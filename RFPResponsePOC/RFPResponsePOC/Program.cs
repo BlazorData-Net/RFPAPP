@@ -1,3 +1,4 @@
+using Radzen;
 using RFPResponsePOC.Client.Pages;
 using RFPResponsePOC.Components;
 
@@ -13,6 +14,8 @@ public class Program
         // Add services to the container.
         builder.Services.AddRazorComponents()
             .AddInteractiveWebAssemblyComponents();
+
+        builder.Services.AddRadzenComponents();
 
         var app = builder.Build();
 
