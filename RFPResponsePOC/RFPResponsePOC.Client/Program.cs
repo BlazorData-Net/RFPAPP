@@ -25,50 +25,11 @@ class Program
         builder.Services.AddScoped<SettingsService>();
         builder.Services.AddScoped<DatabaseService>();
 
-        // Load Default files
-        var folderPath = "";
-        var filePath = "";
-
-        // RFPResponsePOC Directory
-        folderPath = $"{Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)}/RFPResponsePOC";
-        if (!Directory.Exists(folderPath))
+        // Set the base address for the application
+        var http = new HttpClient()
         {
-            Directory.CreateDirectory(folderPath);
-        }
-
-        // RFPResponsePOCLog.csv
-        filePath = Path.Combine(folderPath, "RFPResponsePOCLog.csv");
-
-        if (!File.Exists(filePath))
-        {
-            using (var streamWriter = new StreamWriter(filePath))
-            {
-                streamWriter.WriteLine("Application started at " + DateTime.Now + " [" + DateTime.Now.Ticks.ToString() + "]");
-            }
-        }
-        else
-        {
-            // File already exists
-            string[] RFPResponsePOCLog;
-
-            // Open the file to get existing content
-            using (var file = new System.IO.StreamReader(filePath))
-            {
-                RFPResponsePOCLog = file.ReadToEnd().Split('\n');
-
-                if (RFPResponsePOCLog[RFPResponsePOCLog.Length - 1].Trim() == "")
-                {
-                    RFPResponsePOCLog = RFPResponsePOCLog.Take(RFPResponsePOCLog.Length - 1).ToArray();
-                }
-            }
-
-            // Append the text to csv file
-            using (var streamWriter = new StreamWriter(filePath))
-            {
-                streamWriter.WriteLine(string.Join("\n", "Application started at " + DateTime.Now));
-                streamWriter.WriteLine(string.Join("\n", RFPResponsePOCLog));
-            }
-        }
+            BaseAddress = new Uri(builder.HostEnvironment.BaseAddress)
+        };
 
         await builder.Build().RunAsync();
     }
