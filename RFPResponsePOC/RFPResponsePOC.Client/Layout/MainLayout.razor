@@ -1,28 +1,13 @@
 ﻿@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 <RadzenComponents @rendermode="InteractiveWebAssembly" />
 @inherits LayoutComponentBase
-@inject Blazored.LocalStorage.ISyncLocalStorageService localStorage
-@inject SettingsService SettingsService
-@inject AppMetadata _AppMetadata
-@inject LogService LogService
-@inject HttpClient Http
-@using RFPResponsePOC.Model
-@using RFPResponsePOC.Models
-@using Radzen.Blazor
 <RadzenDialog />
 <RadzenNotification />
 <RadzenTooltip />
 <RadzenContextMenu />
 <main>
     <div class="top-row px-4">
-        @if (UpdateAvailable)
-        {
-            <a href="https://documentation.aistorybuilders.com/" target="_blank">* Update Available - Close web browser and reload *</a>
-        }
-        else
-        {
-            <a href="https://AIStoryBuilders.com/" target="_blank">AIStoryBuilders.com</a>
-        }
+        <a href="https://BlazorData.net/" target="_blank">BlazorData.net</a>
     </div>
 
     <article class="content px-4">
@@ -32,7 +17,7 @@
 <RadzenFooter>
     <div class="row justify-content-start align-items-center px-2 pt-2 p-3 mb-2 bg-light text-dark">
         <div class="col-12 d-flex align-items-left">
-            &copy; @year - Version: @versionLocal - &nbsp; <a href="https://documentation.aistorybuilders.com/" target="_blank">Documentation</a>&nbsp; - &nbsp; <a href="https://github.com/AIStoryBuilders/AIStoryBuildersOnline/discussions/" target="_blank">Help and Support</a>
+            <p>@@2025</p>
         </div>
     </div>
 </RadzenFooter>
@@ -41,85 +26,3 @@
     <a href="." class="reload">Reload</a>
     <span class="dismiss">🗙</span>
 </div>
-@code {
-    bool UpdateAvailable = false;
-    private string versionLocal = "";
-    private string versionPublished = "";
-    private string year = DateTime.Now.Year.ToString();
-
-    protected override async Task OnInitializedAsync()
-    {
-        try
-        {
-            // Load Settings
-            await SettingsService.LoadSettingsAsync();
-
-            var Organization = SettingsService.Organization;
-            var ApiKey = SettingsService.ApiKey;
-            var AIModel = SettingsService.AIModel;
-            var GUID = SettingsService.GUID;
-
-            versionLocal = _AppMetadata.Version;
-
-            await LogService.WriteToLogAsync("Application started at " + DateTime.Now);
-
-            try
-            {
-                // Call the API at https://aistorybuilders.com/api/version/GetVersion
-                // to get the version
-
-                if (GUID == null || GUID == "")
-                {
-                    GUID = "{missing}";
-                }
-
-                var response = await Http.GetAsync($"https://aistorybuilders.com/api/VersionOnline/getversiononline?paramGUID={GUID}&paramCurrentVersion={versionLocal}");
-                response.EnsureSuccessStatusCode();
-                var result = await response.Content.ReadAsStringAsync();
-                versionPublished = result;
-
-                // Use the version number from the API if it is greater than the local version
-                if (ConvertToInteger(versionPublished) > ConvertToInteger(versionLocal))
-                {
-                    UpdateAvailable = true;
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex.Message);
-            await LogService.WriteToLogAsync(ex.Message);
-        }
-
-        // call the base class
-        base.OnInitialized();
-    }
-
-    #region private int ConvertToInteger(string strParamVersion)
-    private int ConvertToInteger(string strParamVersion)
-    {
-        int intVersionNumber = 0;
-        string strVersion = strParamVersion;
-
-        // Split into parts seperated by periods
-        char[] splitchar = { '.' };
-        var strSegments = strVersion.Split(splitchar);
-
-        // Process the segments
-        int i = 0;
-        List<int> colMultiplyers = new List<int> { 10000, 100, 1 };
-        foreach (var strSegment in strSegments)
-        {
-            int intSegmentNumber = Convert.ToInt32(strSegment);
-            intVersionNumber = intVersionNumber + (intSegmentNumber * colMultiplyers[i]);
-            i++;
-        }
-
-        return intVersionNumber;
-    }
-    #endregion
-}

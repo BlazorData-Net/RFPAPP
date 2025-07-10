@@ -31,6 +31,8 @@ class Program
             BaseAddress = new Uri(builder.HostEnvironment.BaseAddress)
         };
 
+        builder.Services.AddScoped(sp => http);
+
         // Load Default files
         var folderPath = "";
         var filePath = "";

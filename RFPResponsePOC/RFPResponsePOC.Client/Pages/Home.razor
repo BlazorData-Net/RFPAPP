@@ -1,6 +1,14 @@
 ﻿@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 @page "/"
-
+@inject AppMetadata _AppMetadata
+@inject LogService LogService
+@inject Blazored.LocalStorage.ISyncLocalStorageService localStorage
+@inject SettingsService SettingsService
+@inject AppMetadata _AppMetadata
+@inject HttpClient Http
+@using RFPResponsePOC.Model
+@using RFPResponsePOC.Models
+@using Radzen.Blazor
 <PageTitle>Home</PageTitle>
 
 <p role="status">Current count: @currentCount</p>
@@ -10,8 +18,62 @@
 @code {
     private int currentCount = 0;
 
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Load Settings
+            await SettingsService.LoadSettingsAsync();
+
+            var Organization = SettingsService.Organization;
+            var ApiKey = SettingsService.ApiKey;
+            var AIModel = SettingsService.AIModel;
+            var GUID = SettingsService.GUID;
+
+            try
+            {
+                await LogService.WriteToLogAsync("Application started at " + DateTime.Now);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+
+        // call the base class
+        base.OnInitialized();
+    }
+
     private void IncrementCount()
     {
         currentCount++;
     }
+
+    #region private int ConvertToInteger(string strParamVersion)
+    private int ConvertToInteger(string strParamVersion)
+    {
+        int intVersionNumber = 0;
+        string strVersion = strParamVersion;
+
+        // Split into parts seperated by periods
+        char[] splitchar = { '.' };
+        var strSegments = strVersion.Split(splitchar);
+
+        // Process the segments
+        int i = 0;
+        List<int> colMultiplyers = new List<int> { 10000, 100, 1 };
+        foreach (var strSegment in strSegments)
+        {
+            int intSegmentNumber = Convert.ToInt32(strSegment);
+            intVersionNumber = intVersionNumber + (intSegmentNumber * colMultiplyers[i]);
+            i++;
+        }
+
+        return intVersionNumber;
+    }
+    #endregion
 }

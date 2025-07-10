@@ -16,7 +16,24 @@ public class Program
 
         // Add services to the container.
         builder.Services.AddRazorComponents()
-            .AddInteractiveWebAssemblyComponents();     
+            .AddInteractiveWebAssemblyComponents();
+
+        builder.Services.AddRadzenComponents();
+
+        // Local Storage
+        builder.Services.AddBlazoredLocalStorage();
+
+        // Add services to the container.
+        AppMetadata appMetadata = new AppMetadata() { Version = "01.00.00" };
+        builder.Services.AddSingleton(appMetadata);
+
+        builder.Services.AddScoped<LogService>();
+        builder.Services.AddScoped<SettingsService>();
+        builder.Services.AddScoped<DatabaseService>();
+
+        // Register HttpClient
+        builder.Services.AddHttpClient();
+        builder.Services.AddScoped<HttpClient>();
 
         var app = builder.Build();
 
