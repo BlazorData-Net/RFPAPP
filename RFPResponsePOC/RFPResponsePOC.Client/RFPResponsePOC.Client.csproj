@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+﻿<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
@@ -13,11 +13,13 @@
 	  <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />	
 	  <PackageReference Include="DocX" Version="4.0.25105.5786" />	 
 	  <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-	  <PackageReference Include="Radzen.Blazor" Version="7.1.4" />
-	  <PackageReference Include="Microsoft.Extensions.AI" Version="9.7.0" />
-	  <PackageReference Include="Microsoft.Extensions.AI.Abstractions" Version="9.7.0" />
-	  <PackageReference Include="Microsoft.Extensions.AI.OpenAI" Version="9.6.0-preview.1.25310.2" />
-	  <PackageReference Include="Azure.AI.OpenAI" Version="2.2.0-beta.4" />
+	  <PackageReference Include="Radzen.Blazor" Version="7.1.5" />
+	  <PackageReference Include="Microsoft.Extensions.AI.Ollama" Version="9.1.0-preview.1.25064.3" />
+	  <PackageReference Include="Microsoft.Extensions.AI" Version="9.1.0-preview.1.25064.3" />
+	  <PackageReference Include="Microsoft.Extensions.AI.Abstractions" Version="9.1.0-preview.1.25064.3" />
+	  <PackageReference Include="Microsoft.Extensions.AI.OpenAI" Version="9.1.0-preview.1.25064.3" />
+	  <PackageReference Include="Azure.AI.OpenAI" Version="2.1.0" />
+	  <PackageReference Include="Azure.Identity" Version="1.13.2" />
   </ItemGroup>
 
 </Project>

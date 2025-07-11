@@ -38,7 +38,7 @@ class Program
         var filePath = "";
 
         // RFPResponsePOC Directory
-        folderPath = $"/RFPResponsePOC";
+        folderPath = $"RFPResponsePOC";
         if (!Directory.Exists(folderPath))
         {
             Directory.CreateDirectory(folderPath);

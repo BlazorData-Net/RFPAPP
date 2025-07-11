@@ -3,36 +3,85 @@
 @inject AppMetadata _AppMetadata
 @inject LogService LogService
 @inject Blazored.LocalStorage.ISyncLocalStorageService localStorage
-@inject SettingsService SettingsService
+@inject SettingsService _SettingsService
 @inject AppMetadata _AppMetadata
 @inject HttpClient Http
 @using RFPResponsePOC.Model
 @using RFPResponsePOC.Models
 @using Radzen.Blazor
 <PageTitle>Home</PageTitle>
+<RadzenMenu>
+    @if (ApiKey.Length > 10)
+    {
+        <RadzenMenuItem Click="OnHomeClicked" Text="Home" Icon="home"></RadzenMenuItem>
+        <RadzenMenuItem Click="OnLogsClicked" Text="Logs" Icon="assignment"></RadzenMenuItem>
+        <RadzenMenuItem Click="OnUtilityClicked" Text="Utility" Icon="aspect_ratio"></RadzenMenuItem>
+        <RadzenMenuItem Click="OnSettingsClicked" Text="Settings" Icon="line_style"></RadzenMenuItem>
+    }
+    else
+    {
+        <RadzenMenuItem Click="OnSettingsClicked" Text="Settings" Icon="line_style"></RadzenMenuItem>
+    }
+</RadzenMenu>
+<br />
+@if (@InProgress)
+{
+    <div class="rz-m-10">
+        <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+    </div>
+}
+@if (HomeVisible)
+{
 
-<p role="status">Current count: @currentCount</p>
-
-<RadzenButton Click="@IncrementCount" Text="Click me"></RadzenButton>
+}
+@if (SettingsVisible)
+{
+    <Settings SettingsChanged="HandleSettingsChanged"></Settings>
+}
+@if (LogsVisible)
+{
+    <Logs></Logs>
+}
+@if (UtilityVisible)
+{
+    <p>Utility</p>
+}
 
 @code {
-    private int currentCount = 0;
+    string Organization = "";
+    string ApiKey = "";
+
+    bool InProgress = false;
+    bool HomeVisible = true;
+    bool SettingsVisible = false;
+    bool LogsVisible = false;
+    bool UtilityVisible = false;
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
             // Load Settings
-            await SettingsService.LoadSettingsAsync();
+            _SettingsService.LoadSettings();
 
-            var Organization = SettingsService.Organization;
-            var ApiKey = SettingsService.ApiKey;
-            var AIModel = SettingsService.AIModel;
-            var GUID = SettingsService.GUID;
+            var ApiKey = _SettingsService.Settings.ApplicationSettings.ApiKey ?? "";
+            var AIModel = _SettingsService.Settings.ApplicationSettings.AIModel;
 
             try
             {
                 await LogService.WriteToLogAsync("Application started at " + DateTime.Now);
+
+                if ((ApiKey == "") || (ApiKey.Length < 10))
+                {
+                    // Switch to the Settings page
+                    HomeVisible = false;
+                    SettingsVisible = true;
+                    LogsVisible = false;
+                }
+                else
+                {
+
+                }
             }
             catch (Exception ex)
             {
@@ -48,9 +97,53 @@
         base.OnInitialized();
     }
 
-    private void IncrementCount()
+    // Events
+
+    void OnHomeClicked(MenuItemEventArgs args)
     {
-        currentCount++;
+        HomeVisible = true;
+        SettingsVisible = false;
+        UtilityVisible = false;
+        LogsVisible = false;
+    }
+
+    void OnSettingsClicked(MenuItemEventArgs args)
+    {
+        HomeVisible = false;
+        SettingsVisible = true;
+        UtilityVisible = false;
+        LogsVisible = false;
+    }
+
+    void OnLogsClicked(MenuItemEventArgs args)
+    {
+        HomeVisible = false;
+        SettingsVisible = false;
+        UtilityVisible = false;
+        LogsVisible = true;
+    }
+
+    void OnUtilityClicked(MenuItemEventArgs args)
+    {
+        HomeVisible = false;
+        SettingsVisible = false;
+        UtilityVisible = true;
+        LogsVisible = false;
+    }
+
+    private void HandleSettingsChanged()
+    {
+        _SettingsService.LoadSettings();
+        ApiKey = _SettingsService.Settings.ApplicationSettings.ApiKey;
+
+        // If there is a key show the Home page
+        if (ApiKey.Length > 10)
+        {
+            HomeVisible = true;
+            SettingsVisible = false;
+            UtilityVisible = false;
+            LogsVisible = false;
+        }
     }
 
     #region private int ConvertToInteger(string strParamVersion)

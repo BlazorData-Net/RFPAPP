@@ -1,0 +1,264 @@
+﻿@using static RFPResponsePOC.AI.OrchestratorMethods
+@using Newtonsoft.Json;
+@using RFPResponsePOC.AI
+@using RFPResponsePOC.Model
+@inherits OwningComponentBase
+@inject Blazored.LocalStorage.ISyncLocalStorageService localStorage
+@inject NotificationService NotificationService
+@inject DialogService DialogService
+@inject SettingsService SettingsService
+@inject LogService _LogService
+@inject IJSRuntime JSRuntime
+
+<RadzenRow AlignItems="AlignItems.Start" Wrap="FlexWrap.Wrap" Gap="1rem" Class="rz-p-sm-12">
+    <RadzenColumn Size="12" SizeSM="6">
+        <RadzenStack>
+
+            <!-- AI Service Type -->
+            <RadzenFormField Text="AI Service Type:" Variant="@variant">
+                <RadzenDropDown Data="@colAITypes"
+                                @bind-Value="@AIType"
+                                Style="width:300px"
+                                Change="@(args => ChangeAIType(args))" />
+            </RadzenFormField>
+
+            <!-- API Key (only for OpenAI and Azure OpenAI) -->
+            @if (AIType == "OpenAI" || AIType == "Azure OpenAI")
+            {
+                <RadzenFormField Text="API Key:" Variant="@variant">
+                    <RadzenTextBox @bind-Value="@ApiKey"
+                                   Type="@(ShowApiKey ? "text" : "password")"
+                                   Style="width:450px;"
+                                   @oninput="HandleApiKeyChange" />
+                    <RadzenButton Icon="@(ShowApiKey ? "visibility_off" : "visibility")"
+                                  ButtonStyle="ButtonStyle.Light"
+                                  Size="ButtonSize.Small"
+                                  Click="ToggleApiKeyVisibility" />
+                </RadzenFormField>
+            }
+
+            @if (AIType == "OpenAI")
+            {
+                <RadzenFormField Text="OpenAI Model:" Variant="@variant">
+                    <RadzenTextBox @bind-Value="@AIModel" Style="width:450px;" />
+                </RadzenFormField>
+            }
+            else if (AIType == "Azure OpenAI")
+            {
+                <RadzenFormField Text="Azure OpenAI Model Deployment Name:" Variant="@variant">
+                    <RadzenTextBox @bind-Value="@AIModel" Style="width:450px;" />
+                </RadzenFormField>
+                <RadzenFormField Text="Azure OpenAI Endpoint:" Variant="@variant">
+                    <RadzenTextBox @bind-Value="@Endpoint" Style="width:450px;" />
+                </RadzenFormField>
+            }
+            else if (AIType == "LM Studio" || AIType == "Ollma")
+            {
+                <RadzenFormField Text="Endpoint:" Variant="@variant">
+                    <RadzenTextBox @bind-Value="@Endpoint" Style="width:450px;" />
+                </RadzenFormField>
+                <RadzenFormField Text="Model Name:" Variant="@variant">
+                    <RadzenTextBox @bind-Value="@AIModel" Style="width:450px;" />
+                </RadzenFormField>
+            }
+
+            <!-- Action Button -->
+            @if (!IsSettingsEntered)
+            {
+                @if (AIType == "OpenAI")
+                {
+                    <RadzenButton Text="An OpenAI API Key is required (Click here to get one)"
+                                  ButtonStyle="ButtonStyle.Secondary"
+                                  Click="OpenAIKeyLink"
+                                  Style="margin-bottom: 10px; width: 500px" />
+                }
+                else if (AIType == "Azure OpenAI")
+                {
+                    <RadzenButton Text="An Azure OpenAI API Key is required (Click here to get one)"
+                                  ButtonStyle="ButtonStyle.Secondary"
+                                  Click="OpenAIKeyLink"
+                                  Style="margin-bottom: 10px; width: 500px" />
+                }
+            }
+            else
+            {
+                <RadzenButton Text="Save"
+                              ButtonStyle="ButtonStyle.Primary"
+                              Click="SettingsSave"
+                              Style="margin-bottom: 10px; width: 500px" />
+            }
+
+        </RadzenStack>
+    </RadzenColumn>
+</RadzenRow>
+
+@code {
+    [Parameter] public EventCallback SettingsChanged { get; set; }
+
+    // Services
+    private OrchestratorMethods OrchestratorMethods;
+
+    // Fields
+    private bool IsSettingsEntered = false;
+    private bool ShowApiKey { get; set; } = false;
+
+    // Default Values
+    private string ApiKey = "";
+    private string AIModel = "gpt-4o";
+    private string AIType = "OpenAI";
+    private string Endpoint = "";
+    private string AIEmbeddingModel = "";
+    private string ApiVersion = "";
+
+    // Collections
+    private readonly List<string> colAITypes = new()
+    {
+        "OpenAI",
+        "Azure OpenAI",
+        "LM Studio",
+        "Ollma"
+    };
+
+    Variant variant = Variant.Outlined;
+    string DefaultAIModel = "gpt-4o";
+
+    protected override void OnInitialized()
+    {
+        SettingsService.LoadSettings();
+
+        OrchestratorMethods = (OrchestratorMethods)ScopedServices.GetService(typeof(OrchestratorMethods));
+
+        // Get APIKey from secure settings
+        ApiKey = SettingsService.Settings.ApplicationSettings.ApiKey ?? "";
+        Endpoint = SettingsService.Settings.ApplicationSettings.Endpoint;
+        ApiVersion = SettingsService.Settings.ApplicationSettings.ApiVersion;
+        AIModel = SettingsService.Settings.ApplicationSettings.AIModel;
+        AIType = SettingsService.Settings.ApplicationSettings.AIType;
+
+        if (ApiKey.Length > 1)
+        {
+            IsSettingsEntered = true;
+        }
+        else
+        {
+            IsSettingsEntered = false;
+        }
+    }
+
+    private void HandleApiKeyChange(ChangeEventArgs e)
+    {
+        // Mark settings as entered if the user starts typing an API key
+        ApiKey = e.Value?.ToString() ?? string.Empty;
+
+        IsSettingsEntered = !string.IsNullOrWhiteSpace(ApiKey);
+    }
+
+    private void ToggleApiKeyVisibility()
+    {
+        ShowApiKey = !ShowApiKey;
+    }
+
+    private void APIKeyDetection(KeyboardEventArgs args)
+    {
+        IsSettingsEntered = true;
+    }
+
+    private async Task OpenAIKeyLink()
+    {
+        if (AIType == "OpenAI")
+        {
+            await JSRuntime.InvokeVoidAsync("open", "https://platform.openai.com/account/api-keys", "_blank");
+        }
+        else // "Azure OpenAI"
+        {
+            await JSRuntime.InvokeVoidAsync("open",
+                "https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/create-resource?pivots=web-portal", "_blank");
+        }
+    }
+
+    private async Task SettingsSave()
+    {
+        try
+        {
+            if ((AIType == "OpenAI") && (!ApiKey.StartsWith("sk-")))
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "Error",
+                    Detail = "Invalid API Key - must start with: sk-",
+                    Duration = 4000
+                });
+
+                return;
+            }
+
+            if (ApiKey.Length < 5)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "Error",
+                    Detail = "API Key is required",
+                    Duration = 4000
+                });
+
+                return;
+            }
+
+            // Update Settings
+            SettingsService settingsService = new SettingsService();
+
+            SettingsService.ApplicationSettings applicationSettings = settingsService.Settings.ApplicationSettings;
+
+            applicationSettings.ApiKey = ApiKey ?? "";
+            applicationSettings.Endpoint = Endpoint;
+            applicationSettings.AIModel = AIModel;
+            applicationSettings.AIType = AIType;
+            applicationSettings.AIEmbeddingModel = AIEmbeddingModel;
+
+            await settingsService.UpdateSettingsAsync(applicationSettings);
+
+            // Test API Key
+            var result = await OrchestratorMethods.TestAccessAsync(AIType, AIModel, ApiKey, Endpoint, AIEmbeddingModel);
+
+            if (!result)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "Error",
+                    Detail = "Failed to connect to the AI service. Please check your API Key and Endpoint.",
+                    Duration = 8000
+                });
+
+                return;
+            }
+
+            // Notify parent that settings have changed
+            // This will trigger the parent component to refresh or take action
+            await SettingsChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Error",
+                Detail = ex.Message,
+                Duration = 8000
+            });
+
+            await _LogService.WriteToLogAsync($"SettingsSave exception: {ex.GetBaseException().ToString()}");
+        }
+    }
+
+    private void ChangeAIType(dynamic paramAIType)
+    {
+        // Set the default model based on the AI Type
+        if (paramAIType == "OpenAI")
+        {
+            AIModel = DefaultAIModel;
+        }
+    }
+}
