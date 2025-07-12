@@ -1,14 +1,18 @@
 ﻿@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 @page "/"
-@inject AppMetadata _AppMetadata
-@inject LogService LogService
-@inject Blazored.LocalStorage.ISyncLocalStorageService localStorage
-@inject SettingsService _SettingsService
-@inject AppMetadata _AppMetadata
-@inject HttpClient Http
+@using System.Text
+@using System.IO.Compression
 @using RFPResponsePOC.Model
 @using RFPResponsePOC.Models
 @using Radzen.Blazor
+@inject AppMetadata _AppMetadata
+@inject LogService LogService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@inject SettingsService _SettingsService
+@inject AppMetadata _AppMetadata
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@inject IJSRuntime JsRuntime
 <PageTitle>Home</PageTitle>
 <RadzenMenu>
     @if (ApiKey.Length > 10)
@@ -48,53 +52,74 @@
 }
 
 @code {
+#nullable disable
+    private IDisposable registration;
     string Organization = "";
     string ApiKey = "";
 
-    bool InProgress = false;
+    bool InProgress = true;
     bool HomeVisible = true;
     bool SettingsVisible = false;
     bool LogsVisible = false;
     bool UtilityVisible = false;
 
-    protected override async Task OnInitializedAsync()
-    {
-        try
-        {
-            // Load Settings
-            _SettingsService.LoadSettings();
+    bool ZipFileExists = false;
+    string BasePath = @"/Temp";
 
-            var ApiKey = _SettingsService.Settings.ApplicationSettings.ApiKey ?? "";
-            var AIModel = _SettingsService.Settings.ApplicationSettings.AIModel;
+    // Allow access to the JSRuntime
+    private DotNetObjectReference<Home> objRef;
+
+    // Run on page load
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // See if the Zip file exists in LocalStorage
+            ZipFileExists = await localStorage.ContainKeyAsync("ZipFiles.zip");
+
+            // Set a reference to the current instance of Home
+            objRef = DotNetObjectReference.Create(this);
+
+            // Register the beforeunload event with JavaScript
+            await JsRuntime.InvokeVoidAsync("setupBeforeUnload", objRef);
 
             try
             {
-                await LogService.WriteToLogAsync("Application started at " + DateTime.Now);
+                // Load Settings
+                _SettingsService.LoadSettings();
 
-                if ((ApiKey == "") || (ApiKey.Length < 10))
+                var ApiKey = _SettingsService.Settings.ApplicationSettings.ApiKey ?? "";
+                var AIModel = _SettingsService.Settings.ApplicationSettings.AIModel;
+
+                try
                 {
-                    // Switch to the Settings page
-                    HomeVisible = false;
-                    SettingsVisible = true;
-                    LogsVisible = false;
+                    //await LogService.WriteToLogAsync("Application started at " + DateTime.Now);
+
+                    if ((ApiKey == "") || (ApiKey.Length < 10))
+                    {       
+                        // Switch to the Settings page
+                        HomeVisible = false;
+                        SettingsVisible = true;
+                        LogsVisible = false;                        
+                    }
+                    else
+                    {
+
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-
+                    Console.WriteLine(ex.Message);
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
             }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex.Message);
-        }
 
-        // call the base class
-        base.OnInitialized();
+            InProgress = false;
+            StateHasChanged();
+        }        
     }
 
     // Events
@@ -146,6 +171,124 @@
         }
     }
 
+    // JavaScript Events
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            registration =
+                Navigation.RegisterLocationChangingHandler(OnLocationChanging);
+        }
+    }
+
+    private ValueTask OnLocationChanging(LocationChangingContext context)
+    {
+        // Get the base URL
+        string baseUrl = Navigation.BaseUri;
+
+        // Detect that user is going to counter page
+        if (context.TargetLocation != baseUrl)
+        {
+            // User is navigating away from the page - Zip any files
+            // Zip up any files and store in LocalStorage
+            Task.Run(async () => await ZipTheFiles());
+        }
+
+        return ValueTask.CompletedTask;
+    }
+
+    [JSInvokable]
+    public void HandleBeforeUnload()
+    {
+        // User is navigating away from the page - Zip any files
+        // Zip up any files and store in LocalStorage
+        Task.Run(async () => await ZipTheFiles());
+    }
+
+    // Zip file methods
+
+    private async Task ZipTheFiles()
+    {
+        string zipPath = @"/Zip";
+        string zipFilePath = @"/Zip/ZipFiles.zip";
+
+        // If zipFilePath exists, delete it
+        if (File.Exists(zipFilePath))
+        {
+            File.Delete(zipFilePath);
+        }
+
+        // Create the directory if it doesn't exist
+        if (!Directory.Exists(zipPath))
+        {
+            Directory.CreateDirectory(zipPath);
+        }
+
+        // If BasePath is not a directory, return
+        if (!Directory.Exists(BasePath))
+        {
+            return;
+        }
+
+        // Create a zip file from the directory
+        ZipFile.CreateFromDirectory(BasePath, zipFilePath);
+
+        StateHasChanged();
+
+        // Read the Zip file into a byte array
+        byte[] exportFileBytes = File.ReadAllBytes(zipFilePath);
+        StateHasChanged();
+
+        // Convert byte array to Base64 string
+        string base64String = Convert.ToBase64String(exportFileBytes);
+        StateHasChanged();
+
+        // Store base64String in the browser's local storage
+        await localStorage.SetItemAsync("ZipFiles.zip", base64String);
+
+        ZipFileExists = true;
+    }
+
+    private async Task UnzipFile()
+    {
+        string extractPath = @"/Zip";
+
+        // If the extract directory does not exist, create it
+        if (!Directory.Exists(extractPath))
+        {
+            Directory.CreateDirectory(extractPath);
+        }
+
+        // Get exportFileString from the browser's local storage
+        string exportFileString = await localStorage.GetItemAsync<string>("ZipFiles.zip");
+
+        // Convert the Base64 string to a byte array
+        byte[] exportFileBytes = Convert.FromBase64String(exportFileString);
+
+        // Write the byte array to a file
+        await File.WriteAllBytesAsync($"{extractPath}/ZipFiles.zip", exportFileBytes);
+
+        // Extract the zip file
+        ZipFile.ExtractToDirectory($"{extractPath}/ZipFiles.zip", BasePath);
+    }
+
+    private async Task DownloadZipFile()
+    {
+        // Get exportFileString from the browser's local storage
+        string base64String = await localStorage.GetItemAsync<string>("ZipFiles.zip");
+
+        // Download the zip file
+        await JsRuntime.InvokeVoidAsync("saveAsFile", "ZipFiles.zip", base64String);
+    }
+
+    private void DeleteZipFile()
+    {
+        // Remove the zip file from the browser's local storage
+        localStorage.RemoveItemAsync("ZipFiles.zip");
+        ZipFileExists = false;
+    }
+
     #region private int ConvertToInteger(string strParamVersion)
     private int ConvertToInteger(string strParamVersion)
     {
@@ -169,4 +312,9 @@
         return intVersionNumber;
     }
     #endregion
+
+    public void Dispose()
+    {
+        objRef?.Dispose();
+    }
 }
