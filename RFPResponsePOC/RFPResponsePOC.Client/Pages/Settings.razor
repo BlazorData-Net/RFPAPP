@@ -27,13 +27,9 @@
             {
                 <RadzenFormField Text="API Key:" Variant="@variant">
                     <RadzenTextBox @bind-Value="@ApiKey"
-                                   Type="@(ShowApiKey ? "text" : "password")"
+                                   Type="password"
                                    Style="width:450px;"
                                    @oninput="HandleApiKeyChange" />
-                    <RadzenButton Icon="@(ShowApiKey ? "visibility_off" : "visibility")"
-                                  ButtonStyle="ButtonStyle.Light"
-                                  Size="ButtonSize.Small"
-                                  Click="ToggleApiKeyVisibility" />
                 </RadzenFormField>
             }
 

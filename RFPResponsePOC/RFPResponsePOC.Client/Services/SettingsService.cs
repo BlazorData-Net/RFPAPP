@@ -71,7 +71,7 @@ namespace RFPResponsePOC.Model
         public SettingsService()
         {
             // Construct the path to the settings file using Path.Combine for cross-platform compatibility
-            _settingsPath = Path.Combine("RFPResponsePOC", "RFPResponsePOC.config");
+            _settingsPath = "/RFPResponsePOC.config";
 
             LoadSettings();
         }
