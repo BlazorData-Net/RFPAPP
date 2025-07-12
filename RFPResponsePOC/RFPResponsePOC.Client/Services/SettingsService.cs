@@ -154,10 +154,7 @@ namespace RFPResponsePOC.Model
         }
 
         /// <summary>
-        /// Updates specific sections of the configuration and saves the changes.
-        /// 
-        /// If you need more granular updates (e.g., only one type of connection),
-        /// you can add logic to find/modify the correct ConnectionSettings item.
+        /// Updates specific sections of the configuration and saves the changes.        /// 
         /// </summary>
         /// <param name="applicationSettings">New application settings.</param>
         /// <param name="connectionSettings">List of connection settings to overwrite existing ones.</param>
@@ -175,7 +172,6 @@ namespace RFPResponsePOC.Model
             // Replace or merge connection settings if provided
             if (connectionSettings != null)
             {
-                // Example: simply replace the entire collection
                 Settings.ConnectionSettings = connectionSettings;
             }
 

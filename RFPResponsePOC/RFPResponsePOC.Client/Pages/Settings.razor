@@ -1,4 +1,5 @@
-﻿@using static RFPResponsePOC.AI.OrchestratorMethods
+﻿@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@using static RFPResponsePOC.AI.OrchestratorMethods
 @using Newtonsoft.Json;
 @using RFPResponsePOC.AI
 @using RFPResponsePOC.Model
@@ -92,7 +93,7 @@
     [Parameter] public EventCallback SettingsChanged { get; set; }
 
     // Services
-    private OrchestratorMethods OrchestratorMethods;
+    private OrchestratorMethods objOrchestratorMethods;
 
     // Fields
     private bool IsSettingsEntered = false;
@@ -122,7 +123,7 @@
     {
         SettingsService.LoadSettings();
 
-        OrchestratorMethods = (OrchestratorMethods)ScopedServices.GetService(typeof(OrchestratorMethods));
+        objOrchestratorMethods = (OrchestratorMethods)ScopedServices.GetService(typeof(OrchestratorMethods));
 
         // Get APIKey from secure settings
         ApiKey = SettingsService.Settings.ApplicationSettings.ApiKey ?? "";
@@ -216,7 +217,9 @@
             await settingsService.UpdateSettingsAsync(applicationSettings);
 
             // Test API Key
-            var result = await OrchestratorMethods.TestAccessAsync(AIType, AIModel, ApiKey, Endpoint, AIEmbeddingModel);
+            objOrchestratorMethods = new OrchestratorMethods(SettingsService, _LogService);
+            
+            var result = await objOrchestratorMethods.TestAccessAsync(AIType, AIModel, ApiKey, Endpoint, AIEmbeddingModel);
 
             if (!result)
             {

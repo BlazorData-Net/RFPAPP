@@ -1,4 +1,5 @@
-﻿@using System.Text
+﻿@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@using System.Text
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 @inject IJSRuntime JsRuntime
