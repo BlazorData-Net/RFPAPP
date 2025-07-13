@@ -71,7 +71,7 @@ namespace RFPResponsePOC.Model
         public SettingsService()
         {
             // Construct the path to the settings file using Path.Combine for cross-platform compatibility
-            _settingsPath = "/RFPResponsePOC.config";
+            _settingsPath = @"/RFPResponsePOC/RFPResponsePOC.config";
 
             LoadSettings();
         }
@@ -193,7 +193,7 @@ namespace RFPResponsePOC.Model
                 {
                     ApplicationSettings = new ApplicationSettings
                     {
-                        AIModel = "DefaultAIModel",
+                        AIModel = "o3-mini",
                         AIType = "OpenAI",
                         Endpoint = "https://api.openai.com",
                         ApiVersion = "v1",

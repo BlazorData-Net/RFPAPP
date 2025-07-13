@@ -63,8 +63,9 @@
     bool LogsVisible = false;
     bool UtilityVisible = false;
 
+    bool FilesExist = false;
     bool ZipFileExists = false;
-    string BasePath = @"/Temp";
+    string BasePath = @"/RFPResponsePOC";
 
     // Allow access to the JSRuntime
     private DotNetObjectReference<Home> objRef;
@@ -176,7 +177,7 @@
         LogsVisible = false;
     }
 
-    private void HandleSettingsChanged()
+    private async Task HandleSettingsChanged()
     {
         _SettingsService.LoadSettings();
         ApiKey = _SettingsService.Settings.ApplicationSettings.ApiKey;
@@ -188,6 +189,8 @@
             SettingsVisible = false;
             UtilityVisible = false;
             LogsVisible = false;
+
+            await ZipTheFiles();
         }
     }
 
@@ -219,11 +222,11 @@
     }
 
     [JSInvokable]
-    public void HandleBeforeUnload()
+    public async Task HandleBeforeUnload()
     {
         // User is navigating away from the page - Zip any files
         // Zip up any files and store in LocalStorage
-        Task.Run(async () => await ZipTheFiles());
+        await ZipTheFiles();
     }
 
     // Zip file methods
@@ -291,6 +294,8 @@
 
         // Extract the zip file
         ZipFile.ExtractToDirectory($"{extractPath}/ZipFiles.zip", BasePath);
+
+        FilesExist = true;
     }
 
     private async Task DownloadZipFile()
