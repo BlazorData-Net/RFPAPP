@@ -171,18 +171,16 @@
     private async Task HandleSettingsChanged()
     {
         _SettingsService.LoadSettings();
+
         ApiKey = _SettingsService.Settings.ApplicationSettings.ApiKey;
+        AIModel = _SettingsService.Settings.ApplicationSettings.AIModel;
 
-        // If there is a key show the Home page
-        if (ApiKey.Length > 10)
-        {
-            HomeVisible = true;
-            SettingsVisible = false;
-            UtilityVisible = false;
-            LogsVisible = false;
+        HomeVisible = true;
+        SettingsVisible = false;
+        UtilityVisible = false;
+        LogsVisible = false;
 
-            await ZipTheFiles();
-        }
+        await ZipTheFiles();
     }
 
     // JavaScript Events

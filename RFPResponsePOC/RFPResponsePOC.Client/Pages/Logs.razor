@@ -6,9 +6,6 @@
 <h3>Logs</h3>
 <div class="row">
     <div class="col">
-        <RadzenButton Text="Export Log" ButtonStyle="ButtonStyle.Primary"
-                      Click="ExportLogAsync"
-                      Style="margin-bottom: 10px; width: 150px" />&nbsp;&nbsp;
         <RadzenButton Text="Clear Log" ButtonStyle="ButtonStyle.Danger"
                       Click="ClearLog"
                       Style="margin-bottom: 10px; width: 150px" />&nbsp;&nbsp;
@@ -75,64 +72,22 @@
             }
 
             NotificationService.Notify(new NotificationMessage
-                {
-                    Severity = NotificationSeverity.Success,
-                    Summary = "Success",
-                    Detail = "Log Cleared",
-                    Duration = 4000
-                });
-        }
-        catch (Exception ex)
-        {
-            NotificationService.Notify(new NotificationMessage
-                {
-                    Severity = NotificationSeverity.Error,
-                    Summary = "Error",
-                    Detail = ex.Message,
-                    Duration = 4000
-                });
-        }
-    }
-
-    private async Task ExportLogAsync()
-    {
-        try
-        {
-            string FinalLog = "<style> table { border-collapse: separate; border-spacing: 5px; } th, td { padding: 5px; } </style> <table><tr><th>Log Data</th></tr>";
-
-            foreach (string line in RFPResponsePOCLog)
             {
-                FinalLog += "<tr><td>" + line + "</td></tr>";
-            }
-
-            FinalLog += "</table>";
-
-            string FileName = $"RFPResponsePOCLog_{DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss")}.html";
-
-            // Convert RFPResponsePOCLog to a MemoryStream but keep the line breaks
-            using var stream = new MemoryStream(Encoding.Default.GetBytes(FinalLog));
-
-            using var streamRef = new DotNetStreamReference(stream: stream);
-
-            await JsRuntime.InvokeVoidAsync("saveAsFile", FileName, streamRef);
-
-            NotificationService.Notify(new NotificationMessage
-                {
-                    Severity = NotificationSeverity.Success,
-                    Summary = "Saved",
-                    Detail = $"The file was saved successfully",
-                    Duration = 4000
-                });
+                Severity = NotificationSeverity.Success,
+                Summary = "Success",
+                Detail = "Log Cleared",
+                Duration = 4000
+            });
         }
         catch (Exception ex)
         {
             NotificationService.Notify(new NotificationMessage
-                {
-                    Severity = NotificationSeverity.Error,
-                    Summary = "Error",
-                    Detail = ex.Message,
-                    Duration = 4000
-                });
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Error",
+                Detail = ex.Message,
+                Duration = 4000
+            });
         }
     }
 }
