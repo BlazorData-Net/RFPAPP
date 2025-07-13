@@ -64,7 +64,7 @@
             <!-- Action Button -->
             @if ((AIType == "OpenAI") || (AIType == "Azure OpenAI"))
             {
-                @if (!IsSettingsEntered)
+                @if (!IsOpenAISettingsEntered)
                 {
                     @if (AIType == "OpenAI")
                     {
@@ -115,7 +115,7 @@
     private OrchestratorMethods objOrchestratorMethods;
 
     // Fields
-    private bool IsSettingsEntered = false;
+    private bool IsOpenAISettingsEntered = false;
     private bool ShowApiKey { get; set; } = false;
 
     // Default Values
@@ -168,11 +168,11 @@
 
             if (ApiKey.Length > 1)
             {
-                IsSettingsEntered = true;
+                IsOpenAISettingsEntered = true;
             }
             else
             {
-                IsSettingsEntered = false;
+                IsOpenAISettingsEntered = false;
             }
 
             StateHasChanged();
@@ -184,7 +184,7 @@
         // Mark settings as entered if the user starts typing an API key
         ApiKey = e.Value?.ToString() ?? string.Empty;
 
-        IsSettingsEntered = !string.IsNullOrWhiteSpace(ApiKey);
+        IsOpenAISettingsEntered = !string.IsNullOrWhiteSpace(ApiKey);
     }
 
     private void ToggleApiKeyVisibility()
@@ -194,7 +194,7 @@
 
     private void APIKeyDetection(KeyboardEventArgs args)
     {
-        IsSettingsEntered = true;
+        IsOpenAISettingsEntered = true;
     }
 
     private async Task OpenAIKeyLink()
