@@ -2,6 +2,7 @@
 @page "/"
 @using System.Text
 @using System.IO.Compression
+@using RFPResponsePOC.Client.Services
 @using RFPResponsePOC.Model
 @using RFPResponsePOC.Models
 @using Radzen.Blazor
@@ -17,7 +18,7 @@
 @inject IJSRuntime JsRuntime
 <PageTitle>Home</PageTitle>
 <RadzenMenu>
-    @if (ApiKey.Length > 10)
+    @if (ShowMainMenu)
     {
         <RadzenMenuItem Click="OnHomeClicked" Text="Home" Icon="home"></RadzenMenuItem>
         <RadzenMenuItem Click="OnUtilityClicked" Text="Utility" Icon="aspect_ratio"></RadzenMenuItem>
@@ -41,8 +42,8 @@
     @if (ZipFileExists)
     {
         <p>
-            <button class="btn btn-secondary" @onclick="DownloadZipFile">Download Saved Settings File</button>&nbsp;&nbsp;
-            <button class="btn btn-danger" @onclick="DeleteZipFile">Delete Saved Settings</button>
+            <button class="btn btn-secondary" @onclick="objZipService.DownloadZipFile">Download Saved Settings File</button>&nbsp;&nbsp;
+            <button class="btn btn-danger" @onclick="objZipService.DeleteZipFile">Delete Saved Settings</button>
         </p>
         <hr />
         <p>APIKey = @ApiKey</p>
@@ -63,8 +64,10 @@
 }
 
 @code {
-#nullable disable
+    #nullable disable
     private IDisposable registration;
+
+    bool ShowMainMenu = false;
     string ApiKey = "";
     string AIModel = "";
 
@@ -74,11 +77,11 @@
     bool LogsVisible = false;
     bool UtilityVisible = false;
 
-    bool ZipFileExists = false;
-    string BasePath = @"/RFPResponsePOC";
-
     // Allow access to the JSRuntime
     private DotNetObjectReference<Home> objRef;
+
+    ZipService objZipService = new ZipService();
+    bool ZipFileExists = false;
 
     // Run on page load
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -91,15 +94,19 @@
             // Register the beforeunload event with JavaScript
             await JsRuntime.InvokeVoidAsync("setupBeforeUnload", objRef);
 
+            // Initialize the ZipService
+            objZipService = new ZipService(JsRuntime, localStorage, _SettingsService, LogService);
+
             try
             {
-                // See if the Zip file exists in LocalStorage
-                ZipFileExists = await localStorage.ContainKeyAsync("ZipFiles.zip");
+                ZipFileExists = await objZipService.IsZipFileExistsAsync();
 
                 if (ZipFileExists)
                 {
                     // If it exists, unzip the file and load settings
-                    await UnzipFile();
+                    await objZipService.UnzipFile();
+
+                    ShowMainMenu = true;
                 }
                 else
                 {
@@ -111,12 +118,6 @@
                             streamWriter.WriteLine("Application started at " + DateTime.Now + " [" + DateTime.Now.Ticks.ToString() + "]");
                         }
                     }
-
-                    // Load Settings
-                    _SettingsService.LoadSettings();
-
-                    var ApiKey = _SettingsService.Settings.ApplicationSettings.ApiKey ?? "";
-                    var AIModel = _SettingsService.Settings.ApplicationSettings.AIModel;
 
                     // Switch to the Settings page
                     HomeVisible = false;
@@ -130,6 +131,13 @@
             }
 
             InProgress = false;
+
+            // Load Settings
+            _SettingsService.LoadSettings();
+
+            ApiKey = _SettingsService.Settings.ApplicationSettings.ApiKey ?? "";
+            AIModel = _SettingsService.Settings.ApplicationSettings.AIModel;
+
             StateHasChanged();
         }
     }
@@ -168,7 +176,7 @@
         LogsVisible = false;
     }
 
-    private async Task HandleSettingsChanged()
+    private void HandleSettingsChanged()
     {
         _SettingsService.LoadSettings();
 
@@ -180,7 +188,10 @@
         UtilityVisible = false;
         LogsVisible = false;
 
-        await ZipTheFiles();
+        ShowMainMenu = true;
+        ZipFileExists = true;
+
+        StateHasChanged();
     }
 
     // JavaScript Events
@@ -204,7 +215,7 @@
         {
             // User is navigating away from the page - Zip any files
             // Zip up any files and store in LocalStorage
-            Task.Run(async () => await ZipTheFiles());
+            Task.Run(async () => await objZipService.ZipTheFiles());
         }
 
         return ValueTask.CompletedTask;
@@ -215,132 +226,8 @@
     {
         // User is navigating away from the page - Zip any files
         // Zip up any files and store in LocalStorage
-        await ZipTheFiles();
-    }
-
-    // Zip file methods
-
-    private async Task ZipTheFiles()
-    {
-        string zipPath = @"/Zip";
-        string zipFilePath = @"/Zip/ZipFiles.zip";
-
-        // If zipFilePath exists, delete it
-        if (File.Exists(zipFilePath))
-        {
-            File.Delete(zipFilePath);
-        }
-
-        // Create the directory if it doesn't exist
-        if (!Directory.Exists(zipPath))
-        {
-            Directory.CreateDirectory(zipPath);
-        }
-
-        // If BasePath is not a directory, return
-        if (!Directory.Exists(BasePath))
-        {
-            return;
-        }
-
-        // Create a zip file from the directory
-        ZipFile.CreateFromDirectory(BasePath, zipFilePath);
-
-        StateHasChanged();
-
-        // Read the Zip file into a byte array
-        byte[] exportFileBytes = File.ReadAllBytes(zipFilePath);
-        StateHasChanged();
-
-        // Convert byte array to Base64 string
-        string base64String = Convert.ToBase64String(exportFileBytes);
-        StateHasChanged();
-
-        // Store base64String in the browser's local storage
-        await localStorage.SetItemAsync("ZipFiles.zip", base64String);
-
-        ZipFileExists = true;
-    }
-
-    private async Task UnzipFile()
-    {
-        try
-        {
-            string extractPath = @"/Zip";
-
-            // If the extract directory does not exist, create it
-            if (!Directory.Exists(extractPath))
-            {
-                Directory.CreateDirectory(extractPath);
-            }
-
-            // Get exportFileString from the browser's local storage
-            string exportFileString = await localStorage.GetItemAsync<string>("ZipFiles.zip");
-
-            // Convert the Base64 string to a byte array
-            byte[] exportFileBytes = Convert.FromBase64String(exportFileString);
-
-            // Write the byte array to a file
-            await File.WriteAllBytesAsync($"{extractPath}/ZipFiles.zip", exportFileBytes);
-
-            // Extract the zip file
-            ZipFile.ExtractToDirectory($"{extractPath}/ZipFiles.zip", BasePath, true);
-
-            // Load Settings
-            _SettingsService.LoadSettings();
-
-            ApiKey = _SettingsService.Settings.ApplicationSettings.ApiKey ?? "";
-            AIModel = _SettingsService.Settings.ApplicationSettings.AIModel;
-
-            // Switch to the Home page
-            HomeVisible = true;
-            SettingsVisible = false;
-            LogsVisible = false;
-
-            await LogService.WriteToLogAsync("Application started at " + DateTime.Now + " [" + DateTime.Now.Ticks.ToString() + "]");
-        }
-        catch (Exception ex)
-        {
-            NotificationService.Notify(new NotificationMessage
-            {
-                Severity = NotificationSeverity.Error,
-                Summary = "Error",
-                Detail = ex.Message,
-                Duration = 8000
-            });
-
-            await LogService.WriteToLogAsync($"SettingsSave exception: {ex.GetBaseException().ToString()}");
-        }
-    }
-
-    private async Task DownloadZipFile()
-    {
-        // Get exportFileString from the browser's local storage
-        string base64String = await localStorage.GetItemAsync<string>("ZipFiles.zip");
-
-        // Download the zip file
-        await JsRuntime.InvokeVoidAsync("saveAsFile", "ZipFiles.zip", base64String);
-    }
-
-    private void DeleteZipFile()
-    {
-        // Remove the zip file from the browser's local storage
-        localStorage.RemoveItemAsync("ZipFiles.zip");
-        ZipFileExists = false;
-
-        // Delete the zip file from the server
-        string zipFilePath = @"/Zip/ZipFiles.zip";
-        if (File.Exists(zipFilePath))
-        {
-            File.Delete(zipFilePath);
-        }
-
-        // Delete the extracted files
-        if (Directory.Exists(BasePath))
-        {
-            Directory.Delete(BasePath, true);
-        }
-    }
+        await objZipService.ZipTheFiles();
+    }    
 
     #region private int ConvertToInteger(string strParamVersion)
     private int ConvertToInteger(string strParamVersion)
