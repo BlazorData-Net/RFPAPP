@@ -1,0 +1,43 @@
+﻿Please OCR the file. Only return JSON nothing else. Please OCR this Capacity Chart into this json format: {
+  "rooms": [
+    {
+      "name": "Pacific A",
+      "squareFeet": 770,
+      "capacities": {
+        "banquet": 40,
+        "conference": 22,
+        "square": 22,
+        "reception": 40,
+        "schoolRoom": 25,
+        "theatre": 50,
+        "uShape": 20
+      }
+    },
+    {
+      "name": "Pacific B",
+      "squareFeet": 682,
+      "capacities": {
+        "banquet": 40,
+        "conference": 22,
+        "square": 22,
+        "reception": 60,
+        "schoolRoom": 30,
+        "theatre": 50,
+        "uShape": 20
+      }
+    },
+    {
+      "name": "San Diego",
+      "squareFeet": 720,
+      "capacities": {
+        "banquet": 60,
+        "conference": 25,
+        "square": 0,
+        "reception": 50,
+        "schoolRoom": 30,
+        "theatre": 80,
+        "uShape": 30
+      }
+    }
+  ]
+}

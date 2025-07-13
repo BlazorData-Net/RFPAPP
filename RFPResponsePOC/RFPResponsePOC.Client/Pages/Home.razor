@@ -21,7 +21,7 @@
     @if (ShowMainMenu)
     {
         <RadzenMenuItem Click="OnHomeClicked" Text="Home" Icon="home"></RadzenMenuItem>
-        <RadzenMenuItem Click="OnUtilityClicked" Text="Utility" Icon="aspect_ratio"></RadzenMenuItem>
+        <RadzenMenuItem Click="OnCapacityClicked" Text="Capacity" Icon="aspect_ratio"></RadzenMenuItem>
         <RadzenMenuItem Click="OnLogsClicked" Text="Logs" Icon="assignment"></RadzenMenuItem>
         <RadzenMenuItem Click="OnSettingsClicked" Text="Settings" Icon="line_style"></RadzenMenuItem>
     }
@@ -46,8 +46,6 @@
             <button class="btn btn-danger" @onclick="objZipService.DeleteZipFile">Delete Saved Settings</button>
         </p>
         <hr />
-        <p>APIKey = @ApiKey</p>
-        <p>AIModel = @AIModel</p>
     }
 }
 @if (SettingsVisible)
@@ -58,9 +56,9 @@
 {
     <Logs></Logs>
 }
-@if (UtilityVisible)
+@if (CapacityVisible)
 {
-    <Utility></Utility>
+    <Capacity></Capacity>
 }
 
 @code {
@@ -78,7 +76,7 @@
     bool HomeVisible = true;
     bool SettingsVisible = false;
     bool LogsVisible = false;
-    bool UtilityVisible = false;
+    bool CapacityVisible = false;
 
     ZipService objZipService = new ZipService();
     bool ZipFileExists = false;
@@ -123,7 +121,7 @@
                     HomeVisible = false;
                     SettingsVisible = true;
                     LogsVisible = false;
-                    UtilityVisible = false;
+                    CapacityVisible = false;
                 }
             }
             catch (Exception ex)
@@ -149,7 +147,7 @@
     {
         HomeVisible = true;
         SettingsVisible = false;
-        UtilityVisible = false;
+        CapacityVisible = false;
         LogsVisible = false;
     }
 
@@ -157,7 +155,7 @@
     {
         HomeVisible = false;
         SettingsVisible = true;
-        UtilityVisible = false;
+        CapacityVisible = false;
         LogsVisible = false;
     }
 
@@ -165,15 +163,15 @@
     {
         HomeVisible = false;
         SettingsVisible = false;
-        UtilityVisible = false;
+        CapacityVisible = false;
         LogsVisible = true;
     }
 
-    void OnUtilityClicked(MenuItemEventArgs args)
+    void OnCapacityClicked(MenuItemEventArgs args)
     {
         HomeVisible = false;
         SettingsVisible = false;
-        UtilityVisible = true;
+        CapacityVisible = true;
         LogsVisible = false;
     }
 
@@ -186,7 +184,7 @@
 
         HomeVisible = true;
         SettingsVisible = false;
-        UtilityVisible = false;
+        CapacityVisible = false;
         LogsVisible = false;
 
         ShowMainMenu = true;

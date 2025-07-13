@@ -24,11 +24,7 @@ namespace RFPResponsePOC.AI
         public async Task<bool> TestAccessAsync(string AIType, string AIModel, string ApiKey, string Endpoint, string AIEmbeddingModel)
         {
             var chatClient = CreateAIChatClient(AIType, AIModel, ApiKey, Endpoint, AIEmbeddingModel);
-
-            string SystemMessage = "";
-
-            SystemMessage = "Please return the following as json: \"This is successful\" in this format {\r\n 'message': message\r\n}";
-            
+            string SystemMessage = "Please return the following as json: \"This is successful\" in this format {\r\n  'message': message\r\n}";
             var response = await chatClient.CompleteAsync(SystemMessage);
 
             if (response.Choices.Count == 0)
