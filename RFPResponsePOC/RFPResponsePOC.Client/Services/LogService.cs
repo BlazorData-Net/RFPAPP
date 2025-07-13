@@ -14,7 +14,7 @@ namespace RFPResponsePOC.Model
             {
                 // Open the file to get existing content
                 var RFPResponsePOCLogPath =
-                    $"/RFPResponsePOCLog.csv";
+                    $"/RFPResponsePOC/RFPResponsePOCLog.csv";
 
                 using (var file = new System.IO.StreamReader(RFPResponsePOCLogPath))
                 {

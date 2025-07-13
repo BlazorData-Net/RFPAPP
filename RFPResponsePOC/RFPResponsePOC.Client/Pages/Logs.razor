@@ -16,7 +16,7 @@
 </div>
 <RadzenDataGrid AllowFiltering="false" AllowColumnResize="true" AllowAlternatingRows="true"
                 PageSize="3" AllowPaging="true" PagerHorizontalAlign="HorizontalAlign.Left"
-                Data="@AIStoryBuildersLog" TItem="string" ColumnWidth="300px" ShowPagingSummary="true">
+                Data="@RFPResponsePOCLog" TItem="string" ColumnWidth="300px" ShowPagingSummary="true">
     <Columns>
         <RadzenDataGridColumn TItem="string" Title="Entry">
             <Template>
@@ -30,23 +30,28 @@
 
 
 @code {
-    string AIStoryBuildersLogPath = "";
-    string[] AIStoryBuildersLog;
+    string RFPResponsePOCLogPath = "";
+    string[] RFPResponsePOCLog;
 
-    protected override void OnInitialized()
+    // Run on page load
+    protected override void OnAfterRender(bool firstRender)
     {
-        AIStoryBuildersLogPath =
-        $"{Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)}/AIStoryBuilders/AIStoryBuildersLog.csv";
-
-        // Read the lines from the .csv file
-        using (var file = new System.IO.StreamReader(AIStoryBuildersLogPath))
+        if (firstRender)
         {
-            AIStoryBuildersLog = file.ReadToEnd().Split('\n');
+            RFPResponsePOCLogPath = @"/RFPResponsePOC/RFPResponsePOCLog.csv";
 
-            if (AIStoryBuildersLog[AIStoryBuildersLog.Length - 1].Trim() == "")
+            // Read the lines from the .csv file
+            using (var file = new System.IO.StreamReader(RFPResponsePOCLogPath))
             {
-                AIStoryBuildersLog = AIStoryBuildersLog.Distinct().Take(AIStoryBuildersLog.Length - 1).ToArray();
+                RFPResponsePOCLog = file.ReadToEnd().Split('\n');
+
+                if (RFPResponsePOCLog[RFPResponsePOCLog.Length - 1].Trim() == "")
+                {
+                    RFPResponsePOCLog = RFPResponsePOCLog.Distinct().Take(RFPResponsePOCLog.Length - 1).ToArray();
+                }
             }
+
+            StateHasChanged();
         }
     }
 
@@ -54,18 +59,18 @@
     {
         try
         {
-            using (var streamWriter = new StreamWriter(AIStoryBuildersLogPath))
+            using (var streamWriter = new StreamWriter(RFPResponsePOCLogPath))
             {
                 streamWriter.WriteLine(string.Join("\n", "Log cleared on " + DateTime.Now));
             }
 
             // Read the lines from the .csv file
-            using (var file = new System.IO.StreamReader(AIStoryBuildersLogPath))
+            using (var file = new System.IO.StreamReader(RFPResponsePOCLogPath))
             {
-                AIStoryBuildersLog = file.ReadToEnd().Split('\n');
-                if (AIStoryBuildersLog[AIStoryBuildersLog.Length - 1].Trim() == "")
+                RFPResponsePOCLog = file.ReadToEnd().Split('\n');
+                if (RFPResponsePOCLog[RFPResponsePOCLog.Length - 1].Trim() == "")
                 {
-                    AIStoryBuildersLog = AIStoryBuildersLog.Take(AIStoryBuildersLog.Length - 1).ToArray();
+                    RFPResponsePOCLog = RFPResponsePOCLog.Take(RFPResponsePOCLog.Length - 1).ToArray();
                 }
             }
 
@@ -95,16 +100,16 @@
         {
             string FinalLog = "<style> table { border-collapse: separate; border-spacing: 5px; } th, td { padding: 5px; } </style> <table><tr><th>Log Data</th></tr>";
 
-            foreach (string line in AIStoryBuildersLog)
+            foreach (string line in RFPResponsePOCLog)
             {
                 FinalLog += "<tr><td>" + line + "</td></tr>";
             }
 
             FinalLog += "</table>";
 
-            string FileName = $"AIStoryBuildersLog_{DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss")}.html";
+            string FileName = $"RFPResponsePOCLog_{DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss")}.html";
 
-            // Convert AIStoryBuildersLog to a MemoryStream but keep the line breaks
+            // Convert RFPResponsePOCLog to a MemoryStream but keep the line breaks
             using var stream = new MemoryStream(Encoding.Default.GetBytes(FinalLog));
 
             using var streamRef = new DotNetStreamReference(stream: stream);

@@ -105,9 +105,9 @@
                 else
                 {
                     // Create Log file in the virtual directory
-                    if (!File.Exists("RFPResponsePOCLog.csv"))
+                    if (!File.Exists(@"/RFPResponsePOC/RFPResponsePOCLog.csv"))
                     {
-                        using (var streamWriter = new StreamWriter("RFPResponsePOCLog.csv"))
+                        using (var streamWriter = new StreamWriter(@"/RFPResponsePOC/RFPResponsePOCLog.csv"))
                         {
                             streamWriter.WriteLine("Application started at " + DateTime.Now + " [" + DateTime.Now.Ticks.ToString() + "]");
                         }
@@ -299,6 +299,8 @@
             HomeVisible = true;
             SettingsVisible = false;
             LogsVisible = false;
+
+            await LogService.WriteToLogAsync("Application started at " + DateTime.Now + " [" + DateTime.Now.Ticks.ToString() + "]");
         }
         catch (Exception ex)
         {
