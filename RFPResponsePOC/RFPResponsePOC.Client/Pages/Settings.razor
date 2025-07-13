@@ -2,13 +2,15 @@
 @using static RFPResponsePOC.AI.OrchestratorMethods
 @using Newtonsoft.Json;
 @using RFPResponsePOC.AI
+@using RFPResponsePOC.Client.Services
 @using RFPResponsePOC.Model
 @inherits OwningComponentBase
-@inject Blazored.LocalStorage.ISyncLocalStorageService localStorage
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 @inject SettingsService SettingsService
 @inject LogService _LogService
+@inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 
 <RadzenRow AlignItems="AlignItems.Start" Wrap="FlexWrap.Wrap" Gap="1rem" Class="rz-p-sm-12">
@@ -100,7 +102,14 @@
 </RadzenRow>
 
 @code {
+#nullable disable
     [Parameter] public EventCallback SettingsChanged { get; set; }
+
+    private IDisposable registration;
+
+    // Allow access to the JSRuntime
+    private DotNetObjectReference<Settings> objRef;
+    ZipService objZipService = new ZipService();
 
     // Services
     private OrchestratorMethods objOrchestratorMethods;
@@ -128,26 +137,45 @@
     Variant variant = Variant.Outlined;
     string DefaultAIModel = "o3-mini";
 
-    protected override void OnInitialized()
+    // Run on page load
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        SettingsService.LoadSettings();
-
-        objOrchestratorMethods = (OrchestratorMethods)ScopedServices.GetService(typeof(OrchestratorMethods));
-
-        // Get APIKey from secure settings
-        ApiKey = SettingsService.Settings.ApplicationSettings.ApiKey ?? "";
-        Endpoint = SettingsService.Settings.ApplicationSettings.Endpoint;
-        ApiVersion = SettingsService.Settings.ApplicationSettings.ApiVersion;
-        AIModel = SettingsService.Settings.ApplicationSettings.AIModel;
-        AIType = SettingsService.Settings.ApplicationSettings.AIType;
-
-        if (ApiKey.Length > 1)
+        if (firstRender)
         {
-            IsSettingsEntered = true;
-        }
-        else
-        {
-            IsSettingsEntered = false;
+            // Set a reference to the current instance of Home
+            objRef = DotNetObjectReference.Create(this);
+
+            // Register the beforeunload event with JavaScript
+            await JSRuntime.InvokeVoidAsync("setupBeforeUnload", objRef);
+
+            // Register the location changing handler
+            registration =
+            Navigation.RegisterLocationChangingHandler(OnLocationChanging);
+
+            // Initialize the ZipService
+            objZipService = new ZipService(JSRuntime, localStorage, SettingsService, _LogService);
+
+            SettingsService.LoadSettings();
+
+            objOrchestratorMethods = (OrchestratorMethods)ScopedServices.GetService(typeof(OrchestratorMethods));
+
+            // Get APIKey from secure settings
+            ApiKey = SettingsService.Settings.ApplicationSettings.ApiKey ?? "";
+            Endpoint = SettingsService.Settings.ApplicationSettings.Endpoint;
+            ApiVersion = SettingsService.Settings.ApplicationSettings.ApiVersion;
+            AIModel = SettingsService.Settings.ApplicationSettings.AIModel;
+            AIType = SettingsService.Settings.ApplicationSettings.AIType;
+
+            if (ApiKey.Length > 1)
+            {
+                IsSettingsEntered = true;
+            }
+            else
+            {
+                IsSettingsEntered = false;
+            }
+
+            StateHasChanged();
         }
     }
 
@@ -287,5 +315,36 @@
         {
             AIModel = DefaultAIModel;
         }
+    }
+
+    #region JavaScript
+    private ValueTask OnLocationChanging(LocationChangingContext context)
+    {
+        // Get the base URL
+        string baseUrl = Navigation.BaseUri;
+
+        // Detect that user is going to counter page
+        if (context.TargetLocation != baseUrl)
+        {
+            // User is navigating away from the page - Zip any files
+            // Zip up any files and store in LocalStorage
+            Task.Run(async () => await objZipService.ZipTheFiles());
+        }
+
+        return ValueTask.CompletedTask;
+    }
+
+    [JSInvokable]
+    public async Task HandleBeforeUnload()
+    {
+        // User is navigating away from the page - Zip any files
+        // Zip up any files and store in LocalStorage
+        await objZipService.ZipTheFiles();
+    }
+    #endregion
+
+    public void Dispose()
+    {
+        objRef?.Dispose();
     }
 }

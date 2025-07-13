@@ -1,16 +1,77 @@
 ﻿@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 @using System.Text
+@using RFPResponsePOC.Client.Services
+@using RFPResponsePOC.Model
 @inject NotificationService NotificationService
 @inject DialogService DialogService
+@inject IJSRuntime JsRuntime
+@inject LogService LogService
+@inject NotificationService NotificationService
+@inject DialogService DialogService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@inject SettingsService _SettingsService
+@inject NavigationManager Navigation
 @inject IJSRuntime JsRuntime
 <h3>Utility</h3>
 
 
 @code {
+#nullable disable
+    private IDisposable registration;
 
-    protected override void OnAfterRender(bool firstRender)
+    // Allow access to the JSRuntime
+    private DotNetObjectReference<Utility> objRef;
+
+    ZipService objZipService = new ZipService();
+
+    // Run on page load
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
- 
+        if (firstRender)
+        {
+            // Set a reference to the current instance of Home
+            objRef = DotNetObjectReference.Create(this);
+
+            // Register the beforeunload event with JavaScript
+            await JsRuntime.InvokeVoidAsync("setupBeforeUnload", objRef);
+
+            // Register the location changing handler
+            registration =
+            Navigation.RegisterLocationChangingHandler(OnLocationChanging);
+
+            // Initialize the ZipService
+            objZipService = new ZipService(JsRuntime, localStorage, _SettingsService, LogService);
+        }
     }
+
+    #region JavaScript
+    private ValueTask OnLocationChanging(LocationChangingContext context)
+    {
+        // Get the base URL
+        string baseUrl = Navigation.BaseUri;
+
+        // Detect that user is going to counter page
+        if (context.TargetLocation != baseUrl)
+        {
+            // User is navigating away from the page - Zip any files
+            // Zip up any files and store in LocalStorage
+            Task.Run(async () => await objZipService.ZipTheFiles());
+        }
+
+        return ValueTask.CompletedTask;
+    }
+
+    [JSInvokable]
+    public async Task HandleBeforeUnload()
+    {
+        // User is navigating away from the page - Zip any files
+        // Zip up any files and store in LocalStorage
+        await objZipService.ZipTheFiles();
+    }
+    #endregion
     
+    public void Dispose()
+    {
+        objRef?.Dispose();
+    }
 }

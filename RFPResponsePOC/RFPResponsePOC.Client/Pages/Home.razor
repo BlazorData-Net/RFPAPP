@@ -67,6 +67,9 @@
     #nullable disable
     private IDisposable registration;
 
+    // Allow access to the JSRuntime
+    private DotNetObjectReference<Home> objRef;
+
     bool ShowMainMenu = false;
     string ApiKey = "";
     string AIModel = "";
@@ -76,9 +79,6 @@
     bool SettingsVisible = false;
     bool LogsVisible = false;
     bool UtilityVisible = false;
-
-    // Allow access to the JSRuntime
-    private DotNetObjectReference<Home> objRef;
 
     ZipService objZipService = new ZipService();
     bool ZipFileExists = false;
@@ -123,6 +123,7 @@
                     HomeVisible = false;
                     SettingsVisible = true;
                     LogsVisible = false;
+                    UtilityVisible = false;
                 }
             }
             catch (Exception ex)
@@ -205,6 +206,7 @@
         }
     }
 
+    #region JavaScript
     private ValueTask OnLocationChanging(LocationChangingContext context)
     {
         // Get the base URL
@@ -228,6 +230,7 @@
         // Zip up any files and store in LocalStorage
         await objZipService.ZipTheFiles();
     }    
+    #endregion
 
     #region private int ConvertToInteger(string strParamVersion)
     private int ConvertToInteger(string strParamVersion)
