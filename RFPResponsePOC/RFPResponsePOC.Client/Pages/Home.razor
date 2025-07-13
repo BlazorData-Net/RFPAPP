@@ -41,9 +41,8 @@
     @if (ZipFileExists)
     {
         <p>
-            <button class="btn btn-secondary" @onclick="UnzipFile">Unzip File To Directory</button>&nbsp;&nbsp;
-            <button class="btn btn-secondary" @onclick="DownloadZipFile">Download Zip File</button>&nbsp;&nbsp;
-            <button class="btn btn-danger" @onclick="DeleteZipFile">Delete Zip File</button>
+            <button class="btn btn-secondary" @onclick="DownloadZipFile">Download Saved Settings File</button>&nbsp;&nbsp;
+            <button class="btn btn-danger" @onclick="DeleteZipFile">Delete Saved Settings</button>
         </p>
         <hr />
         <p>APIKey = @ApiKey</p>
@@ -330,6 +329,19 @@
         // Remove the zip file from the browser's local storage
         localStorage.RemoveItemAsync("ZipFiles.zip");
         ZipFileExists = false;
+
+        // Delete the zip file from the server
+        string zipFilePath = @"/Zip/ZipFiles.zip";
+        if (File.Exists(zipFilePath))
+        {
+            File.Delete(zipFilePath);
+        }
+
+        // Delete the extracted files
+        if (Directory.Exists(BasePath))
+        {
+            Directory.Delete(BasePath, true);
+        }
     }
 
     #region private int ConvertToInteger(string strParamVersion)

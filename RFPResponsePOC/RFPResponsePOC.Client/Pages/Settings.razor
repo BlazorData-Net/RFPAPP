@@ -60,20 +60,30 @@
             }
 
             <!-- Action Button -->
-            @if (!IsSettingsEntered)
+            @if ((AIType == "OpenAI") || (AIType == "Azure OpenAI"))
             {
-                @if (AIType == "OpenAI")
+                @if (!IsSettingsEntered)
                 {
-                    <RadzenButton Text="An OpenAI API Key is required (Click here to get one)"
-                                  ButtonStyle="ButtonStyle.Secondary"
-                                  Click="OpenAIKeyLink"
-                                  Style="margin-bottom: 10px; width: 500px" />
+                    @if (AIType == "OpenAI")
+                    {
+                        <RadzenButton Text="An OpenAI API Key is required (Click here to get one)"
+                                      ButtonStyle="ButtonStyle.Secondary"
+                                      Click="OpenAIKeyLink"
+                                      Style="margin-bottom: 10px; width: 500px" />
+                    }
+                    else if (AIType == "Azure OpenAI")
+                    {
+                        <RadzenButton Text="An Azure OpenAI API Key is required (Click here to get one)"
+                                      ButtonStyle="ButtonStyle.Secondary"
+                                      Click="OpenAIKeyLink"
+                                      Style="margin-bottom: 10px; width: 500px" />
+                    }
                 }
-                else if (AIType == "Azure OpenAI")
+                else
                 {
-                    <RadzenButton Text="An Azure OpenAI API Key is required (Click here to get one)"
-                                  ButtonStyle="ButtonStyle.Secondary"
-                                  Click="OpenAIKeyLink"
+                    <RadzenButton Text="Save"
+                                  ButtonStyle="ButtonStyle.Primary"
+                                  Click="SettingsSave"
                                   Style="margin-bottom: 10px; width: 500px" />
                 }
             }
@@ -112,7 +122,6 @@
     {
         "OpenAI",
         "Azure OpenAI",
-        "LM Studio",
         "Ollma"
     };
 
@@ -190,17 +199,36 @@
                 return;
             }
 
-            if (ApiKey.Length < 5)
+            if ((AIType == "LM Studio") || (AIType == "Ollma"))
             {
-                NotificationService.Notify(new NotificationMessage
+                if (Endpoint.Length < 5)
                 {
-                    Severity = NotificationSeverity.Error,
-                    Summary = "Error",
-                    Detail = "API Key is required",
-                    Duration = 4000
-                });
+                    NotificationService.Notify(new NotificationMessage
+                        {
+                            Severity = NotificationSeverity.Error,
+                            Summary = "Error",
+                            Detail = "Valid Endpoint is required",
+                            Duration = 4000
+                        });
 
-                return;
+                    return;
+                }
+            }
+            else
+            {
+                // OpenAi or Azure Open AI requires API Key
+                if (ApiKey.Length < 5)
+                {
+                    NotificationService.Notify(new NotificationMessage
+                        {
+                            Severity = NotificationSeverity.Error,
+                            Summary = "Error",
+                            Detail = "API Key is required",
+                            Duration = 4000
+                        });
+
+                    return;
+                }
             }
 
             // Update Settings
