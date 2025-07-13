@@ -7,6 +7,8 @@
 @using Radzen.Blazor
 @inject AppMetadata _AppMetadata
 @inject LogService LogService
+@inject NotificationService NotificationService
+@inject DialogService DialogService
 @inject Blazored.LocalStorage.ILocalStorageService localStorage
 @inject SettingsService _SettingsService
 @inject AppMetadata _AppMetadata
@@ -36,7 +38,17 @@
 }
 @if (HomeVisible)
 {
-
+    @if (ZipFileExists)
+    {
+        <p>
+            <button class="btn btn-secondary" @onclick="UnzipFile">Unzip File To Directory</button>&nbsp;&nbsp;
+            <button class="btn btn-secondary" @onclick="DownloadZipFile">Download Zip File</button>&nbsp;&nbsp;
+            <button class="btn btn-danger" @onclick="DeleteZipFile">Delete Zip File</button>
+        </p>
+        <hr />
+        <p>APIKey = @ApiKey</p>
+        <p>AIModel = @AIModel</p>
+    }
 }
 @if (SettingsVisible)
 {
@@ -54,8 +66,8 @@
 @code {
 #nullable disable
     private IDisposable registration;
-    string Organization = "";
     string ApiKey = "";
+    string AIModel = "";
 
     bool InProgress = true;
     bool HomeVisible = true;
@@ -63,7 +75,6 @@
     bool LogsVisible = false;
     bool UtilityVisible = false;
 
-    bool FilesExist = false;
     bool ZipFileExists = false;
     string BasePath = @"/RFPResponsePOC";
 
@@ -86,9 +97,9 @@
                 // See if the Zip file exists in LocalStorage
                 ZipFileExists = await localStorage.ContainKeyAsync("ZipFiles.zip");
 
-                if( ZipFileExists)
+                if (ZipFileExists)
                 {
-                    // If it exists, unzip the file
+                    // If it exists, unzip the file and load settings
                     await UnzipFile();
                 }
                 else
@@ -101,36 +112,17 @@
                             streamWriter.WriteLine("Application started at " + DateTime.Now + " [" + DateTime.Now.Ticks.ToString() + "]");
                         }
                     }
-                }
 
-                // Load Settings
-                _SettingsService.LoadSettings();
+                    // Load Settings
+                    _SettingsService.LoadSettings();
 
-                var ApiKey = _SettingsService.Settings.ApplicationSettings.ApiKey ?? "";
-                var AIModel = _SettingsService.Settings.ApplicationSettings.AIModel;
+                    var ApiKey = _SettingsService.Settings.ApplicationSettings.ApiKey ?? "";
+                    var AIModel = _SettingsService.Settings.ApplicationSettings.AIModel;
 
-                try
-                {
-                    await LogService.WriteToLogAsync("Application started at " + DateTime.Now);
-
-                    if ((ApiKey == "") || (ApiKey.Length < 10))
-                    {       
-                        // Switch to the Settings page
-                        HomeVisible = false;
-                        SettingsVisible = true;
-                        LogsVisible = false;                        
-                    }
-                    else
-                    {
-                        // Switch to the Home page
-                        HomeVisible = true;
-                        SettingsVisible = false;
-                        LogsVisible = false;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.Message);
+                    // Switch to the Settings page
+                    HomeVisible = false;
+                    SettingsVisible = true;
+                    LogsVisible = false;
                 }
             }
             catch (Exception ex)
@@ -140,7 +132,7 @@
 
             InProgress = false;
             StateHasChanged();
-        }        
+        }
     }
 
     // Events
@@ -275,27 +267,51 @@
 
     private async Task UnzipFile()
     {
-        string extractPath = @"/Zip";
-
-        // If the extract directory does not exist, create it
-        if (!Directory.Exists(extractPath))
+        try
         {
-            Directory.CreateDirectory(extractPath);
+            string extractPath = @"/Zip";
+
+            // If the extract directory does not exist, create it
+            if (!Directory.Exists(extractPath))
+            {
+                Directory.CreateDirectory(extractPath);
+            }
+
+            // Get exportFileString from the browser's local storage
+            string exportFileString = await localStorage.GetItemAsync<string>("ZipFiles.zip");
+
+            // Convert the Base64 string to a byte array
+            byte[] exportFileBytes = Convert.FromBase64String(exportFileString);
+
+            // Write the byte array to a file
+            await File.WriteAllBytesAsync($"{extractPath}/ZipFiles.zip", exportFileBytes);
+
+            // Extract the zip file
+            ZipFile.ExtractToDirectory($"{extractPath}/ZipFiles.zip", BasePath, true);
+
+            // Load Settings
+            _SettingsService.LoadSettings();
+
+            ApiKey = _SettingsService.Settings.ApplicationSettings.ApiKey ?? "";
+            AIModel = _SettingsService.Settings.ApplicationSettings.AIModel;
+
+            // Switch to the Home page
+            HomeVisible = true;
+            SettingsVisible = false;
+            LogsVisible = false;
         }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Error",
+                Detail = ex.Message,
+                Duration = 8000
+            });
 
-        // Get exportFileString from the browser's local storage
-        string exportFileString = await localStorage.GetItemAsync<string>("ZipFiles.zip");
-
-        // Convert the Base64 string to a byte array
-        byte[] exportFileBytes = Convert.FromBase64String(exportFileString);
-
-        // Write the byte array to a file
-        await File.WriteAllBytesAsync($"{extractPath}/ZipFiles.zip", exportFileBytes);
-
-        // Extract the zip file
-        ZipFile.ExtractToDirectory($"{extractPath}/ZipFiles.zip", BasePath);
-
-        FilesExist = true;
+            await LogService.WriteToLogAsync($"SettingsSave exception: {ex.GetBaseException().ToString()}");
+        }
     }
 
     private async Task DownloadZipFile()
