@@ -9,6 +9,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="wwwroot\Prompts\Capacity.prompt" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.7" />
 	  <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />	
 	  <PackageReference Include="DocX" Version="4.0.25105.5786" />	 
@@ -23,9 +27,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Prompts\Capacity.prompt">
+    <Content Update="wwwroot\Prompts\Capacity.prompt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
+    </Content>
   </ItemGroup>
 
 </Project>

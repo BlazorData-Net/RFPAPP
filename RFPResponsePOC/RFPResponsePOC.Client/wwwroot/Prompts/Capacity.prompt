@@ -1,4 +1,4 @@
-﻿Please OCR the file. Only return JSON nothing else. Please OCR this Capacity Chart into this json format: {
+﻿Please OCR the file and convert it to json. Only return JSON nothing else. Please OCR this Capacity Chart into a json format structured like this example: {
   "rooms": [
     {
       "name": "Pacific A",
@@ -24,19 +24,6 @@
         "schoolRoom": 30,
         "theatre": 50,
         "uShape": 20
-      }
-    },
-    {
-      "name": "San Diego",
-      "squareFeet": 720,
-      "capacities": {
-        "banquet": 60,
-        "conference": 25,
-        "square": 0,
-        "reception": 50,
-        "schoolRoom": 30,
-        "theatre": 80,
-        "uShape": 30
       }
     }
   ]

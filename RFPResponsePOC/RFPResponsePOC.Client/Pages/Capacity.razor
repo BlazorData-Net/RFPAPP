@@ -2,6 +2,8 @@
 @using System.Text
 @using RFPResponsePOC.Client.Services
 @using RFPResponsePOC.Model
+@using Microsoft.AspNetCore.Components.Forms
+@using RFPResponsePOC.AI
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 @inject IJSRuntime JsRuntime
@@ -12,8 +14,11 @@
 @inject SettingsService _SettingsService
 @inject NavigationManager Navigation
 @inject IJSRuntime JsRuntime
+@inject HttpClient Http
 <h3>Capacity</h3>
 
+<label for="capacityUpload">Upload capacity chart (.pdf)</label>
+<InputFile id="capacityUpload" OnChange="HandleCapacityChartUpload" accept=".pdf" />
 
 @code {
 #nullable disable
@@ -69,7 +74,76 @@
         await objZipService.ZipTheFiles();
     }
     #endregion
-    
+
+    private async Task HandleCapacityChartUpload(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var file = e.File;
+            if (file == null || !file.Name.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "Invalid File",
+                    Detail = "Please upload a PDF file.",
+                    Duration = 4000
+                });
+                return;
+            }
+
+            // Read the PDF file as a byte array
+            using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024); // 10MB limit
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
+            var pdfBytes = ms.ToArray();
+
+            // Read the contents of \Prompts\Capacity.prompt into prompt
+            var prompt = await Http.GetStringAsync("Prompts/Capacity.prompt");
+
+            // Instantiate orchestrator and settings
+            var objOrchestratorMethods = new OrchestratorMethods(_SettingsService, LogService);
+            var settingsService = new SettingsService();
+
+            // You may need to adjust CallOpenAIAsync to accept file bytes if not already supported
+            var result = await objOrchestratorMethods.CallOpenAIFileAsync(
+                settingsService,settingsService.Settings.ApplicationSettings.ApiKey, prompt, pdfBytes 
+            );
+
+            // Handle result (show notification, update UI, etc.)
+            if (result.Error == "")
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = "Success",
+                    Detail = "Capacity chart uploaded and processed.",
+                    Duration = 4000
+                });
+            }
+            else
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "Error",
+                    Detail = $"Failed to process the capacity chart. {result.Error}",
+                    Duration = 4000
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Error",
+                Detail = ex.Message,
+                Duration = 8000
+            });
+        }
+    }
+
     public void Dispose()
     {
         objRef?.Dispose();
