@@ -19,6 +19,18 @@
 
 <label for="capacityUpload">Upload capacity chart (.pdf)</label>
 <InputFile id="capacityUpload" OnChange="HandleCapacityChartUpload" accept=".pdf" />
+@if (@InProgress)
+{
+    <div class="rz-m-10">
+        <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+    </div>
+}
+<p>
+    @if (@result.Response != "")
+    {
+        <RadzenText Text="@result.Response" />
+    }
+</p>
 
 @code {
 #nullable disable
@@ -27,7 +39,11 @@
     // Allow access to the JSRuntime
     private DotNetObjectReference<Capacity> objRef;
 
+    AIResponse result = new AIResponse();
+
     ZipService objZipService = new ZipService();
+
+    private bool InProgress = false;
 
     // Run on page load
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -79,6 +95,9 @@
     {
         try
         {
+            InProgress = true;
+            StateHasChanged();
+
             var file = e.File;
             if (file == null || !file.Name.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
             {
@@ -106,9 +125,12 @@
             var settingsService = new SettingsService();
 
             // You may need to adjust CallOpenAIAsync to accept file bytes if not already supported
-            var result = await objOrchestratorMethods.CallOpenAIFileAsync(
-                settingsService,settingsService.Settings.ApplicationSettings.ApiKey, prompt, pdfBytes 
+            result = await objOrchestratorMethods.CallOpenAIFileAsync(
+                settingsService, settingsService.Settings.ApplicationSettings.ApiKey, prompt, pdfBytes
             );
+
+            InProgress = false;
+            StateHasChanged();
 
             // Handle result (show notification, update UI, etc.)
             if (result.Error == "")
@@ -134,6 +156,9 @@
         }
         catch (Exception ex)
         {
+            InProgress = false;
+            StateHasChanged();
+
             NotificationService.Notify(new NotificationMessage
             {
                 Severity = NotificationSeverity.Error,
