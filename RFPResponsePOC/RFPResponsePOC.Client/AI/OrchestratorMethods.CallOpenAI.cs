@@ -6,7 +6,9 @@ using RFPResponsePOC.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http.Json;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace RFPResponsePOC.AI
@@ -62,12 +64,64 @@ namespace RFPResponsePOC.AI
             string prompt,
             byte[] fileBytes)
         {
-            var chatClient = new OpenAIClient(apiKey);
-    
+            JsonDocument doc;
+
+            try
+            {
+                string base64 = Convert.ToBase64String(fileBytes);
+
+                var request = new
+                {
+                    model = "gpt-4o",
+                    messages = new object[]
+                    {
+                        new {
+                            role = "user",
+                            content = new object[]
+                            {
+                                new { type = "text", text = prompt },
+                                new {
+                                    type = "image_url",
+                                    image_url = new {
+                                        url = $"data:image/png;base64,{base64}"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    max_completion_tokens = 10000
+                };
+
+                var client = new HttpClient();
+                client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
+
+                var response = await client.PostAsJsonAsync("https://api.openai.com/v1/chat/completions", request);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var error = await response.Content.ReadAsStringAsync();
+                    throw new Exception($"OpenAI error: {response.StatusCode} - {error}");
+                }
+
+                using var stream = await response.Content.ReadAsStreamAsync();
+                doc = await JsonDocument.ParseAsync(stream);
+
+            }
+            catch (Exception ex)
+            {
+                // Handle unexpected exceptions
+                await LogService.WriteToLogAsync($"An error occurred while calling the AI model: {ex.Message}");
+                return new AIResponse() { Response = "", Error = $"An error occurred while processing the file: {ex.Message}" };
+            }
+
             return new AIResponse
             {
-                Response = "response.Text",
-                Error = null
+                Response = doc.RootElement
+                      .GetProperty("choices")[0]
+                      .GetProperty("message")
+                      .GetProperty("content")
+                      .GetString() ?? "No text found.",
+                Error = ""
             };
         }
         #endregion
