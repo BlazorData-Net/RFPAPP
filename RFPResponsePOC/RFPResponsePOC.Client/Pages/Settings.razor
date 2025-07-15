@@ -17,77 +17,28 @@
     <RadzenColumn Size="12" SizeSM="6">
         <RadzenStack>
 
-            <!-- AI Service Type -->
-            <RadzenFormField Text="AI Service Type:" Variant="@variant">
-                <RadzenDropDown Data="@colAITypes"
-                                @bind-Value="@AIType"
-                                Style="width:300px"
-                                Change="@(args => ChangeAIType(args))" />
+            <RadzenFormField Text="API Key:" Variant="@variant">
+                <RadzenTextBox @bind-Value="@ApiKey"
+                               Type="password"
+                               Style="width:450px;"
+                               @oninput="HandleApiKeyChange" />
             </RadzenFormField>
 
-            <!-- API Key (only for OpenAI and Azure OpenAI) -->
-            @if (AIType == "OpenAI" || AIType == "Azure OpenAI")
-            {
-                <RadzenFormField Text="API Key:" Variant="@variant">
-                    <RadzenTextBox @bind-Value="@ApiKey"
-                                   Type="password"
-                                   Style="width:450px;"
-                                   @oninput="HandleApiKeyChange" />
-                </RadzenFormField>
-            }
 
-            @if (AIType == "OpenAI")
-            {
-                <RadzenFormField Text="OpenAI Model:" Variant="@variant">
-                    <RadzenTextBox @bind-Value="@AIModel" Style="width:450px;" />
-                </RadzenFormField>
-            }
-            else if (AIType == "Azure OpenAI")
-            {
-                <RadzenFormField Text="Azure OpenAI Model Deployment Name:" Variant="@variant">
-                    <RadzenTextBox @bind-Value="@AIModel" Style="width:450px;" />
-                </RadzenFormField>
-                <RadzenFormField Text="Azure OpenAI Endpoint:" Variant="@variant">
-                    <RadzenTextBox @bind-Value="@Endpoint" Style="width:450px;" />
-                </RadzenFormField>
-            }
-            else if (AIType == "LM Studio" || AIType == "Ollma")
-            {
-                <RadzenFormField Text="Endpoint:" Variant="@variant">
-                    <RadzenTextBox @bind-Value="@Endpoint" Style="width:450px;" />
-                </RadzenFormField>
-                <RadzenFormField Text="Model Name:" Variant="@variant">
-                    <RadzenTextBox @bind-Value="@AIModel" Style="width:450px;" />
-                </RadzenFormField>
-            }
+            <RadzenFormField Text="OpenAI Model:" Variant="@variant">
+                <RadzenTextBox @bind-Value="@AIModel" Style="width:450px;" />
+            </RadzenFormField>
 
-            <!-- Action Button -->
-            @if ((AIType == "OpenAI") || (AIType == "Azure OpenAI"))
+
+
+            @if (!IsOpenAISettingsEntered)
             {
-                @if (!IsOpenAISettingsEntered)
-                {
-                    @if (AIType == "OpenAI")
-                    {
-                        <RadzenButton Text="An OpenAI API Key is required (Click here to get one)"
-                                      ButtonStyle="ButtonStyle.Secondary"
-                                      Click="OpenAIKeyLink"
-                                      Style="margin-bottom: 10px; width: 500px" />
-                    }
-                    else if (AIType == "Azure OpenAI")
-                    {
-                        <RadzenButton Text="An Azure OpenAI API Key is required (Click here to get one)"
-                                      ButtonStyle="ButtonStyle.Secondary"
-                                      Click="OpenAIKeyLink"
-                                      Style="margin-bottom: 10px; width: 500px" />
-                    }
-                }
-                else
-                {
-                    <RadzenButton Text="Save"
-                                  ButtonStyle="ButtonStyle.Primary"
-                                  Click="SettingsSave"
-                                  Style="margin-bottom: 10px; width: 500px" />
-                }
+
+                <RadzenButton Text="An OpenAI API Key is required (Click here to get one)"
+                              ButtonStyle="ButtonStyle.Secondary"
+                              Click="OpenAIKeyLink"
+                              Style="margin-bottom: 10px; width: 500px" />
+
             }
             else
             {
@@ -120,22 +71,13 @@
 
     // Default Values
     private string ApiKey = "";
-    private string AIModel = "gpt-4o";
+    private string AIModel = "o3-mini";
     private string AIType = "OpenAI";
     private string Endpoint = "";
     private string AIEmbeddingModel = "";
     private string ApiVersion = "";
 
-    // Collections
-    private readonly List<string> colAITypes = new()
-    {
-        "OpenAI",
-        "Azure OpenAI",
-        "Ollma"
-    };
-
     Variant variant = Variant.Outlined;
-    string DefaultAIModel = "o3-mini";
 
     // Run on page load
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -199,15 +141,7 @@
 
     private async Task OpenAIKeyLink()
     {
-        if (AIType == "OpenAI")
-        {
-            await JSRuntime.InvokeVoidAsync("open", "https://platform.openai.com/account/api-keys", "_blank");
-        }
-        else // "Azure OpenAI"
-        {
-            await JSRuntime.InvokeVoidAsync("open",
-                "https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/create-resource?pivots=web-portal", "_blank");
-        }
+        await JSRuntime.InvokeVoidAsync("open", "https://platform.openai.com/account/api-keys", "_blank");
     }
 
     private async Task SettingsSave()
@@ -227,36 +161,18 @@
                 return;
             }
 
-            if ((AIType == "LM Studio") || (AIType == "Ollma"))
+            // OpenAi or Azure Open AI requires API Key
+            if (ApiKey.Length < 5)
             {
-                if (Endpoint.Length < 5)
+                NotificationService.Notify(new NotificationMessage
                 {
-                    NotificationService.Notify(new NotificationMessage
-                        {
-                            Severity = NotificationSeverity.Error,
-                            Summary = "Error",
-                            Detail = "Valid Endpoint is required",
-                            Duration = 4000
-                        });
+                    Severity = NotificationSeverity.Error,
+                    Summary = "Error",
+                    Detail = "API Key is required",
+                    Duration = 4000
+                });
 
-                    return;
-                }
-            }
-            else
-            {
-                // OpenAi or Azure Open AI requires API Key
-                if (ApiKey.Length < 5)
-                {
-                    NotificationService.Notify(new NotificationMessage
-                        {
-                            Severity = NotificationSeverity.Error,
-                            Summary = "Error",
-                            Detail = "API Key is required",
-                            Duration = 4000
-                        });
-
-                    return;
-                }
+                return;
             }
 
             // Update Settings
@@ -274,7 +190,7 @@
 
             // Test API Key
             objOrchestratorMethods = new OrchestratorMethods(SettingsService, _LogService);
-            
+
             var result = await objOrchestratorMethods.TestAccessAsync(AIType, AIModel, ApiKey, Endpoint, AIEmbeddingModel);
 
             if (!result)
@@ -305,15 +221,6 @@
             });
 
             await _LogService.WriteToLogAsync($"SettingsSave exception: {ex.GetBaseException().ToString()}");
-        }
-    }
-
-    private void ChangeAIType(dynamic paramAIType)
-    {
-        // Set the default model based on the AI Type
-        if (paramAIType == "OpenAI")
-        {
-            AIModel = DefaultAIModel;
         }
     }
 

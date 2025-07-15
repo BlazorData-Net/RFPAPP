@@ -1,5 +1,4 @@
 using Azure.AI.OpenAI;
-using Microsoft.Extensions.AI;
 using OpenAI;
 using RFPResponsePOC.Model;
 using System.ClientModel;
@@ -23,58 +22,6 @@ namespace RFPResponsePOC.AI
         }
 
         // Utility Methods
-
-        #region public IChatClient CreateAIChatClient(string AIType, string AIModel, string ApiKey, string Endpoint, string AIEmbeddingModel)
-        public IChatClient CreateAIChatClient(string AIType, string AIModel, string ApiKey, string Endpoint, string AIEmbeddingModel)
-        {
-            ApiKeyCredential apiKeyCredential = new ApiKeyCredential(ApiKey);
-
-            if (AIType == "OpenAI")
-            {
-                OpenAIClientOptions options = new OpenAIClientOptions();
-                options.NetworkTimeout = TimeSpan.FromSeconds(520);
-
-                return new OpenAIClient(
-                    apiKeyCredential, options)
-                    .AsChatClient(AIModel);
-            }
-            else if (AIType == "Azure OpenAI")
-            {
-                AzureOpenAIClientOptions options = new AzureOpenAIClientOptions();
-                options.NetworkTimeout = TimeSpan.FromSeconds(520);
-
-                return new AzureOpenAIClient(
-                    new Uri(Endpoint),
-                    apiKeyCredential, options)
-                    .AsChatClient(AIModel);
-            }
-            else if (AIType == "LM Studio")
-            {
-                OpenAIClientOptions options = new OpenAIClientOptions();
-                options.NetworkTimeout = TimeSpan.FromSeconds(520);
-
-                options.Endpoint = new Uri(Endpoint);
-
-                // If Endpoint does not end with "/v1/", append it
-                if (!Endpoint.EndsWith("/v1/"))
-                {
-                    Endpoint += "/v1/";
-                }
-
-                options.Endpoint = new Uri(Endpoint);
-
-                return new OpenAIClient(
-                    apiKeyCredential, options)
-                    .AsChatClient(AIModel);
-            }
-            else // Ollama
-            {
-                return new OllamaChatClient(
-                    new Uri(Endpoint),
-                    AIModel);
-            }
-        }
-        #endregion
 
         #region public float CosineSimilarity(float[] vector1, float[] vector2)
         public float CosineSimilarity(float[] vector1, float[] vector2)

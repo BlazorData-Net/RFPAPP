@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.AI;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OpenAI;
 using OpenAI.Chat;
@@ -24,17 +23,11 @@ namespace RFPResponsePOC.AI
         #region public async Task<bool> TestAccessAsync(string AIType, string AIModel, string ApiKey, string Endpoint, string AIEmbeddingModel)
         public async Task<bool> TestAccessAsync(string AIType, string AIModel, string ApiKey, string Endpoint, string AIEmbeddingModel)
         {
-            var chatClient = CreateAIChatClient(AIType, AIModel, ApiKey, Endpoint, AIEmbeddingModel);
-            string SystemMessage = "Please return the following as json: \"This is successful\" in this format {\r\n  'message': message\r\n}";
-            var response = await chatClient.CompleteAsync(SystemMessage);
+            var chatClient = new OpenAIClient(ApiKey);
 
-            if (response.Choices.Count == 0)
-            {
-                return false;
-            }
 
             // Pass though ExtractJsonFromResponse
-            var json = ExtractJsonFromResponse(response.Choices.FirstOrDefault().Text);
+            var json = ExtractJsonFromResponse("response.Choices.FirstOrDefault().Text");
 
             return true;
         }
@@ -45,48 +38,13 @@ namespace RFPResponsePOC.AI
         {
             try
             {
-                // Create the AI chat client using the provided settings
-                var chatClient = CreateAIChatClient(
-                    SettingsService.Settings.ApplicationSettings.AIType,
-                    SettingsService.Settings.ApplicationSettings.AIModel,
-                    ApiKey,
-                    SettingsService.Settings.ApplicationSettings.Endpoint,
-                    SettingsService.Settings.ApplicationSettings.AIEmbeddingModel);
+                var chatClient = new OpenAIClient(ApiKey);
 
-                // Send the system message to the AI chat client
-                var response = await chatClient.CompleteAsync(AIQuery);
-
-                // Check if the response contains any choices
-                if (response.Choices == null || response.Choices.Count == 0)
+                return new AIResponse
                 {
-                    // Optionally, log the absence of choices or handle it as needed
-                    return new AIResponse() { Response = "", Error = "No choices returned in the AI response." };
-                }
-
-                // Extract the text from the first choice
-                string jsonResponse = response.Choices[0].Text.Trim();
-
-                jsonResponse = ExtractJsonFromResponse(jsonResponse);
-
-                try
-                {
-                    var parsedResponse = JsonConvert.DeserializeObject<AIResponse>(jsonResponse);
-
-                    if (parsedResponse != null && !string.IsNullOrEmpty(parsedResponse.Response))
-                    {
-                        return parsedResponse;
-                    }
-                    else
-                    {
-                        return new AIResponse() { Response = "", Error = "Parsed response is null or missing the 'Response' field." };
-                    }
-                }
-                catch (JsonException jsonEx)
-                {
-                    // Handle JSON parsing errors
-                    await LogService.WriteToLogAsync($"Error parsing JSON response: {jsonEx.Message}");
-                    return new AIResponse() { Response = "", Error = $"Error parsing JSON response: {jsonEx.Message}" };
-                }
+                    Response = "response.Text",
+                    Error = null
+                };
             }
             catch (Exception ex)
             {
@@ -104,25 +62,13 @@ namespace RFPResponsePOC.AI
             string prompt,
             byte[] fileBytes)
         {
-            try
+            var chatClient = new OpenAIClient(apiKey);
+    
+            return new AIResponse
             {
-
-
-                return new AIResponse
-                {
-                    Response = "",
-                    Error = null
-                };
-            }
-            catch (JsonException jex)
-            {
-                await LogService.WriteToLogAsync($"Error parsing JSON response: {jex.Message}");
-                return new AIResponse
-                {
-                    Response = "",
-                    Error = $"Error parsing JSON response: {jex.Message}"
-                };
-            }
+                Response = "response.Text",
+                Error = null
+            };
         }
         #endregion
     }
