@@ -106,89 +106,21 @@ namespace RFPResponsePOC.AI
         {
             try
             {
-                var chatClient = CreateAIChatClient(
-                    objSettings.Settings.ApplicationSettings.AIType,
-                    objSettings.Settings.ApplicationSettings.AIModel,
-                    apiKey,
-                    objSettings.Settings.ApplicationSettings.Endpoint,
-                    objSettings.Settings.ApplicationSettings.AIEmbeddingModel);
 
-                // prepare file content
-                string fileContent;
-                try { fileContent = Encoding.UTF8.GetString(fileBytes); }
-                catch { fileContent = Convert.ToBase64String(fileBytes); }
 
-                // Create the user message and attach your image bytes
-                var userMessage = new Microsoft.Extensions.AI.ChatMessage(Microsoft.Extensions.AI.ChatRole.System,
-                    prompt);
-
-                // tack on the image; media type must match your file
-                userMessage.Contents.Add(new DataContent(fileContent, "image/png"));
-
-                // build messages
-                var messages = new List<Microsoft.Extensions.AI.ChatMessage>();
-
-                // 2) User message with file content
-                messages.Add(userMessage);
-
-                // send
-                Microsoft.Extensions.AI.ChatCompletion completion =
-                    await chatClient.CompleteAsync(messages);
-
-                // log raw for debugging
-                string raw = completion.Message.Text?.Trim() ?? "";
-                await LogService.WriteToLogAsync($"[DEBUG] Raw AI response: {raw}");
-
-                string responseString = raw;
-
-                //// extract JSON blob
-                //string jsonResponse = ExtractJsonFromResponse(raw);
-
-                //// parse
-                try
-                {
-                //    // Parse into a JObject so we can inspect the "Response" token
-                //    var root = JObject.Parse(jsonResponse);
-
-                //    var token = root["Response"];
-
-                //    if (token == null)
-                //    {
-                //        return new AIResponse
-                //        {
-                //            Response = "",
-                //            Error = "JSON did not contain a \"Response\" property."
-                //        };
-                //    }
-
-                //    // If it's already a string, grab it; otherwise re-serialize the object
-                //    string responseString = token.Type == JTokenType.String
-                //        ? token.Value<string>()
-                //        : token.ToString(Formatting.None);
-
-                return new AIResponse
-                    {
-                        Response = responseString,
-                        Error = null
-                    };
-                }
-                catch (JsonException jex)
-                {
-                    await LogService.WriteToLogAsync($"Error parsing JSON response: {jex.Message}");
-                    return new AIResponse
-                    {
-                        Response = "",
-                        Error = $"Error parsing JSON response: {jex.Message}"
-                    };
-                }
-            }
-            catch (Exception ex)
-            {
-                await LogService.WriteToLogAsync($"An error occurred: {ex.Message}");
                 return new AIResponse
                 {
                     Response = "",
-                    Error = $"An error occurred while calling the AI model: {ex.Message}"
+                    Error = null
+                };
+            }
+            catch (JsonException jex)
+            {
+                await LogService.WriteToLogAsync($"Error parsing JSON response: {jex.Message}");
+                return new AIResponse
+                {
+                    Response = "",
+                    Error = $"Error parsing JSON response: {jex.Message}"
                 };
             }
         }
