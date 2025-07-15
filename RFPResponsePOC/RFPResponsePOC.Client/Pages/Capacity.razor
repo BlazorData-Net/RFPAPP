@@ -108,7 +108,7 @@
             var pdfBytes = ms.ToArray();
 
             // Read the contents of \Prompts\Capacity.prompt into prompt
-            var prompt = await Http.GetStringAsync("Prompts/Capacity.prompt");
+            var prompt = await Http.GetStringAsync("Prompts/OCR.prompt");
 
             // Instantiate orchestrator and settings
             var objOrchestratorMethods = new OrchestratorMethods(_SettingsService, LogService);
@@ -116,7 +116,7 @@
 
             // You may need to adjust CallOpenAIAsync to accept file bytes if not already supported
             result = await objOrchestratorMethods.CallOpenAIFileAsync(
-                settingsService, settingsService.Settings.ApplicationSettings.ApiKey, prompt, pdfBytes
+                settingsService, settingsService.Settings.ApplicationSettings.ApiKey, "gpt-4o", prompt, pdfBytes
             );
 
             InProgress = false;

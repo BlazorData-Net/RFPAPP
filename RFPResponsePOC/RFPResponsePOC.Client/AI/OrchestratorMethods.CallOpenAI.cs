@@ -57,10 +57,11 @@ namespace RFPResponsePOC.AI
         }
         #endregion
 
-        #region public async Task<AIResponse> CallOpenAIFileAsync(SettingsService objSettings, string apiKey, prompt, byte[] fileBytes)
+        #region public async Task<AIResponse> CallOpenAIFileAsync(SettingsService objSettings, string apiKey, string AIModel, string prompt, byte[] fileBytes)
         public async Task<AIResponse> CallOpenAIFileAsync(
             SettingsService objSettings,
             string apiKey,
+            string AIModel,
             string prompt,
             byte[] fileBytes)
         {
@@ -72,7 +73,7 @@ namespace RFPResponsePOC.AI
 
                 var request = new
                 {
-                    model = "gpt-4o",
+                    model = AIModel,
                     messages = new object[]
                     {
                         new {
