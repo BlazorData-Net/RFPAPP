@@ -118,25 +118,18 @@ namespace RFPResponsePOC.AI
                 try { fileContent = Encoding.UTF8.GetString(fileBytes); }
                 catch { fileContent = Convert.ToBase64String(fileBytes); }
 
+                // Create the user message and attach your image bytes
+                var userMessage = new Microsoft.Extensions.AI.ChatMessage(Microsoft.Extensions.AI.ChatRole.System,
+                    prompt);
+
+                // tack on the image; media type must match your file
+                userMessage.Contents.Add(new DataContent(fileContent, "image/png"));
+
                 // build messages
-                var messages = new List<Microsoft.Extensions.AI.ChatMessage>
-                {
-                    // 1) Strict JSON instruction
-                    new Microsoft.Extensions.AI.ChatMessage(
-                        Microsoft.Extensions.AI.ChatRole.System,
-                        "When you reply, output strictly a JSON object with a single property \"Response\" " +
-                        "containing your answer. Do NOT include any other keys or extra text."),
+                var messages = new List<Microsoft.Extensions.AI.ChatMessage>();
 
-                    // 2) User prompt
-                    new Microsoft.Extensions.AI.ChatMessage(
-                        Microsoft.Extensions.AI.ChatRole.User,
-                        prompt),
-
-                    // 3) File payload
-                    new Microsoft.Extensions.AI.ChatMessage(
-                        Microsoft.Extensions.AI.ChatRole.User,
-                        $"Here is the file content (Base64 if binary):\n```\n{fileContent}\n```")
-                };
+                // 2) User message with file content
+                messages.Add(userMessage);
 
                 // send
                 Microsoft.Extensions.AI.ChatCompletion completion =
@@ -146,32 +139,34 @@ namespace RFPResponsePOC.AI
                 string raw = completion.Message.Text?.Trim() ?? "";
                 await LogService.WriteToLogAsync($"[DEBUG] Raw AI response: {raw}");
 
-                // extract JSON blob
-                string jsonResponse = ExtractJsonFromResponse(raw);
+                string responseString = raw;
 
-                // parse
+                //// extract JSON blob
+                //string jsonResponse = ExtractJsonFromResponse(raw);
+
+                //// parse
                 try
                 {
-                    // Parse into a JObject so we can inspect the "Response" token
-                    var root = JObject.Parse(jsonResponse);
+                //    // Parse into a JObject so we can inspect the "Response" token
+                //    var root = JObject.Parse(jsonResponse);
 
-                    var token = root["Response"];
+                //    var token = root["Response"];
 
-                    if (token == null)
-                    {
-                        return new AIResponse
-                        {
-                            Response = "",
-                            Error = "JSON did not contain a \"Response\" property."
-                        };
-                    }
+                //    if (token == null)
+                //    {
+                //        return new AIResponse
+                //        {
+                //            Response = "",
+                //            Error = "JSON did not contain a \"Response\" property."
+                //        };
+                //    }
 
-                    // If it's already a string, grab it; otherwise re-serialize the object
-                    string responseString = token.Type == JTokenType.String
-                        ? token.Value<string>()
-                        : token.ToString(Formatting.None);
+                //    // If it's already a string, grab it; otherwise re-serialize the object
+                //    string responseString = token.Type == JTokenType.String
+                //        ? token.Value<string>()
+                //        : token.ToString(Formatting.None);
 
-                    return new AIResponse
+                return new AIResponse
                     {
                         Response = responseString,
                         Error = null
