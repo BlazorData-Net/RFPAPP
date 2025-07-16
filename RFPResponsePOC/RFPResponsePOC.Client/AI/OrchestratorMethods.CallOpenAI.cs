@@ -39,7 +39,7 @@ namespace RFPResponsePOC.AI
 
             var json = ExtractJsonFromResponse(reply);
 
-            return json != null;
+            return !string.IsNullOrWhiteSpace(json);
         }
         #endregion
 
