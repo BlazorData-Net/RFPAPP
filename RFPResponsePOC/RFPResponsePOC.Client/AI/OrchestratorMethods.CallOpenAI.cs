@@ -22,16 +22,23 @@ namespace RFPResponsePOC.AI
     }
     public partial class OrchestratorMethods
     {
-        #region public async Task<bool> TestAccessAsync(string AIType, string AIModel, string ApiKey, string Endpoint, string AIEmbeddingModel)
-        public async Task<bool> TestAccessAsync(string AIType, string AIModel, string ApiKey, string Endpoint, string AIEmbeddingModel)
+        #region public async Task<bool> TestAccessAsync(string apiKey, string model)
+        public async Task<bool> TestAccessAsync(string apiKey, string model)
         {
-            var chatClient = new OpenAIClient(ApiKey);
+            var client = new ChatClient(model, apiKey);
 
+            var messages = new List<ChatMessage>
+            {
+                new SystemChatMessage("You are a helpful assistant."),
+                new UserChatMessage("Hello!")
+            };
 
-            // Pass though ExtractJsonFromResponse
-            var json = ExtractJsonFromResponse("response.Choices.FirstOrDefault().Text");
+            var response = await client.CompleteChatAsync(messages);
+            var reply = response.Value.Content.FirstOrDefault()?.Text;
 
-            return true;
+            var json = ExtractJsonFromResponse(reply);
+
+            return json != null;
         }
         #endregion
 
@@ -106,7 +113,6 @@ namespace RFPResponsePOC.AI
 
                 using var stream = await response.Content.ReadAsStreamAsync();
                 doc = await JsonDocument.ParseAsync(stream);
-
             }
             catch (Exception ex)
             {

@@ -12,9 +12,6 @@ namespace RFPResponsePOC.Model
         {
             public string AIModel { get; set; }
             public string ApiKey { get; set; }
-            public string AIType { get; set; }
-            public string Endpoint { get; set; }
-            public string ApiVersion { get; set; }
             public string AIEmbeddingModel { get; set; }
         }
 
@@ -103,12 +100,6 @@ namespace RFPResponsePOC.Model
                     throw new InvalidDataException("Failed to deserialize the settings file.");
                 }
 
-                // Set default values for specific settings if necessary
-                if (string.IsNullOrWhiteSpace(Settings.ApplicationSettings.AIType))
-                {
-                    Settings.ApplicationSettings.AIType = "OpenAI";
-                }
-
                 // If ConnectionSettings was missing or null, initialize it
                 if (Settings.ConnectionSettings == null)
                 {
@@ -154,7 +145,7 @@ namespace RFPResponsePOC.Model
         }
 
         /// <summary>
-        /// Updates specific sections of the configuration and saves the changes.        /// 
+        /// Updates specific sections of the configuration and saves the changes.       
         /// </summary>
         /// <param name="applicationSettings">New application settings.</param>
         /// <param name="connectionSettings">List of connection settings to overwrite existing ones.</param>
@@ -194,9 +185,6 @@ namespace RFPResponsePOC.Model
                     ApplicationSettings = new ApplicationSettings
                     {
                         AIModel = "o3-mini",
-                        AIType = "OpenAI",
-                        Endpoint = "https://api.openai.com",
-                        ApiVersion = "v1",
                         AIEmbeddingModel = "DefaultEmbeddingModel"
                     },
                     ConnectionSettings = new List<ConnectionSettings>()

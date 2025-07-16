@@ -72,10 +72,7 @@
     // Default Values
     private string ApiKey = "";
     private string AIModel = "gpt-4o";
-    private string AIType = "OpenAI";
-    private string Endpoint = "";
     private string AIEmbeddingModel = "";
-    private string ApiVersion = "";
 
     Variant variant = Variant.Outlined;
 
@@ -103,10 +100,7 @@
 
             // Get APIKey from secure settings
             ApiKey = SettingsService.Settings.ApplicationSettings.ApiKey ?? "";
-            Endpoint = SettingsService.Settings.ApplicationSettings.Endpoint;
-            ApiVersion = SettingsService.Settings.ApplicationSettings.ApiVersion;
             AIModel = SettingsService.Settings.ApplicationSettings.AIModel;
-            AIType = SettingsService.Settings.ApplicationSettings.AIType;
 
             if (ApiKey.Length > 1)
             {
@@ -148,7 +142,7 @@
     {
         try
         {
-            if ((AIType == "OpenAI") && (!ApiKey.StartsWith("sk-")))
+            if (!ApiKey.StartsWith("sk-"))
             {
                 NotificationService.Notify(new NotificationMessage
                 {
@@ -181,9 +175,7 @@
             SettingsService.ApplicationSettings applicationSettings = settingsService.Settings.ApplicationSettings;
 
             applicationSettings.ApiKey = ApiKey ?? "";
-            applicationSettings.Endpoint = Endpoint;
             applicationSettings.AIModel = AIModel;
-            applicationSettings.AIType = AIType;
             applicationSettings.AIEmbeddingModel = AIEmbeddingModel;
 
             await settingsService.UpdateSettingsAsync(applicationSettings);
@@ -191,7 +183,7 @@
             // Test API Key
             objOrchestratorMethods = new OrchestratorMethods(SettingsService, _LogService);
 
-            var result = await objOrchestratorMethods.TestAccessAsync(AIType, AIModel, ApiKey, Endpoint, AIEmbeddingModel);
+            var result = await objOrchestratorMethods.TestAccessAsync(ApiKey, AIModel);
 
             if (!result)
             {
