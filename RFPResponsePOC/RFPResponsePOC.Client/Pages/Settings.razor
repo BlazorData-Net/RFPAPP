@@ -195,8 +195,12 @@
                     Duration = 8000
                 });
 
+                await _LogService.WriteToLogAsync($"SettingsSave exception: Failed to connect to the AI service. Please check your API Key and Endpoint.");
+
                 return;
             }
+
+            await _LogService.WriteToLogAsync($"SettingsSave Model: {AIModel}");
 
             // Notify parent that settings have changed
             // This will trigger the parent component to refresh or take action
