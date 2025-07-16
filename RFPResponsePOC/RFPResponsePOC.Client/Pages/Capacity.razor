@@ -116,7 +116,7 @@
 
             // You may need to adjust CallOpenAIAsync to accept file bytes if not already supported
             result = await objOrchestratorMethods.CallOpenAIFileAsync(
-                settingsService, settingsService.Settings.ApplicationSettings.ApiKey, "gpt-4o", prompt, pdfBytes
+                settingsService.Settings.ApplicationSettings.ApiKey, settingsService.Settings.ApplicationSettings.AIModel, prompt, pdfBytes
             );
 
             InProgress = false;

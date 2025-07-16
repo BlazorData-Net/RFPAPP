@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Azure;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OpenAI;
 using OpenAI.Chat;
@@ -64,9 +65,8 @@ namespace RFPResponsePOC.AI
         }
         #endregion
 
-        #region public async Task<AIResponse> CallOpenAIFileAsync(SettingsService objSettings, string apiKey, string AIModel, string prompt, byte[] fileBytes)
+        #region public async Task<AIResponse> CallOpenAIFileAsync(string apiKey, string AIModel, string prompt, byte[] fileBytes)
         public async Task<AIResponse> CallOpenAIFileAsync(
-            SettingsService objSettings,
             string apiKey,
             string AIModel,
             string prompt,
@@ -121,13 +121,17 @@ namespace RFPResponsePOC.AI
                 return new AIResponse() { Response = "", Error = $"An error occurred while processing the file: {ex.Message}" };
             }
 
-            return new AIResponse
-            {
-                Response = doc.RootElement
+            var Response = doc.RootElement
                       .GetProperty("choices")[0]
                       .GetProperty("message")
                       .GetProperty("content")
-                      .GetString() ?? "No text found.",
+                      .GetString() ?? "No text found.";
+
+            await LogService.WriteToLogAsync($"CallOpenAIFileAsync: AI model: {AIModel} Response: {Response}");
+
+            return new AIResponse
+            {
+                Response = Response,
                 Error = ""
             };
         }
