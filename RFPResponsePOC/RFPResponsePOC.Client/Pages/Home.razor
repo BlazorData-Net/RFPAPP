@@ -101,10 +101,8 @@
 
                 if (ZipFileExists)
                 {
-                    // If it exists, unzip the file and load settings
+                    // If it exists, unzip the file 
                     await objZipService.UnzipFile();
-
-                    ShowMainMenu = true;
                 }
                 else
                 {
@@ -136,6 +134,22 @@
 
             ApiKey = _SettingsService.Settings.ApplicationSettings.ApiKey ?? "";
             AIModel = _SettingsService.Settings.ApplicationSettings.AIModel;
+
+            // Check if API Key is entered
+            if(ApiKey.Length > 1)
+            {
+                ShowMainMenu = true;
+            }
+            else
+            {
+                ShowMainMenu = false;
+
+                // Switch to the Settings page
+                HomeVisible = false;
+                SettingsVisible = true;
+                LogsVisible = false;
+                CapacityVisible = false;
+            }
 
             StateHasChanged();
         }
