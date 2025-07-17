@@ -291,17 +291,17 @@ else
         int intVersionNumber = 0;
         string strVersion = strParamVersion;
 
-        // Split into parts seperated by periods
+        // Split into parts separated by periods
         char[] splitchar = { '.' };
         var strSegments = strVersion.Split(splitchar);
 
         // Process the segments
         int i = 0;
-        List<int> colMultiplyers = new List<int> { 10000, 100, 1 };
+        List<int> colMultipliers = new List<int> { 10000, 100, 1 };
         foreach (var strSegment in strSegments)
         {
             int intSegmentNumber = Convert.ToInt32(strSegment);
-            intVersionNumber = intVersionNumber + (intSegmentNumber * colMultiplyers[i]);
+            intVersionNumber = intVersionNumber + (intSegmentNumber * colMultipliers[i]);
             i++;
         }
 

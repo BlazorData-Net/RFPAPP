@@ -29,7 +29,7 @@ namespace RFPResponsePOC.Model
 
             if (RFPResponsePOCDatabase == null)
             {
-                // Create a new instance of the SettingsService
+                // Create a new Database instance
                 RFPResponsePOCDatabase = new Database();
 
                 RFPResponsePOCDatabase.colRFPResponsePOCDatabase = new Dictionary<string, string>();
