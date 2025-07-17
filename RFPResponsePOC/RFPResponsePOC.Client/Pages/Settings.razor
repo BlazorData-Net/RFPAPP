@@ -29,8 +29,6 @@
                 <RadzenTextBox @bind-Value="@AIModel" Style="width:450px;" />
             </RadzenFormField>
 
-
-
             @if (!IsOpenAISettingsEntered)
             {
 
@@ -47,11 +45,17 @@
                               Click="SettingsSave"
                               Style="margin-bottom: 10px; width: 500px" />
             }
-
+            @if (ZipFileExists)
+            {
+                <hr />
+                <div style="display: flex; justify-content: center; align-items: center;">
+                    <button class="btn btn-secondary" @onclick="objZipService.DownloadZipFile">Download Saved Settings</button>&nbsp;&nbsp;
+                    <button class="btn btn-danger" @onclick="objZipService.DeleteZipFile">Delete Saved Settings</button>
+                </div>
+            }
         </RadzenStack>
     </RadzenColumn>
 </RadzenRow>
-
 @code {
 #nullable disable
     [Parameter] public EventCallback SettingsChanged { get; set; }
@@ -74,6 +78,8 @@
     private string AIModel = "o4-mini";
     private string AIEmbeddingModel = "";
 
+    // Global fields
+    bool ZipFileExists = false;
     Variant variant = Variant.Outlined;
 
     // Run on page load
@@ -93,6 +99,8 @@
 
             // Initialize the ZipService
             objZipService = new ZipService(JSRuntime, localStorage, SettingsService, _LogService);
+
+            ZipFileExists = await objZipService.IsZipFileExistsAsync();
 
             SettingsService.LoadSettings();
 

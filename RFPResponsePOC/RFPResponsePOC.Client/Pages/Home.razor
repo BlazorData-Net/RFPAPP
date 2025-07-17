@@ -22,6 +22,7 @@
     {
         <RadzenMenuItem Click="OnHomeClicked" Text="Home" Icon="home"></RadzenMenuItem>
         <RadzenMenuItem Click="OnCapacityClicked" Text="Capacity" Icon="aspect_ratio"></RadzenMenuItem>
+        <RadzenMenuItem Click="OnProposalClicked" Text="Proposal" Icon="aspect_ratio"></RadzenMenuItem>
         <RadzenMenuItem Click="OnLogsClicked" Text="Logs" Icon="assignment"></RadzenMenuItem>
         <RadzenMenuItem Click="OnSettingsClicked" Text="Settings" Icon="line_style"></RadzenMenuItem>
     }
@@ -37,28 +38,33 @@
         <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
     </div>
 }
-@if (HomeVisible)
+else
 {
-    @if (ZipFileExists)
+    @if (HomeVisible)
     {
-        <p>
-            <button class="btn btn-secondary" @onclick="objZipService.DownloadZipFile">Download Saved Settings File</button>&nbsp;&nbsp;
-            <button class="btn btn-danger" @onclick="objZipService.DeleteZipFile">Delete Saved Settings</button>
-        </p>
-        <hr />
+        <div class="step-message">
+            <strong>Step One:</strong><br /><br />
+            <RadzenButton Text="Upload your Capacity Chart" Click="@CapacityClicked" Style="margin-left: 10px;" ButtonStyle="ButtonStyle.Primary" />
+            <br /><br /><strong>Step Two:</strong><br /><br />
+            <RadzenButton Text="Upload the RFPs" Click="@PrposalClicked" Style="margin-left: 10px;" ButtonStyle="ButtonStyle.Primary" />
+        </div>
     }
-}
-@if (SettingsVisible)
-{
-    <Settings SettingsChanged="HandleSettingsChanged"></Settings>
-}
-@if (LogsVisible)
-{
-    <Logs></Logs>
-}
-@if (CapacityVisible)
-{
-    <Capacity></Capacity>
+    @if (CapacityVisible)
+    {
+        <Capacity></Capacity>
+    }
+    @if (ProposalVisible)
+    {
+        <Proposal></Proposal>
+    }
+    @if (SettingsVisible)
+    {
+        <Settings SettingsChanged="HandleSettingsChanged"></Settings>
+    }
+    @if (LogsVisible)
+    {
+        <Logs></Logs>
+    }
 }
 
 @code {
@@ -77,6 +83,7 @@
     bool SettingsVisible = false;
     bool LogsVisible = false;
     bool CapacityVisible = false;
+    bool ProposalVisible = false;
 
     ZipService objZipService = new ZipService();
     bool ZipFileExists = false;
@@ -120,6 +127,7 @@
                     SettingsVisible = true;
                     LogsVisible = false;
                     CapacityVisible = false;
+                    ProposalVisible = false;
                 }
             }
             catch (Exception ex)
@@ -149,6 +157,7 @@
                 SettingsVisible = true;
                 LogsVisible = false;
                 CapacityVisible = false;
+                ProposalVisible = false;
             }
 
             StateHasChanged();
@@ -162,6 +171,7 @@
         HomeVisible = true;
         SettingsVisible = false;
         CapacityVisible = false;
+        ProposalVisible = false;
         LogsVisible = false;
     }
 
@@ -170,6 +180,7 @@
         HomeVisible = false;
         SettingsVisible = true;
         CapacityVisible = false;
+        ProposalVisible = false;
         LogsVisible = false;
     }
 
@@ -178,6 +189,7 @@
         HomeVisible = false;
         SettingsVisible = false;
         CapacityVisible = false;
+        ProposalVisible = false;
         LogsVisible = true;
     }
 
@@ -186,6 +198,34 @@
         HomeVisible = false;
         SettingsVisible = false;
         CapacityVisible = true;
+        ProposalVisible = false;
+        LogsVisible = false;
+    }
+
+    void CapacityClicked(MouseEventArgs args)
+    {
+        HomeVisible = false;
+        SettingsVisible = false;
+        CapacityVisible = true;
+        ProposalVisible = false;
+        LogsVisible = false;
+    }
+
+    void OnProposalClicked(MenuItemEventArgs args)
+    {
+        HomeVisible = false;
+        SettingsVisible = false;
+        CapacityVisible = false;
+        ProposalVisible = true;
+        LogsVisible = false;
+    }
+
+    void PrposalClicked(MouseEventArgs args)
+    {
+        HomeVisible = false;
+        SettingsVisible = false;
+        CapacityVisible = false;
+        ProposalVisible = true;
         LogsVisible = false;
     }
 
@@ -199,6 +239,7 @@
         HomeVisible = true;
         SettingsVisible = false;
         CapacityVisible = false;
+        ProposalVisible = false;
         LogsVisible = false;
 
         ShowMainMenu = true;

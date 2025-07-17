@@ -1,0 +1,166 @@
+﻿@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@using System.Text
+@using RFPResponsePOC.Client.Services
+@using RFPResponsePOC.Model
+@using Microsoft.AspNetCore.Components.Forms
+@using RFPResponsePOC.AI
+@inject NotificationService NotificationService
+@inject DialogService DialogService
+@inject IJSRuntime JsRuntime
+@inject LogService LogService
+@inject NotificationService NotificationService
+@inject DialogService DialogService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@inject SettingsService _SettingsService
+@inject NavigationManager Navigation
+@inject IJSRuntime JsRuntime
+@inject HttpClient Http
+<h3>Proposal</h3>
+
+<label for="proposalUpload">Upload Proposal (.png/.jpg/.jpeg)</label>
+<InputFile id="proposalUpload" OnChange="HandleproposalChartUpload" accept=".png,.jpg,.jpeg" />
+@if (@InProgress)
+{
+    <div class="rz-m-10">
+        <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+    </div>
+}
+<p>
+    @if (@result.Response != "")
+    {
+        <br /><br />
+        <RadzenText Text="@result.Response" />
+    }
+</p>
+
+@code {
+#nullable disable
+    private IDisposable registration;
+
+    // Allow access to the JSRuntime
+    private DotNetObjectReference<Proposal> objRef;
+
+    AIResponse result = new AIResponse();
+
+    ZipService objZipService = new ZipService();
+
+    private bool InProgress = false;
+
+    // Run on page load
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Set a reference to the current instance of Home
+            objRef = DotNetObjectReference.Create(this);
+
+            // Register the beforeunload event with JavaScript
+            await JsRuntime.InvokeVoidAsync("setupBeforeUnload", objRef);
+
+            // Register the location changing handler
+            registration =
+            Navigation.RegisterLocationChangingHandler(OnLocationChanging);
+
+            // Initialize the ZipService
+            objZipService = new ZipService(JsRuntime, localStorage, _SettingsService, LogService);
+        }
+    }
+
+    #region JavaScript
+    private ValueTask OnLocationChanging(LocationChangingContext context)
+    {
+        // Get the base URL
+        string baseUrl = Navigation.BaseUri;
+
+        // Detect that user is going to counter page
+        if (context.TargetLocation != baseUrl)
+        {
+            // User is navigating away from the page - Zip any files
+            // Zip up any files and store in LocalStorage
+            Task.Run(async () => await objZipService.ZipTheFiles());
+        }
+
+        return ValueTask.CompletedTask;
+    }
+
+    [JSInvokable]
+    public async Task HandleBeforeUnload()
+    {
+        // User is navigating away from the page - Zip any files
+        // Zip up any files and store in LocalStorage
+        await objZipService.ZipTheFiles();
+    }
+    #endregion
+
+    private async Task HandleproposalChartUpload(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            InProgress = true;
+            StateHasChanged();
+
+            var file = e.File;
+
+            // Read the PDF file as a byte array
+            using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024); // 10MB limit
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
+            var pdfBytes = ms.ToArray();
+
+            // Read the contents of \Prompts\proposal.prompt into prompt
+            var prompt = await Http.GetStringAsync("Prompts/OCR.prompt");
+
+            // Instantiate orchestrator and settings
+            var objOrchestratorMethods = new OrchestratorMethods(_SettingsService, LogService);
+            var settingsService = new SettingsService();
+
+            // You may need to adjust CallOpenAIAsync to accept file bytes if not already supported
+            result = await objOrchestratorMethods.CallOpenAIFileAsync(
+                settingsService.Settings.ApplicationSettings.ApiKey, settingsService.Settings.ApplicationSettings.AIModel, prompt, pdfBytes
+            );
+
+            InProgress = false;
+            StateHasChanged();
+
+            // Handle result (show notification, update UI, etc.)
+            if (result.Error == "")
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = "Success",
+                    Detail = "proposal chart uploaded and processed.",
+                    Duration = 4000
+                });
+            }
+            else
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "Error",
+                    Detail = $"Failed to process the proposal chart. {result.Error}",
+                    Duration = 4000
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            InProgress = false;
+            StateHasChanged();
+
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Error",
+                Detail = ex.Message,
+                Duration = 8000
+            });
+        }
+    }
+
+    public void Dispose()
+    {
+        objRef?.Dispose();
+    }
+}
