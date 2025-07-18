@@ -16,22 +16,9 @@
 @inject IJSRuntime JsRuntime
 @inject HttpClient Http
 <h3>Proposal</h3>
-
-<label for="proposalUpload">Upload Proposal (.png/.jpg/.jpeg)</label>
-<InputFile id="proposalUpload" OnChange="HandleproposalChartUpload" accept=".png,.jpg,.jpeg" />
-@if (@InProgress)
-{
-    <div class="rz-m-10">
-        <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
-    </div>
-}
-<p>
-    @if (@result.Response != "")
-    {
-        <br /><br />
-        <RadzenText Text="@result.Response" />
-    }
-</p>
+<br />
+<br />
+<h4>Coming Soon</h4>
 
 @code {
 #nullable disable
@@ -91,73 +78,6 @@
         await objZipService.ZipTheFiles();
     }
     #endregion
-
-    private async Task HandleproposalChartUpload(InputFileChangeEventArgs e)
-    {
-        try
-        {
-            InProgress = true;
-            StateHasChanged();
-
-            var file = e.File;
-
-            // Read the PDF file as a byte array
-            using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024); // 10MB limit
-            using var ms = new MemoryStream();
-            await stream.CopyToAsync(ms);
-            var pdfBytes = ms.ToArray();
-
-            // Read the contents of \Prompts\proposal.prompt into prompt
-            var prompt = await Http.GetStringAsync("Prompts/OCR.prompt");
-
-            // Instantiate orchestrator and settings
-            var objOrchestratorMethods = new OrchestratorMethods(_SettingsService, LogService);
-            var settingsService = new SettingsService();
-
-            // You may need to adjust CallOpenAIAsync to accept file bytes if not already supported
-            result = await objOrchestratorMethods.CallOpenAIFileAsync(
-                settingsService.Settings.ApplicationSettings.ApiKey, settingsService.Settings.ApplicationSettings.AIModel, prompt, pdfBytes
-            );
-
-            InProgress = false;
-            StateHasChanged();
-
-            // Handle result (show notification, update UI, etc.)
-            if (result.Error == "")
-            {
-                NotificationService.Notify(new NotificationMessage
-                {
-                    Severity = NotificationSeverity.Success,
-                    Summary = "Success",
-                    Detail = "proposal chart uploaded and processed.",
-                    Duration = 4000
-                });
-            }
-            else
-            {
-                NotificationService.Notify(new NotificationMessage
-                {
-                    Severity = NotificationSeverity.Error,
-                    Summary = "Error",
-                    Detail = $"Failed to process the proposal chart. {result.Error}",
-                    Duration = 4000
-                });
-            }
-        }
-        catch (Exception ex)
-        {
-            InProgress = false;
-            StateHasChanged();
-
-            NotificationService.Notify(new NotificationMessage
-            {
-                Severity = NotificationSeverity.Error,
-                Summary = "Error",
-                Detail = ex.Message,
-                Duration = 8000
-            });
-        }
-    }
 
     public void Dispose()
     {

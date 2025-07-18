@@ -43,34 +43,47 @@ namespace RFPResponsePOC.AI
         }
         #endregion
 
-        #region public async Task<AIResponse> CallOpenAIAsync(SettingsService objSettings, string ApiKey, string AIQuery)
-        public async Task<AIResponse> CallOpenAIAsync(SettingsService objSettings, string ApiKey, string AIQuery)
+        #region public async Task<AIResponse> CallOpenAIAsync(SettingsService objSettings, string AIQuery)
+        public async Task<AIResponse> CallOpenAIAsync(SettingsService objSettings, string AIQuery)
         {
             try
             {
-                var chatClient = new OpenAIClient(ApiKey);
+                var client = new ChatClient(objSettings.Settings.ApplicationSettings.AIModel, objSettings.Settings.ApplicationSettings.ApiKey);
+
+                var messages = new List<ChatMessage>
+                {
+                    new SystemChatMessage("Please only respond with json. Do not output anything else."),
+                    new UserChatMessage(AIQuery)
+                };
+
+                var response = await client.CompleteChatAsync(messages);
+                var reply = response.Value.Content.FirstOrDefault()?.Text;
+
+                await LogService.WriteToLogAsync(
+                    $"CallOpenAIAsync: AI model: {objSettings.Settings.ApplicationSettings.AIModel} Reply: {reply}");
+
+                var json = ExtractJsonFromResponse(reply);
+
+                await LogService.WriteToLogAsync(
+                    $"CallOpenAIAsync: AI model: {objSettings.Settings.ApplicationSettings.AIModel} JSON: {json}");
 
                 return new AIResponse
                 {
-                    Response = "response.Text",
-                    Error = null
+                    Response = json,
+                    Error = ""
                 };
             }
             catch (Exception ex)
             {
                 // Handle unexpected exceptions
-                await LogService.WriteToLogAsync($"An error occurred while calling the AI model: {ex.Message}");
-                return new AIResponse() { Response = "", Error = $"An error occurred while testing access: {ex.Message}" };
+                await LogService.WriteToLogAsync($"An error occurred: {ex.Message}");
+                return new AIResponse() { Response = "", Error = $"An error occurred: {ex.Message}" };
             }
         }
         #endregion
 
-        #region public async Task<AIResponse> CallOpenAIFileAsync(string apiKey, string AIModel, string prompt, byte[] fileBytes)
-        public async Task<AIResponse> CallOpenAIFileAsync(
-            string apiKey,
-            string AIModel,
-            string prompt,
-            byte[] fileBytes)
+        #region public async Task<AIResponse> CallOpenAIFileAsync(SettingsService objSettings, string prompt, byte[] fileBytes)
+        public async Task<AIResponse> CallOpenAIFileAsync(SettingsService objSettings, string prompt, byte[] fileBytes)
         {
             JsonDocument doc;
 
@@ -80,7 +93,7 @@ namespace RFPResponsePOC.AI
 
                 var request = new
                 {
-                    model = AIModel,
+                    model = objSettings.Settings.ApplicationSettings.AIModel,
                     messages = new object[]
                     {
                         new {
@@ -101,7 +114,8 @@ namespace RFPResponsePOC.AI
                 };
 
                 var client = new HttpClient();
-                client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
+                client.DefaultRequestHeaders.Authorization = 
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", objSettings.Settings.ApplicationSettings.ApiKey);
 
                 var response = await client.PostAsJsonAsync("https://api.openai.com/v1/chat/completions", request);
 
@@ -127,7 +141,8 @@ namespace RFPResponsePOC.AI
                       .GetProperty("content")
                       .GetString() ?? "No text found.";
 
-            await LogService.WriteToLogAsync($"CallOpenAIFileAsync: AI model: {AIModel} Response: {Response}");
+            await LogService.WriteToLogAsync(
+                $"CallOpenAIFileAsync: AI model: {objSettings.Settings.ApplicationSettings.AIModel} Response: {Response}");
 
             return new AIResponse
             {

@@ -19,17 +19,20 @@
 
 <label for="capacityUpload">Upload capacity chart (.png/.jpg/.jpeg)</label>
 <InputFile id="capacityUpload" OnChange="HandleCapacityChartUpload" accept=".png,.jpg,.jpeg" />
+<br />
 @if (@InProgress)
 {
     <div class="rz-m-10">
+        <RadzenText Text="@CurrentStatus" class="rz-m-10" />
         <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
     </div>
 }
+<br />
 <p>
     @if (@result.Response != "")
     {
-        <br /><br />
-        <RadzenText Text="@result.Response" />
+        <!-- Display the result of the AI response in a scrollable text box -->
+        <RadzenTextArea Rows="10" Style="width: 100%;" @bind-Value="@result.Response" ReadOnly="true" />
     }
 </p>
 
@@ -45,6 +48,7 @@
     ZipService objZipService = new ZipService();
 
     private bool InProgress = false;
+    private string CurrentStatus = "";
 
     // Run on page load
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -97,6 +101,7 @@
         try
         {
             InProgress = true;
+            CurrentStatus = "Reading capacity chart...";
             StateHasChanged();
 
             var file = e.File;
@@ -108,16 +113,28 @@
             var pdfBytes = ms.ToArray();
 
             // Read the contents of \Prompts\Capacity.prompt into prompt
-            var prompt = await Http.GetStringAsync("Prompts/OCR.prompt");
+            var OCRprompt = await Http.GetStringAsync("Prompts/OCR.prompt");
 
             // Instantiate orchestrator and settings
             var objOrchestratorMethods = new OrchestratorMethods(_SettingsService, LogService);
             var settingsService = new SettingsService();
 
-            // You may need to adjust CallOpenAIAsync to accept file bytes if not already supported
-            result = await objOrchestratorMethods.CallOpenAIFileAsync(
-                settingsService.Settings.ApplicationSettings.ApiKey, settingsService.Settings.ApplicationSettings.AIModel, prompt, pdfBytes
-            );
+            // Call the OpenAIFileAsync method with the settings, prompt, and PDF bytes
+            result = await objOrchestratorMethods.CallOpenAIFileAsync(settingsService, OCRprompt, pdfBytes);
+
+            // Process the OCR result
+
+            CurrentStatus = "Converting capacity chart...";
+            StateHasChanged();
+
+            // Read the contents of \Prompts\Capacity.prompt into prompt
+            var Capcityprompt = await Http.GetStringAsync("Prompts/Capacity.prompt");
+
+            // Replace the placeholder in the prompt with the OCR result
+            Capcityprompt = Capcityprompt.Replace("{{OCRResult}}", result.Response);
+
+            // Call the OpenAIChatAsync method with the settings, prompt, and OCR result
+            result = await objOrchestratorMethods.CallOpenAIAsync(settingsService, Capcityprompt);
 
             InProgress = false;
             StateHasChanged();

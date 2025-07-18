@@ -1,4 +1,11 @@
-﻿Please parse the contents of this Capacity Chart into this json format: {
+﻿Please parse the contents of this Capacity Chart into the json format.
+
+### CAPACITY CHART START
+{{OCRResult}}
+### CAPACITY CHART STOP
+
+### JSON FORMAT START
+{
   "rooms": [
     {
       "name": "Pacific A",
@@ -41,3 +48,4 @@
     }
   ]
 }
+### JSON FORMAT STOP
