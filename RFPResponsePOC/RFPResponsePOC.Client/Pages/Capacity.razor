@@ -17,16 +17,19 @@
 @inject HttpClient Http
 <h3>Capacity</h3>
 <br />
-<RadzenUpload ChooseText="Upload capacity chart (.png/.jpg/.jpeg)" Accept=".png,.jpg,.jpeg"
+<RadzenUpload @ref="uploader"
+              ChooseText="Upload capacity chart (.png/.jpg/.jpeg)" Accept=".png,.jpg,.jpeg"
               Change=@OnCapacityChartUpload 
-Multiple="false"
-Auto="true"
-Style="margin-bottom: 20px;" />
+              Multiple="false"
+              Auto="true"
+              Style="width: 100%" 
+              InputAttributes="@(new Dictionary<string,object>{ { "aria-label", "select file" }})">
+</RadzenUpload>
 <br />
 @if (@InProgress)
 {
     <div class="rz-m-10">
-        <RadzenText Text="@CurrentStatus" class="rz-m-10" />
+        <RadzenText Text="@CurrentStatus" class="rz-m-10" Style="text-align: center" />
         <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
     </div>
 }
@@ -45,6 +48,9 @@ Style="margin-bottom: 20px;" />
 
     // Allow access to the JSRuntime
     private DotNetObjectReference<Capacity> objRef;
+
+    // Reference to the RadzenUpload component
+    Radzen.Blazor.RadzenUpload uploader;
 
     AIResponse result = new AIResponse();
 
@@ -170,6 +176,9 @@ Style="margin-bottom: 20px;" />
                     Duration = 4000
                 });
             }
+
+            // Clear the selected files so the list is removed
+            await uploader.ClearFiles();
         }
         catch (Exception ex)
         {
