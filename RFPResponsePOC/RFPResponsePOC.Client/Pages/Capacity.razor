@@ -19,18 +19,22 @@
 <br />
 <RadzenUpload @ref="uploader"
               ChooseText="Upload capacity chart (.png/.jpg/.jpeg)" Accept=".png,.jpg,.jpeg"
-              Change=@OnCapacityChartUpload 
+              Change=@OnCapacityChartUpload
               Multiple="false"
               Auto="true"
-              Style="width: 100%" 
+              Style="width: 100%"
               InputAttributes="@(new Dictionary<string,object>{ { "aria-label", "select file" }})">
 </RadzenUpload>
 <br />
 @if (@InProgress)
 {
-    <div class="rz-m-10">
-        <RadzenText Text="@CurrentStatus" class="rz-m-10" Style="text-align: center" />
-        <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+    <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background-color: rgba(0,0,0,0.5); z-index: 1000;
+    display: flex; align-items: center; justify-content: center;">
+        <div class="rz-card" style="padding: 20px;">
+            <RadzenText Text="@CurrentStatus" class="rz-m-10" Style="text-align: center" />
+            <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+        </div>
     </div>
 }
 <br />
