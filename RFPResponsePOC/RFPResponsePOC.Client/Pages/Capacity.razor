@@ -16,9 +16,12 @@
 @inject IJSRuntime JsRuntime
 @inject HttpClient Http
 <h3>Capacity</h3>
-
-<label for="capacityUpload">Upload capacity chart (.png/.jpg/.jpeg)</label>
-<InputFile id="capacityUpload" OnChange="HandleCapacityChartUpload" accept=".png,.jpg,.jpeg" />
+<br />
+<RadzenUpload ChooseText="Upload capacity chart (.png/.jpg/.jpeg)" Accept=".png,.jpg,.jpeg"
+              Change=@OnCapacityChartUpload 
+Multiple="false"
+Auto="true"
+Style="margin-bottom: 20px;" />
 <br />
 @if (@InProgress)
 {
@@ -96,7 +99,7 @@
     }
     #endregion
 
-    private async Task HandleCapacityChartUpload(InputFileChangeEventArgs e)
+    private async Task OnCapacityChartUpload(UploadChangeEventArgs e)
     {
         try
         {
@@ -104,7 +107,14 @@
             CurrentStatus = "Reading capacity chart...";
             StateHasChanged();
 
-            var file = e.File;
+            var file = e.Files.FirstOrDefault();
+
+            if (file is null)
+            {
+                InProgress = false;
+                StateHasChanged();
+                return;
+            }
 
             // Read the PDF file as a byte array
             using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024); // 10MB limit
