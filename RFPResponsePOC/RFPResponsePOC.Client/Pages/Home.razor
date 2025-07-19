@@ -42,11 +42,15 @@ else
 {
     @if (HomeVisible)
     {
-        <div class="step-message">
-            <strong>Step One:</strong><br /><br />
-            <RadzenButton Text="Upload your Capacity Chart" Click="@CapacityClicked" Style="margin-left: 10px; background-color: green;" ButtonStyle="ButtonStyle.Primary" />
-            <br /><br /><strong>Step Two:</strong><br /><br />
-            <RadzenButton Text="Upload the RFPs" Click="@PrposalClicked" Style="margin-left: 10px; background-color: green;" ButtonStyle="ButtonStyle.Primary" />
+        <div class="rz-card step-card">
+            <h3 class="text-center">Welcome to RFP Response POC</h3>
+            <p class="text-center">Follow the steps below to get started</p>
+            <div class="step-message">
+                <strong>Step One:</strong><br /><br />
+                <RadzenButton class="step-button" Text="Upload your Capacity Chart" Click="@CapacityClicked" Style="background-color: green;" ButtonStyle="ButtonStyle.Primary" />
+                <br /><br /><strong>Step Two:</strong><br /><br />
+                <RadzenButton class="step-button" Text="Upload the RFPs" Click="@PrposalClicked" Style="background-color: green;" ButtonStyle="ButtonStyle.Primary" />
+            </div>
         </div>
     }
     @if (CapacityVisible)
