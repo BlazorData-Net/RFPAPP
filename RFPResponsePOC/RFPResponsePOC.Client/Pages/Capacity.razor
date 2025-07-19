@@ -42,7 +42,7 @@
 <br />
 @if (capacityData?.Rooms != null)
 {
-    <RadzenDataGrid @ref="grid" Data="@capacityData.Rooms" TItem="Room" EditMode="DataGridEditMode.Popup" AllowPaging="false">
+    <RadzenDataGrid @ref="grid" Data="@capacityData.Rooms" TItem="Room" EditMode="DataGridEditMode.Single" AllowPaging="false">
         <Columns>
             <RadzenDataGridColumn TItem="Room" Title="Edit" Context="r">
                 <Template Context="r">
