@@ -44,6 +44,15 @@
 {
     <RadzenDataGrid @ref="grid" Data="@capacityData.Rooms" TItem="Room" EditMode="DataGridEditMode.Popup" AllowPaging="false">
         <Columns>
+            <RadzenDataGridColumn TItem="Room" Title="Edit" Context="r">
+                <Template Context="r">
+                    <RadzenButton Icon="edit" Size="ButtonSize.Small" Click="@(() => grid.EditRow(r))" />
+                </Template>
+                <EditTemplate Context="r">
+                    <RadzenButton Icon="save" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Primary" Click="@(() => SaveRow(r))" />
+                    <RadzenButton Icon="close" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Light" Click="@(() => grid.CancelEditRow(r))" Style="margin-left:10px" />
+                </EditTemplate>
+            </RadzenDataGridColumn>
             <RadzenDataGridColumn TItem="Room" Property="Name" Title="Name" />
             <RadzenDataGridColumn TItem="Room" Property="SquareFeet" Title="Sq Ft" />
             <RadzenDataGridColumn TItem="Room" Title="Banquet">
@@ -86,15 +95,6 @@
                 <Template Context="r">@r.Capacities.UShape</Template>
                 <EditTemplate Context="r">
                     <RadzenNumeric TValue="int" Style="width:100%" @bind-Value="r.Capacities.UShape" />
-                </EditTemplate>
-            </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="Room" Title="Edit" Context="r">
-                <Template Context="r">
-                    <RadzenButton Icon="edit" Size="ButtonSize.Small" Click="@(() => grid.EditRow(r))" />
-                </Template>
-                <EditTemplate Context="r">
-                    <RadzenButton Icon="save" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Primary" Click="@(() => SaveRow(r))" />
-                    <RadzenButton Icon="close" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Light" Click="@(() => grid.CancelEditRow(r))" Style="margin-left:10px" />
                 </EditTemplate>
             </RadzenDataGridColumn>
         </Columns>
