@@ -1,0 +1,15 @@
+.step-card {
+    max-width: 500px;
+    margin: 40px auto;
+    padding: 20px;
+    text-align: center;
+}
+
+.step-button {
+    margin-left: 10px;
+    width: 250px;
+}
+
+.step-message {
+    margin-top: 10px;
+}
