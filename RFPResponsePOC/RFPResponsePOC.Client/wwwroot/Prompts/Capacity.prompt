@@ -1,4 +1,4 @@
-﻿Please parse the contents of this Capacity Chart into the json format.
+﻿Please parse the contents of this Capacity Chart into the json format. Put the room names in alphabetical order.
 
 ### CAPACITY CHART START
 {{OCRResult}}
