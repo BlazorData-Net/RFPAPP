@@ -55,47 +55,69 @@
                 </EditTemplate>
             </RadzenDataGridColumn>
             <RadzenDataGridColumn TItem="Room" Property="Name" Title="Name" Resizable="true" />
-            <RadzenDataGridColumn TItem="Room" Property="SquareFeet" Title="Sq Ft" Resizable="true" />
+            <RadzenDataGridColumn TItem="Room" Property="SquareFeet" Title="Sq Ft" Resizable="true">
+                <EditTemplate Context="r">
+                    <RadzenNumeric TValue="double?" Style="width:100%" @bind-Value="r.SquareFeet" />
+                </EditTemplate>
+            </RadzenDataGridColumn>
             <RadzenDataGridColumn TItem="Room" Title="Banquet" Resizable="true">
                 <Template Context="r">@r.Capacities.Banquet</Template>
                 <EditTemplate Context="r">
-                    <RadzenNumeric TValue="int" Style="width:100%" @bind-Value="r.Capacities.Banquet" />
+                    <RadzenNumeric TValue="int?" Style="width:100%" @bind-Value="r.Capacities.Banquet" />
                 </EditTemplate>
             </RadzenDataGridColumn>
             <RadzenDataGridColumn TItem="Room" Title="Conference" Resizable="true">
                 <Template Context="r">@r.Capacities.Conference</Template>
                 <EditTemplate Context="r">
-                    <RadzenNumeric TValue="int" Style="width:100%" @bind-Value="r.Capacities.Conference" />
+                    <RadzenNumeric TValue="int?" Style="width:100%" @bind-Value="r.Capacities.Conference" />
                 </EditTemplate>
             </RadzenDataGridColumn>
             <RadzenDataGridColumn TItem="Room" Title="Square" Resizable="true">
                 <Template Context="r">@r.Capacities.Square</Template>
                 <EditTemplate Context="r">
-                    <RadzenNumeric TValue="int" Style="width:100%" @bind-Value="r.Capacities.Square" />
+                    <RadzenNumeric TValue="int?" Style="width:100%" @bind-Value="r.Capacities.Square" />
                 </EditTemplate>
             </RadzenDataGridColumn>
             <RadzenDataGridColumn TItem="Room" Title="Reception" Resizable="true">
                 <Template Context="r">@r.Capacities.Reception</Template>
                 <EditTemplate Context="r">
-                    <RadzenNumeric TValue="int" Style="width:100%" @bind-Value="r.Capacities.Reception" />
+                    <RadzenNumeric TValue="int?" Style="width:100%" @bind-Value="r.Capacities.Reception" />
                 </EditTemplate>
             </RadzenDataGridColumn>
             <RadzenDataGridColumn TItem="Room" Title="School Room" Resizable="true">
                 <Template Context="r">@r.Capacities.SchoolRoom</Template>
                 <EditTemplate Context="r">
-                    <RadzenNumeric TValue="int" Style="width:100%" @bind-Value="r.Capacities.SchoolRoom" />
+                    <RadzenNumeric TValue="int?" Style="width:100%" @bind-Value="r.Capacities.SchoolRoom" />
                 </EditTemplate>
             </RadzenDataGridColumn>
             <RadzenDataGridColumn TItem="Room" Title="Theatre" Resizable="true">
                 <Template Context="r">@r.Capacities.Theatre</Template>
                 <EditTemplate Context="r">
-                    <RadzenNumeric TValue="int" Style="width:100%" @bind-Value="r.Capacities.Theatre" />
+                    <RadzenNumeric TValue="int?" Style="width:100%" @bind-Value="r.Capacities.Theatre" />
                 </EditTemplate>
             </RadzenDataGridColumn>
             <RadzenDataGridColumn TItem="Room" Title="U-Shape" Resizable="true">
                 <Template Context="r">@r.Capacities.UShape</Template>
                 <EditTemplate Context="r">
-                    <RadzenNumeric TValue="int" Style="width:100%" @bind-Value="r.Capacities.UShape" />
+                    <RadzenNumeric TValue="int?" Style="width:100%" @bind-Value="r.Capacities.UShape" />
+                </EditTemplate>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="Room" Title="Hollow Square" Resizable="true">
+                <Template Context="r">@r.Capacities.HollowSquare</Template>
+                <EditTemplate Context="r">
+                    <RadzenNumeric TValue="int?" Style="width:100%" @bind-Value="r.Capacities.HollowSquare" />
+                </EditTemplate>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="Room" Title="Boardroom" Resizable="true">
+                <Template Context="r">@r.Capacities.Boardroom</Template>
+                <EditTemplate Context="r">
+                    <RadzenNumeric TValue="int?" Style="width:100%" @bind-Value="r.Capacities.Boardroom" />
+                </EditTemplate>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="Room" Title="Crescent Rounds" Resizable="true">
+                <Template Context="r">@r.Capacities.CrescentRounds</Template>
+                <EditTemplate Context="r">
+                    <RadzenNumeric TValue="int?" Style="width:100%" @bind-Value="r.Capacities.CrescentRounds" />
                 </EditTemplate>
             </RadzenDataGridColumn>
         </Columns>
@@ -139,6 +161,14 @@
 
             // Initialize the ZipService
             objZipService = new ZipService(JsRuntime, localStorage, _SettingsService, LogService);
+
+            // Check if Capacity.json exists and load it
+            var capacityJson = await GetCapacityJsonAsync();
+            if (!string.IsNullOrEmpty(capacityJson))
+            {
+                capacityData = JsonConvert.DeserializeObject<CapacityRoot>(capacityJson);
+                StateHasChanged();
+            }
         }
     }
 
@@ -218,9 +248,8 @@
             // Parse the JSON into objects for display
             capacityData = JsonConvert.DeserializeObject<CapacityRoot>(result.Response);
 
-            // Save the JSON result to the RFPResponsePOC folder
-            var capacityFilePath = @"/RFPResponsePOC/Capacity.json";
-            await File.WriteAllTextAsync(capacityFilePath, result.Response);
+            // Save the JSON result to the virtual file system
+            await File.WriteAllTextAsync("Capacity.json", result.Response);
 
             InProgress = false;
             StateHasChanged();
@@ -268,6 +297,29 @@
     void SaveRow(Room room)
     {
         grid.UpdateRow(room);
+        // Also save to file when a row is updated
+        Task.Run(async () =>
+        {
+            var json = JsonConvert.SerializeObject(capacityData, Formatting.Indented);
+            await File.WriteAllTextAsync("Capacity.json", json);
+        });
+    }
+
+    private async Task<string> GetCapacityJsonAsync()
+    {
+        try
+        {
+            if (File.Exists("Capacity.json"))
+            {
+                return await File.ReadAllTextAsync("Capacity.json");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Log the exception if necessary
+            Console.WriteLine($"Error reading Capacity.json: {ex.Message}");
+        }
+        return null;
     }
 
     public void Dispose()
