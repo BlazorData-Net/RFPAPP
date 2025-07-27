@@ -1,6 +1,7 @@
 ﻿@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 @using System.Text
 @using RFPResponsePOC.Client.Services
+@using System.IO
 @using RFPResponsePOC.Model
 @using RFPResponsePOC.Models
 @using Newtonsoft.Json
@@ -216,6 +217,10 @@
 
             // Parse the JSON into objects for display
             capacityData = JsonConvert.DeserializeObject<CapacityRoot>(result.Response);
+
+            // Save the JSON result to the RFPResponsePOC folder
+            var capacityFilePath = @"/RFPResponsePOC/Capacity.json";
+            await File.WriteAllTextAsync(capacityFilePath, result.Response);
 
             InProgress = false;
             StateHasChanged();
