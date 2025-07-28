@@ -44,12 +44,25 @@ else
     {
         <div class="rz-card step-card">
             <h3 class="text-center">Welcome to RFP Response POC</h3>
-            <p class="text-center">Follow the steps below to get started</p>
             <div class="step-message">
-                <strong>Step One:</strong><br /><br />
-                <RadzenButton class="step-button" Text="Upload your Capacity Chart" Click="@CapacityClicked" Style="background-color: green;" ButtonStyle="ButtonStyle.Primary" />
-                <br /><br /><strong>Step Two:</strong><br /><br />
-                <RadzenButton class="step-button" Text="Upload the RFPs" Click="@PrposalClicked" Style="background-color: green;" ButtonStyle="ButtonStyle.Primary" />
+                @if (CapacityFileExists)
+                {
+                    <RadzenButton class="step-button" Text="Upload the RFPs" Click="@PrposalClicked" Style="background-color: green;" ButtonStyle="ButtonStyle.Primary" />
+                }
+                else
+                {
+                    <p class="text-center">Follow the steps below to get started</p>
+                    <strong>Step One:</strong>
+                    <br />
+                    <br />
+                    <RadzenButton class="step-button" Text="Upload your Capacity Chart" Click="@CapacityClicked" Style="background-color: green;" ButtonStyle="ButtonStyle.Primary" />
+                    <br />
+                    <br />
+                    <strong>Step Two:</strong>
+                    <br />        
+                    <br />
+                    <RadzenButton class="step-button" Text="Upload the RFPs" Click="@PrposalClicked" Style="background-color: green;" ButtonStyle="ButtonStyle.Primary" />
+                }        
             </div>
         </div>
     }
@@ -78,6 +91,8 @@ else
     // Allow access to the JSRuntime
     private DotNetObjectReference<Home> objRef;
 
+    string BasePath = @"/RFPResponsePOC";
+
     bool ShowMainMenu = false;
     string ApiKey = "";
     string AIModel = "";
@@ -88,6 +103,7 @@ else
     bool LogsVisible = false;
     bool CapacityVisible = false;
     bool ProposalVisible = false;
+    bool CapacityFileExists = false;
 
     ZipService objZipService = new ZipService();
     bool ZipFileExists = false;
@@ -162,6 +178,12 @@ else
                 LogsVisible = false;
                 CapacityVisible = false;
                 ProposalVisible = false;
+            }
+
+            // Check if there is a Capacity Chart file
+            if (File.Exists($"{BasePath}//Capacity.json"))
+            {
+                CapacityFileExists = true;
             }
 
             StateHasChanged();

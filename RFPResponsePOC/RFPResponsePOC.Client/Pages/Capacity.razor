@@ -125,8 +125,10 @@
 }
 
 @code {
-#nullable disable
+    #nullable disable
     private IDisposable registration;
+
+    string BasePath = @"/RFPResponsePOC";
 
     // Allow access to the JSRuntime
     private DotNetObjectReference<Capacity> objRef;
@@ -164,6 +166,7 @@
 
             // Check if Capacity.json exists and load it
             var capacityJson = await GetCapacityJsonAsync();
+
             if (!string.IsNullOrEmpty(capacityJson))
             {
                 capacityData = JsonConvert.DeserializeObject<CapacityRoot>(capacityJson);
@@ -249,7 +252,7 @@
             capacityData = JsonConvert.DeserializeObject<CapacityRoot>(result.Response);
 
             // Save the JSON result to the virtual file system
-            await File.WriteAllTextAsync("Capacity.json", result.Response);
+            await File.WriteAllTextAsync($"{BasePath}//Capacity.json", result.Response);
 
             InProgress = false;
             StateHasChanged();
@@ -301,7 +304,7 @@
         Task.Run(async () =>
         {
             var json = JsonConvert.SerializeObject(capacityData, Formatting.Indented);
-            await File.WriteAllTextAsync("Capacity.json", json);
+            await File.WriteAllTextAsync($"{BasePath}//Capacity.json", json);
         });
     }
 
@@ -309,9 +312,9 @@
     {
         try
         {
-            if (File.Exists("Capacity.json"))
+            if (File.Exists($"{BasePath}//Capacity.json"))
             {
-                return await File.ReadAllTextAsync("Capacity.json");
+                return await File.ReadAllTextAsync($"{BasePath}//Capacity.json");
             }
         }
         catch (Exception ex)
