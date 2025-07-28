@@ -1,4 +1,5 @@
 using Blazored.LocalStorage;
+using BlazorWebAssemblyPDF.Services;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Radzen;
 using RFPResponsePOC.Model;
@@ -24,6 +25,7 @@ class Program
         builder.Services.AddScoped<LogService>();
         builder.Services.AddScoped<SettingsService>();
         builder.Services.AddScoped<DatabaseService>();
+        builder.Services.AddScoped<PdfToPngService>();
 
         // Set the base address for the application
         var http = new HttpClient()

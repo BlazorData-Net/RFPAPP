@@ -1,5 +1,6 @@
 ﻿@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 @using System.Text
+@using BlazorWebAssemblyPDF.Services
 @using RFPResponsePOC.Client.Services
 @using System.IO
 @using RFPResponsePOC.Model
@@ -9,19 +10,19 @@
 @using RFPResponsePOC.AI
 @inject NotificationService NotificationService
 @inject DialogService DialogService
-@inject IJSRuntime JsRuntime
 @inject LogService LogService
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 @inject Blazored.LocalStorage.ILocalStorageService localStorage
 @inject SettingsService _SettingsService
 @inject NavigationManager Navigation
+@inject PdfToPngService PdfService
 @inject IJSRuntime JsRuntime
 @inject HttpClient Http
 <h3>Capacity</h3>
 <br />
 <RadzenUpload @ref="uploader"
-              ChooseText="Upload capacity chart (.png/.jpg/.jpeg)" Accept=".png,.jpg,.jpeg"
+              ChooseText="Upload capacity chart (.png/.jpg/.jpeg)" Accept=".png,.jpg,.jpeg,.pdf"
               Change=@OnCapacityChartUpload
               Multiple="false"
               Auto="true"
@@ -123,7 +124,8 @@
         </Columns>
     </RadzenDataGrid>
 }
-
+<!-- hidden canvas used for PDF conversions to PNG -->
+<canvas id="pdfCanvas" style="display:none; border:1px solid #ccc;"></canvas>
 @code {
     #nullable disable
     private IDisposable registration;
@@ -218,7 +220,19 @@
                 return;
             }
 
-            // Read the PDF file as a byte array
+            // If file type is PDF convert it to PNG first
+            if (file.ContentType == "application/pdf")
+            {
+                var pdfUrl = await PdfService.GetPdfDataUrlAsync(file);
+                if (pdfUrl != null)
+                {
+                    await PdfService.RenderPdfToCanvasAsync(pdfUrl, "pdfCanvas");
+                    await PdfService.SaveCanvasAsPngAsync("pdfCanvas");
+                    return;
+                }
+            }
+
+            // Read the file as a byte array
             using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024); // 10MB limit
             using var ms = new MemoryStream();
             await stream.CopyToAsync(ms);
