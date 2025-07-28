@@ -220,6 +220,8 @@
                 return;
             }
 
+            byte[] pdfBytes;
+
             // If file type is PDF convert it to PNG first
             if (file.ContentType == "application/pdf")
             {
@@ -227,16 +229,23 @@
                 if (pdfUrl != null)
                 {
                     await PdfService.RenderPdfToCanvasAsync(pdfUrl, "pdfCanvas");
-                    await PdfService.SaveCanvasAsPngAsync("pdfCanvas");
+                    pdfBytes = await PdfService.GetCanvasPngBytesAsync("pdfCanvas");
+                }
+                else
+                {
+                    InProgress = false;
+                    StateHasChanged();
                     return;
                 }
             }
-
-            // Read the file as a byte array
-            using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024); // 10MB limit
-            using var ms = new MemoryStream();
-            await stream.CopyToAsync(ms);
-            var pdfBytes = ms.ToArray();
+            else
+            {
+                // Read the file as a byte array
+                using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024); // 10MB limit
+                using var ms = new MemoryStream();
+                await stream.CopyToAsync(ms);
+                pdfBytes = ms.ToArray();
+            }
 
             // Read the contents of \Prompts\Capacity.prompt into prompt
             var OCRprompt = await Http.GetStringAsync("Prompts/OCR.prompt");

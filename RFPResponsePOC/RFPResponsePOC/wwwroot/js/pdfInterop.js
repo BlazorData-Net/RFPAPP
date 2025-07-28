@@ -37,5 +37,10 @@ window.pdfInterop = {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+    },
+    getCanvasPngDataUrl: function(canvasId) {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) return null;
+        return canvas.toDataURL('image/png');
     }
 };
