@@ -43,7 +43,7 @@
 }
 <br />
 @if (capacityData?.Rooms != null)
-{
+{    
     <RadzenDataGrid @ref="grid" Data="@capacityData.Rooms" TItem="Room" EditMode="DataGridEditMode.Single" AllowPaging="false" AllowColumnResize="true">
         <Columns>
             <RadzenDataGridColumn TItem="Room" Title="Edit" Context="r" Resizable="false" Width="50px">
@@ -53,7 +53,7 @@
             </RadzenDataGridColumn>
             <RadzenDataGridColumn TItem="Room" Property="Name" Title="Name" Resizable="true" Width="200px" />
             <RadzenDataGridColumn TItem="Room" Title="Details" Resizable="true">
-                <Template Context="r">
+                <Template Context="r">  
                     <div>
                         <strong>Square Feet:</strong> @r.SquareFeet<br />
                         <strong>Length:</strong> @r.Length<br />
