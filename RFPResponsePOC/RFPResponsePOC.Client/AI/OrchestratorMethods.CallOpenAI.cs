@@ -30,8 +30,8 @@ namespace RFPResponsePOC.AI
 
             var messages = new List<ChatMessage>
             {
-                new SystemChatMessage("You are a helpful assistant."),
-                new UserChatMessage("Hello!")
+                new SystemChatMessage("You are a helpful assistant that returns only json."),
+                new UserChatMessage("Say Hello!")
             };
 
             var response = await client.CompleteChatAsync(messages);

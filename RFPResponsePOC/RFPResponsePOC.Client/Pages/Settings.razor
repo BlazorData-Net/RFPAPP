@@ -1,10 +1,11 @@
 ﻿@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@inherits OwningComponentBase
 @using static RFPResponsePOC.AI.OrchestratorMethods
 @using Newtonsoft.Json;
 @using RFPResponsePOC.AI
 @using RFPResponsePOC.Client.Services
 @using RFPResponsePOC.Model
-@inherits OwningComponentBase
+@using Radzen
 @inject Blazored.LocalStorage.ILocalStorageService localStorage
 @inject NotificationService NotificationService
 @inject DialogService DialogService
@@ -26,7 +27,7 @@
 
 
             <RadzenFormField Text="OpenAI Model:" Variant="@variant">
-                <RadzenTextBox @bind-Value="@AIModel" Style="width:450px;" />
+                <RadzenDropDown @bind-Value="@AIModel" Data="@availableModels" Style="width: 450px;" TValue="string" />
             </RadzenFormField>
 
             @if (!IsOpenAISettingsEntered)
@@ -77,6 +78,7 @@
     private string ApiKey = "";
     private string AIModel = "o4-mini";
     private string AIEmbeddingModel = "";
+    private List<string> availableModels = new List<string> { "o4-mini", "gpt-4o" };
 
     // Global fields
     bool ZipFileExists = false;
@@ -186,8 +188,6 @@
             applicationSettings.AIModel = AIModel;
             applicationSettings.AIEmbeddingModel = AIEmbeddingModel;
 
-            await settingsService.UpdateSettingsAsync(applicationSettings);
-
             // Test API Key
             objOrchestratorMethods = new OrchestratorMethods(SettingsService, _LogService);
 
@@ -207,6 +207,8 @@
 
                 return;
             }
+
+            await settingsService.UpdateSettingsAsync(applicationSettings);
 
             await _LogService.WriteToLogAsync($"SettingsSave Model: {AIModel}");
 
