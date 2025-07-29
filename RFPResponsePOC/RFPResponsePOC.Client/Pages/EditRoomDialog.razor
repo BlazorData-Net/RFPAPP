@@ -1,0 +1,124 @@
+@using RFPResponsePOC.Models
+
+@inject DialogService DialogService
+
+<EditForm Model="Room" OnValidSubmit="HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="form-group">
+        <label for="name">Name</label>
+        <InputText id="name" class="form-control" @bind-Value="Room.Name" />
+    </div>
+
+    <div class="form-group">
+        <label for="squareFeet">Square Feet</label>
+        <InputNumber id="squareFeet" class="form-control" @bind-Value="Room.SquareFeet" />
+    </div>
+
+    <div class="form-group">
+        <label for="length">Length</label>
+        <InputNumber id="length" class="form-control" @bind-Value="Room.Length" />
+    </div>
+
+    <div class="form-group">
+        <label for="width">Width</label>
+        <InputNumber id="width" class="form-control" @bind-Value="Room.Width" />
+    </div>
+
+    <div class="form-group">
+        <label for="ceilingHeight">Ceiling Height</label>
+        <InputNumber id="ceilingHeight" class="form-control" @bind-Value="Room.CeilingHeight" />
+    </div>
+
+    <div class="form-group">
+        <label for="floorLevel">Floor Level</label>
+        <InputText id="floorLevel" class="form-control" @bind-Value="Room.FloorLevel" />
+    </div>
+
+    <div class="form-group">
+        <label for="hasNaturalLight">Natural Light</label>
+        <InputCheckbox id="hasNaturalLight" class="form-check-input" @bind-Value="HasNaturalLight" />
+    </div>
+
+    <div class="form-group">
+        <label for="hasPillars">Has Pillars</label>
+        <InputCheckbox id="hasPillars" class="form-check-input" @bind-Value="HasPillars" />
+    </div>
+
+    <h4>Capacities</h4>
+    <div class="form-group">
+        <label for="banquet">Banquet</label>
+        <InputNumber id="banquet" class="form-control" @bind-Value="Room.Capacities.Banquet" />
+    </div>
+    <div class="form-group">
+        <label for="conference">Conference</label>
+        <InputNumber id="conference" class="form-control" @bind-Value="Room.Capacities.Conference" />
+    </div>
+    <div class="form-group">
+        <label for="square">Square</label>
+        <InputNumber id="square" class="form-control" @bind-Value="Room.Capacities.Square" />
+    </div>
+    <div class="form-group">
+        <label for="reception">Reception</label>
+        <InputNumber id="reception" class="form-control" @bind-Value="Room.Capacities.Reception" />
+    </div>
+    <div class="form-group">
+        <label for="schoolRoom">School Room</label>
+        <InputNumber id="schoolRoom" class="form-control" @bind-Value="Room.Capacities.SchoolRoom" />
+    </div>
+    <div class="form-group">
+        <label for="theatre">Theatre</label>
+        <InputNumber id="theatre" class="form-control" @bind-Value="Room.Capacities.Theatre" />
+    </div>
+    <div class="form-group">
+        <label for="uShape">U-Shape</label>
+        <InputNumber id="uShape" class="form-control" @bind-Value="Room.Capacities.UShape" />
+    </div>
+    <div class="form-group">
+        <label for="hollowSquare">Hollow Square</label>
+        <InputNumber id="hollowSquare" class="form-control" @bind-Value="Room.Capacities.HollowSquare" />
+    </div>
+    <div class="form-group">
+        <label for="boardroom">Boardroom</label>
+        <InputNumber id="boardroom" class="form-control" @bind-Value="Room.Capacities.Boardroom" />
+    </div>
+    <div class="form-group">
+        <label for="crescentRounds">Crescent Rounds</label>
+        <InputNumber id="crescentRounds" class="form-control" @bind-Value="Room.Capacities.CrescentRounds" />
+    </div>
+
+    <RadzenButton Text="Save" ButtonStyle="ButtonStyle.Primary" Click="Save" />
+    <RadzenButton Text="Cancel" ButtonStyle="ButtonStyle.Light" Click="Cancel" />
+</EditForm>
+
+@code {
+    [Parameter] public Room Room { get; set; }
+
+    private bool HasNaturalLight
+    {
+        get => Room.HasNaturalLight ?? false;
+        set => Room.HasNaturalLight = value;
+    }
+
+    private bool HasPillars
+    {
+        get => Room.HasPillars ?? false;
+        set => Room.HasPillars = value;
+    }
+
+    private void HandleValidSubmit()
+    {
+        DialogService.Close(Room);
+    }
+
+    private void Save()
+    {
+        DialogService.Close(Room);
+    }
+
+    private void Cancel()
+    {
+        DialogService.Close(null);
+    }
+}

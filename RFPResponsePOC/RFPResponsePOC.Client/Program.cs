@@ -26,6 +26,7 @@ class Program
         builder.Services.AddScoped<SettingsService>();
         builder.Services.AddScoped<DatabaseService>();
         builder.Services.AddScoped<PdfToPngService>();
+        builder.Services.AddScoped<DialogService>();
 
         // Set the base address for the application
         var http = new HttpClient()

@@ -11,8 +11,6 @@
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 @inject LogService LogService
-@inject NotificationService NotificationService
-@inject DialogService DialogService
 @inject Blazored.LocalStorage.ILocalStorageService localStorage
 @inject SettingsService _SettingsService
 @inject NavigationManager Navigation
@@ -48,7 +46,7 @@
         <Columns>
             <RadzenDataGridColumn TItem="Room" Title="Edit" Context="r" Resizable="false" Width="50px">
                 <Template Context="r">
-                    <RadzenButton Icon="edit" Size="ButtonSize.Small" Click="@(() => grid.EditRow(r))" />
+                    <RadzenButton Icon="edit" Size="ButtonSize.Small" Click="@(() => OpenEditDialog(r))" />
                 </Template>
             </RadzenDataGridColumn>
             <RadzenDataGridColumn TItem="Room" Property="Name" Title="Name" Resizable="true" Width="200px" />
@@ -283,10 +281,29 @@
         }
     }
 
-    void SaveRow(Room room)
+    private Room selectedRoom;
+
+    private void OpenEditDialog(Room room)
     {
-        grid.UpdateRow(room);
-        // Also save to file when a row is updated
+        selectedRoom = room;
+
+        DialogService.Open<EditRoomDialog>(
+            "Edit Room",
+            new Dictionary<string, object> { { "Room", selectedRoom } },
+            new DialogOptions { Width = "600px", Height = "400px" }
+        );
+    }
+
+    private void SaveRoom(Room room)
+    {
+        // Update the room in the data source
+        var index = capacityData.Rooms.FindIndex(r => r.Name == room.Name);
+        if (index >= 0)
+        {
+            capacityData.Rooms[index] = room;
+        }
+
+        // Save changes to the JSON file
         Task.Run(async () =>
         {
             var json = JsonConvert.SerializeObject(capacityData, Formatting.Indented);
