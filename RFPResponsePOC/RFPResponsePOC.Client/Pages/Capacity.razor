@@ -56,70 +56,56 @@
                 </EditTemplate>
             </RadzenDataGridColumn>
             <RadzenDataGridColumn TItem="Room" Property="Name" Title="Name" Resizable="true" />
-            <RadzenDataGridColumn TItem="Room" Property="SquareFeet" Title="Sq Ft" Resizable="true">
+            <RadzenDataGridColumn TItem="Room" Property="SquareFeet" Title="Square Feet" Resizable="true">
                 <EditTemplate Context="r">
                     <RadzenNumeric TValue="double?" Style="width:100%" @bind-Value="r.SquareFeet" />
                 </EditTemplate>
             </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="Room" Title="Banquet" Resizable="true">
-                <Template Context="r">@r.Capacities.Banquet</Template>
+            <RadzenDataGridColumn TItem="Room" Property="Length" Title="Length" Resizable="true">
                 <EditTemplate Context="r">
-                    <RadzenNumeric TValue="int?" Style="width:100%" @bind-Value="r.Capacities.Banquet" />
+                    <RadzenNumeric TValue="double?" Style="width:100%" @bind-Value="r.Length" />
                 </EditTemplate>
             </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="Room" Title="Conference" Resizable="true">
-                <Template Context="r">@r.Capacities.Conference</Template>
+            <RadzenDataGridColumn TItem="Room" Property="Width" Title="Width" Resizable="true">
                 <EditTemplate Context="r">
-                    <RadzenNumeric TValue="int?" Style="width:100%" @bind-Value="r.Capacities.Conference" />
+                    <RadzenNumeric TValue="double?" Style="width:100%" @bind-Value="r.Width" />
                 </EditTemplate>
             </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="Room" Title="Square" Resizable="true">
-                <Template Context="r">@r.Capacities.Square</Template>
+            <RadzenDataGridColumn TItem="Room" Property="CeilingHeight" Title="Ceiling Height" Resizable="true">
                 <EditTemplate Context="r">
-                    <RadzenNumeric TValue="int?" Style="width:100%" @bind-Value="r.Capacities.Square" />
+                    <RadzenNumeric TValue="double?" Style="width:100%" @bind-Value="r.CeilingHeight" />
                 </EditTemplate>
             </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="Room" Title="Reception" Resizable="true">
-                <Template Context="r">@r.Capacities.Reception</Template>
+            <RadzenDataGridColumn TItem="Room" Property="FloorLevel" Title="Floor Level" Resizable="true">
                 <EditTemplate Context="r">
-                    <RadzenNumeric TValue="int?" Style="width:100%" @bind-Value="r.Capacities.Reception" />
+                    <RadzenTextBox Style="width:100%" @bind-Value="r.FloorLevel" />
                 </EditTemplate>
             </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="Room" Title="School Room" Resizable="true">
-                <Template Context="r">@r.Capacities.SchoolRoom</Template>
+            <RadzenDataGridColumn TItem="Room" Property="HasNaturalLight" Title="Natural Light" Resizable="true">
                 <EditTemplate Context="r">
-                    <RadzenNumeric TValue="int?" Style="width:100%" @bind-Value="r.Capacities.SchoolRoom" />
+                    <RadzenCheckBox TValue="bool?" @bind-Value="r.HasNaturalLight" />
                 </EditTemplate>
             </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="Room" Title="Theatre" Resizable="true">
-                <Template Context="r">@r.Capacities.Theatre</Template>
+            <RadzenDataGridColumn TItem="Room" Property="HasPillars" Title="Has Pillars" Resizable="true">
                 <EditTemplate Context="r">
-                    <RadzenNumeric TValue="int?" Style="width:100%" @bind-Value="r.Capacities.Theatre" />
+                    <RadzenCheckBox TValue="bool?" @bind-Value="r.HasPillars" />
                 </EditTemplate>
             </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="Room" Title="U-Shape" Resizable="true">
-                <Template Context="r">@r.Capacities.UShape</Template>
-                <EditTemplate Context="r">
-                    <RadzenNumeric TValue="int?" Style="width:100%" @bind-Value="r.Capacities.UShape" />
-                </EditTemplate>
-            </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="Room" Title="Hollow Square" Resizable="true">
-                <Template Context="r">@r.Capacities.HollowSquare</Template>
-                <EditTemplate Context="r">
-                    <RadzenNumeric TValue="int?" Style="width:100%" @bind-Value="r.Capacities.HollowSquare" />
-                </EditTemplate>
-            </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="Room" Title="Boardroom" Resizable="true">
-                <Template Context="r">@r.Capacities.Boardroom</Template>
-                <EditTemplate Context="r">
-                    <RadzenNumeric TValue="int?" Style="width:100%" @bind-Value="r.Capacities.Boardroom" />
-                </EditTemplate>
-            </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="Room" Title="Crescent Rounds" Resizable="true">
-                <Template Context="r">@r.Capacities.CrescentRounds</Template>
-                <EditTemplate Context="r">
-                    <RadzenNumeric TValue="int?" Style="width:100%" @bind-Value="r.Capacities.CrescentRounds" />
-                </EditTemplate>
+            <RadzenDataGridColumn TItem="Room" Title="Capacities" Resizable="true">
+                <Template Context="r">
+                    <div>
+                        <strong>Banquet:</strong> @r.Capacities.Banquet<br />
+                        <strong>Conference:</strong> @r.Capacities.Conference<br />
+                        <strong>Square:</strong> @r.Capacities.Square<br />
+                        <strong>Reception:</strong> @r.Capacities.Reception<br />
+                        <strong>School Room:</strong> @r.Capacities.SchoolRoom<br />
+                        <strong>Theatre:</strong> @r.Capacities.Theatre<br />
+                        <strong>U-Shape:</strong> @r.Capacities.UShape<br />
+                        <strong>Hollow Square:</strong> @r.Capacities.HollowSquare<br />
+                        <strong>Boardroom:</strong> @r.Capacities.Boardroom<br />
+                        <strong>Crescent Rounds:</strong> @r.Capacities.CrescentRounds
+                    </div>
+                </Template>
             </RadzenDataGridColumn>
         </Columns>
     </RadzenDataGrid>
