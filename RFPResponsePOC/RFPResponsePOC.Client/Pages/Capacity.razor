@@ -46,69 +46,46 @@
 {
     <RadzenDataGrid @ref="grid" Data="@capacityData.Rooms" TItem="Room" EditMode="DataGridEditMode.Single" AllowPaging="false" AllowColumnResize="true">
         <Columns>
-            <RadzenDataGridColumn TItem="Room" Title="Edit" Context="r" Resizable="false">
+            <RadzenDataGridColumn TItem="Room" Title="Edit" Context="r" Resizable="false" Width="50px">
                 <Template Context="r">
                     <RadzenButton Icon="edit" Size="ButtonSize.Small" Click="@(() => grid.EditRow(r))" />
                 </Template>
-                <EditTemplate Context="r">
-                    <RadzenButton Icon="save" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Primary" Click="@(() => SaveRow(r))" />
-                    <RadzenButton Icon="close" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Light" Click="@(() => grid.CancelEditRow(r))" Style="margin-left:10px" />
-                </EditTemplate>
             </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="Room" Property="Name" Title="Name" Resizable="true" />
-            <RadzenDataGridColumn TItem="Room" Property="SquareFeet" Title="Square Feet" Resizable="true">
-                <EditTemplate Context="r">
-                    <RadzenNumeric TValue="double?" Style="width:100%" @bind-Value="r.SquareFeet" />
-                </EditTemplate>
-            </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="Room" Property="Length" Title="Length" Resizable="true">
-                <EditTemplate Context="r">
-                    <RadzenNumeric TValue="double?" Style="width:100%" @bind-Value="r.Length" />
-                </EditTemplate>
-            </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="Room" Property="Width" Title="Width" Resizable="true">
-                <EditTemplate Context="r">
-                    <RadzenNumeric TValue="double?" Style="width:100%" @bind-Value="r.Width" />
-                </EditTemplate>
-            </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="Room" Property="CeilingHeight" Title="Ceiling Height" Resizable="true">
-                <EditTemplate Context="r">
-                    <RadzenNumeric TValue="double?" Style="width:100%" @bind-Value="r.CeilingHeight" />
-                </EditTemplate>
-            </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="Room" Property="FloorLevel" Title="Floor Level" Resizable="true">
-                <EditTemplate Context="r">
-                    <RadzenTextBox Style="width:100%" @bind-Value="r.FloorLevel" />
-                </EditTemplate>
-            </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="Room" Property="HasNaturalLight" Title="Natural Light" Resizable="true">
-                <EditTemplate Context="r">
-                    <RadzenCheckBox TValue="bool?" @bind-Value="r.HasNaturalLight" />
-                </EditTemplate>
-            </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="Room" Property="HasPillars" Title="Has Pillars" Resizable="true">
-                <EditTemplate Context="r">
-                    <RadzenCheckBox TValue="bool?" @bind-Value="r.HasPillars" />
-                </EditTemplate>
-            </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="Room" Title="Capacities" Resizable="true">
+            <RadzenDataGridColumn TItem="Room" Property="Name" Title="Name" Resizable="true" Width="200px" />
+            <RadzenDataGridColumn TItem="Room" Title="Details" Resizable="true">
                 <Template Context="r">
                     <div>
-                        <strong>Banquet:</strong> @r.Capacities.Banquet<br />
-                        <strong>Conference:</strong> @r.Capacities.Conference<br />
-                        <strong>Square:</strong> @r.Capacities.Square<br />
-                        <strong>Reception:</strong> @r.Capacities.Reception<br />
-                        <strong>School Room:</strong> @r.Capacities.SchoolRoom<br />
-                        <strong>Theatre:</strong> @r.Capacities.Theatre<br />
-                        <strong>U-Shape:</strong> @r.Capacities.UShape<br />
-                        <strong>Hollow Square:</strong> @r.Capacities.HollowSquare<br />
-                        <strong>Boardroom:</strong> @r.Capacities.Boardroom<br />
-                        <strong>Crescent Rounds:</strong> @r.Capacities.CrescentRounds
+                        <strong>Square Feet:</strong> @r.SquareFeet<br />
+                        <strong>Length:</strong> @r.Length<br />
+                        <strong>Width:</strong> @r.Width<br />
+                        <strong>Ceiling Height:</strong> @r.CeilingHeight<br />
+                        <strong>Floor Level:</strong> @r.FloorLevel<br />
+                        <strong>Natural Light:</strong> @(r.HasNaturalLight == true ? "Yes" : "No")<br />
+                        <strong>Has Pillars:</strong> @(r.HasPillars == true ? "Yes" : "No")<br />
+                        <strong>Capacities:</strong>
+                        <ul>
+                            <li><strong>Banquet:</strong> @r.Capacities.Banquet</li>
+                            <li><strong>Conference:</strong> @r.Capacities.Conference</li>
+                            <li><strong>Square:</strong> @r.Capacities.Square</li>
+                            <li><strong>Reception:</strong> @r.Capacities.Reception</li>
+                            <li><strong>School Room:</strong> @r.Capacities.SchoolRoom</li>
+                            <li><strong>Theatre:</strong> @r.Capacities.Theatre</li>
+                            <li><strong>U-Shape:</strong> @r.Capacities.UShape</li>
+                            <li><strong>Hollow Square:</strong> @r.Capacities.HollowSquare</li>
+                            <li><strong>Boardroom:</strong> @r.Capacities.Boardroom</li>
+                            <li><strong>Crescent Rounds:</strong> @r.Capacities.CrescentRounds</li>
+                        </ul>
                     </div>
                 </Template>
             </RadzenDataGridColumn>
         </Columns>
     </RadzenDataGrid>
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
 }
 <!-- hidden canvas used for PDF conversions to PNG -->
 <canvas id="pdfCanvas" style="display:none; border:1px solid #ccc;"></canvas>
