@@ -14,7 +14,7 @@ namespace BlazorWebAssemblyPDF.Services
             _jsRuntime = jsRuntime;
         }
 
-        public async Task<string?> GetPdfDataUrlAsync(IBrowserFile pdfFile)
+        public async Task<string> GetPdfDataUrlAsync(IBrowserFile pdfFile)
         {
             if (pdfFile == null) return null;
             using var stream = pdfFile.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024); // 10MB limit

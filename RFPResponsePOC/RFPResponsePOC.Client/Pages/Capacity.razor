@@ -250,6 +250,9 @@
                     .ToList()
             };
 
+            // Sort by room name
+            capacityData.Rooms.Sort((x, y) => string.Compare(x.Name, y.Name, StringComparison.OrdinalIgnoreCase));
+
             // Save the JSON result to the virtual file system
             await File.WriteAllTextAsync($"{BasePath}//Capacity.json", result.Response);
 
