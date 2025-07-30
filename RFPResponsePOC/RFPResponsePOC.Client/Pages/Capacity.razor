@@ -20,7 +20,7 @@
 <h3>Capacity</h3>
 <br />
 <RadzenUpload @ref="uploader"
-              ChooseText="Upload capacity chart (.png/.jpg/.jpeg)" Accept=".png,.jpg,.jpeg,.pdf"
+              ChooseText="Upload capacity chart (.pdf/.png/.jpg/.jpeg)" Accept=".png,.jpg,.jpeg,.pdf"
               Change=@OnCapacityChartUpload
               Multiple="false"
               Auto="true"
@@ -49,7 +49,7 @@
                     <RadzenButton Icon="edit" Size="ButtonSize.Small" Click="@(() => OpenEditDialog(r))" />
                 </Template>
             </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="Room" Property="Name" Title="Name" Resizable="true" Width="200px" />
+            <RadzenDataGridColumn TItem="Room" Property="Name" Title="Name" Resizable="true" Width="200px" Sortable="true" />
             <RadzenDataGridColumn TItem="Room" Title="Details" Resizable="true">
                 <Template Context="r">  
                     <div>
@@ -233,7 +233,22 @@
             result = await objOrchestratorMethods.CallOpenAIAsync(settingsService, Capcityprompt);
 
             // Parse the JSON into objects for display
-            capacityData = JsonConvert.DeserializeObject<CapacityRoot>(result.Response);
+            var TempCapacityData = JsonConvert.DeserializeObject<CapacityRoot>(result.Response);
+
+            // Remove from TempCapacityData any room that has the word "and" or an "&" or a "+" in the room name
+            // and build capacityData
+
+            CurrentStatus = "Processing capacity chart...";
+            StateHasChanged();
+
+            capacityData = new CapacityRoot
+            {
+                Rooms = TempCapacityData.Rooms
+                    .Where(r => !r.Name.Contains(" and ", StringComparison.OrdinalIgnoreCase) &&
+                                !r.Name.Contains("&", StringComparison.OrdinalIgnoreCase) &&
+                                !r.Name.Contains("+", StringComparison.OrdinalIgnoreCase))
+                    .ToList()
+            };
 
             // Save the JSON result to the virtual file system
             await File.WriteAllTextAsync($"{BasePath}//Capacity.json", result.Response);
@@ -298,6 +313,7 @@
     {
         // Update the room in the data source
         var index = capacityData.Rooms.FindIndex(r => r.Name == room.Name);
+
         if (index >= 0)
         {
             capacityData.Rooms[index] = room;

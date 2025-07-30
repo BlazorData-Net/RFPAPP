@@ -11,6 +11,7 @@ namespace RFPResponsePOC.Models
     public class Room
     {
         [JsonProperty("name")] public string Name { get; set; }
+        [JsonProperty("roomGroup")] public string RoomGroup { get; set; }
         [JsonProperty("squareFeet")] public double? SquareFeet { get; set; }
         [JsonProperty("length")] public double? Length { get; set; }
         [JsonProperty("width")] public double? Width { get; set; }
