@@ -12,12 +12,23 @@ namespace RFPResponsePOC.Client.Models
             if (rooms == null)
                 return new CapacityRoot { Rooms = new List<Room>() };
 
-            // Group by the beginning of the room name (first word)
+            // Words to exclude from grouping
+            var excluded = new HashSet<string> { "San", "Del", "Santa" };
+
+            // Group by the first word, unless it's in the excluded list; if so, use the second word
             var groupedByName = rooms
-                .GroupBy(r => (r.Name ?? string.Empty).Split(' ').FirstOrDefault() ?? string.Empty)
+                .GroupBy(r =>
+                {
+                    var words = (r.Name ?? string.Empty).Split(' ', 3, System.StringSplitOptions.RemoveEmptyEntries);
+                    if (words.Length == 0)
+                        return string.Empty;
+                    if (excluded.Contains(words[0]) && words.Length > 1)
+                        return words[1];
+                    return words[0];
+                })
                 .ToList();
 
-            // For each group, set RoomGroup to the RoomGroup of the room with the highest SquareFeet
+            // For each group, set RoomGroup to the Name of the room with the highest SquareFeet
             foreach (var group in groupedByName)
             {
                 var maxSqFtRoom = group
@@ -26,15 +37,12 @@ namespace RFPResponsePOC.Client.Models
 
                 if (maxSqFtRoom != null)
                 {
-                    // Use the name of the room with the highest SquareFeet as the target group
                     string targetGroup = maxSqFtRoom.Name;
 
                     foreach (var room in group)
                     {
-                        // Do not assign if this is the max room itself
                         if (room.Name != maxSqFtRoom.Name)
                         {
-                            // Assign the RoomGroup to the target group
                             room.RoomGroup = targetGroup;
                         }
                     }
