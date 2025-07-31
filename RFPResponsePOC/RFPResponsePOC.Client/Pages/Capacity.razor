@@ -1,6 +1,7 @@
 ﻿@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 @using System.Text
 @using BlazorWebAssemblyPDF.Services
+@using RFPResponsePOC.Client.Models
 @using RFPResponsePOC.Client.Services
 @using System.IO
 @using RFPResponsePOC.Model
@@ -250,6 +251,9 @@
                                 !r.Name.Contains("+", StringComparison.OrdinalIgnoreCase))
                     .ToList()
             };
+
+            // Group Rooms by RoomGroup
+            capacityData = RoomGroupingHelper.GroupRooms(capacityData.Rooms);
 
             // Sort by room name
             capacityData.Rooms.Sort((x, y) => string.Compare(x.Name, y.Name, StringComparison.OrdinalIgnoreCase));
