@@ -258,8 +258,11 @@
             // Sort by room name
             capacityData.Rooms.Sort((x, y) => string.Compare(x.Name, y.Name, StringComparison.OrdinalIgnoreCase));
 
+            // Serialize the capacityData to JSON
+            var json = JsonConvert.SerializeObject(capacityData, Formatting.Indented);
+
             // Save the JSON result to the virtual file system
-            await File.WriteAllTextAsync($"{BasePath}//Capacity.json", result.Response);
+            await File.WriteAllTextAsync($"{BasePath}//Capacity.json", json);
 
             InProgress = false;
             StateHasChanged();
