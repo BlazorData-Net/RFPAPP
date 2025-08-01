@@ -9,29 +9,31 @@
     <RadzenTabs>
         <Tabs>
             <RadzenTabsItem Text="Room Details">
-                <div class="form-group">
+                <div style="margin: 20px 0; display: flex; gap: 20px;">
                     <label for="name">Name</label>
                     <RadzenTextBox id="name" @bind-Value="Room.Name" Style="width: 100%;" />
                 </div>
 
-                <div class="form-group">
-                    <label for="squareFeet">Square Feet</label>
-                    <RadzenNumeric id="squareFeet" @bind-Value="Room.SquareFeet" Style="width: 100%;" />
-                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="form-group">
+                        <label for="squareFeet">Square Feet</label>
+                        <RadzenNumeric id="squareFeet" @bind-Value="Room.SquareFeet" Style="width: 100%;" />
+                    </div>
 
-                <div class="form-group">
-                    <label for="length">Length</label>
-                    <RadzenNumeric id="length" @bind-Value="Room.Length" Style="width: 100%;" />
-                </div>
+                    <div class="form-group">
+                        <label for="length">Length</label>
+                        <RadzenNumeric id="length" @bind-Value="Room.Length" Style="width: 100%;" />
+                    </div>
 
-                <div class="form-group">
-                    <label for="width">Width</label>
-                    <RadzenNumeric id="width" @bind-Value="Room.Width" Style="width: 100%;" />
-                </div>
+                    <div class="form-group">
+                        <label for="width">Width</label>
+                        <RadzenNumeric id="width" @bind-Value="Room.Width" Style="width: 100%;" />
+                    </div>
 
-                <div class="form-group">
-                    <label for="ceilingHeight">Ceiling Height</label>
-                    <RadzenNumeric id="ceilingHeight" @bind-Value="Room.CeilingHeight" Style="width: 100%;" />
+                    <div class="form-group">
+                        <label for="ceilingHeight">Ceiling Height</label>
+                        <RadzenNumeric id="ceilingHeight" @bind-Value="Room.CeilingHeight" Style="width: 100%;" />
+                    </div>
                 </div>
 
                 <div class="form-group">
