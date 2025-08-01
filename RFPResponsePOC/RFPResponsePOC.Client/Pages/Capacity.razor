@@ -313,9 +313,16 @@
     {
         selectedRoom = room;
 
+        // Debug: Check if we have rooms data
+        Console.WriteLine($"Opening dialog for room: {room?.Name}");
+        Console.WriteLine($"Total rooms available: {capacityData?.Rooms?.Count ?? 0}");
+
         DialogService.Open<EditRoomDialog>(
             "Edit Room",
-            new Dictionary<string, object> { { "Room", selectedRoom } },
+            new Dictionary<string, object> { 
+                { "Room", selectedRoom }, 
+                { "AllRooms", capacityData?.Rooms ?? new List<Room>() } 
+            },
             new DialogOptions { Width = "600px", Height = "850px" }
         );
     }
