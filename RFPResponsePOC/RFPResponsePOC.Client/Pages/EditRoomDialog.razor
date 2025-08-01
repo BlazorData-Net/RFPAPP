@@ -59,45 +59,47 @@
             </RadzenTabsItem>
 
             <RadzenTabsItem Text="Capacities">
-                <div class="form-group">
-                    <label for="banquet">Banquet</label>
-                    <RadzenNumeric id="banquet" @bind-Value="Room.Capacities.Banquet" Style="width: 100%;" />
-                </div>
-                <div class="form-group">
-                    <label for="conference">Conference</label>
-                    <RadzenNumeric id="conference" @bind-Value="Room.Capacities.Conference" Style="width: 100%;" />
-                </div>
-                <div class="form-group">
-                    <label for="square">Square</label>
-                    <RadzenNumeric id="square" @bind-Value="Room.Capacities.Square" Style="width: 100%;" />
-                </div>
-                <div class="form-group">
-                    <label for="reception">Reception</label>
-                    <RadzenNumeric id="reception" @bind-Value="Room.Capacities.Reception" Style="width: 100%;" />
-                </div>
-                <div class="form-group">
-                    <label for="schoolRoom">School Room</label>
-                    <RadzenNumeric id="schoolRoom" @bind-Value="Room.Capacities.SchoolRoom" Style="width: 100%;" />
-                </div>
-                <div class="form-group">
-                    <label for="theatre">Theatre</label>
-                    <RadzenNumeric id="theatre" @bind-Value="Room.Capacities.Theatre" Style="width: 100%;" />
-                </div>
-                <div class="form-group">
-                    <label for="uShape">U-Shape</label>
-                    <RadzenNumeric id="uShape" @bind-Value="Room.Capacities.UShape" Style="width: 100%;" />
-                </div>
-                <div class="form-group">
-                    <label for="hollowSquare">Hollow Square</label>
-                    <RadzenNumeric id="hollowSquare" @bind-Value="Room.Capacities.HollowSquare" Style="width: 100%;" />
-                </div>
-                <div class="form-group">
-                    <label for="boardroom">Boardroom</label>
-                    <RadzenNumeric id="boardroom" @bind-Value="Room.Capacities.Boardroom" Style="width: 100%;" />
-                </div>
-                <div class="form-group">
-                    <label for="crescentRounds">Crescent Rounds</label>
-                    <RadzenNumeric id="crescentRounds" @bind-Value="Room.Capacities.CrescentRounds" Style="width: 100%;" />
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="form-group">
+                        <label for="banquet">Banquet</label>
+                        <RadzenNumeric id="banquet" @bind-Value="Room.Capacities.Banquet" Style="width: 100%;" />
+                    </div>
+                    <div class="form-group">
+                        <label for="conference">Conference</label>
+                        <RadzenNumeric id="conference" @bind-Value="Room.Capacities.Conference" Style="width: 100%;" />
+                    </div>
+                    <div class="form-group">
+                        <label for="square">Square</label>
+                        <RadzenNumeric id="square" @bind-Value="Room.Capacities.Square" Style="width: 100%;" />
+                    </div>
+                    <div class="form-group">
+                        <label for="reception">Reception</label>
+                        <RadzenNumeric id="reception" @bind-Value="Room.Capacities.Reception" Style="width: 100%;" />
+                    </div>
+                    <div class="form-group">
+                        <label for="schoolRoom">School Room</label>
+                        <RadzenNumeric id="schoolRoom" @bind-Value="Room.Capacities.SchoolRoom" Style="width: 100%;" />
+                    </div>
+                    <div class="form-group">
+                        <label for="theatre">Theatre</label>
+                        <RadzenNumeric id="theatre" @bind-Value="Room.Capacities.Theatre" Style="width: 100%;" />
+                    </div>
+                    <div class="form-group">
+                        <label for="uShape">U-Shape</label>
+                        <RadzenNumeric id="uShape" @bind-Value="Room.Capacities.UShape" Style="width: 100%;" />
+                    </div>
+                    <div class="form-group">
+                        <label for="hollowSquare">Hollow Square</label>
+                        <RadzenNumeric id="hollowSquare" @bind-Value="Room.Capacities.HollowSquare" Style="width: 100%;" />
+                    </div>
+                    <div class="form-group">
+                        <label for="boardroom">Boardroom</label>
+                        <RadzenNumeric id="boardroom" @bind-Value="Room.Capacities.Boardroom" Style="width: 100%;" />
+                    </div>
+                    <div class="form-group">
+                        <label for="crescentRounds">Crescent Rounds</label>
+                        <RadzenNumeric id="crescentRounds" @bind-Value="Room.Capacities.CrescentRounds" Style="width: 100%;" />
+                    </div>
                 </div>
             </RadzenTabsItem>
         </Tabs>
