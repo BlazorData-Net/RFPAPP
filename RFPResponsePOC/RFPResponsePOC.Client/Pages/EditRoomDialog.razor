@@ -6,99 +6,121 @@
     <DataAnnotationsValidator />
     <ValidationSummary />
 
-    <div class="form-group">
-        <label for="name">Name</label>
-        <InputText id="name" class="form-control" @bind-Value="Room.Name" />
-    </div>
+    <RadzenTabs>
+        <Tabs>
+            <RadzenTabsItem Text="Room Details">
+                <div class="form-group">
+                    <label for="name">Name</label>
+                    <RadzenTextBox id="name" @bind-Value="Room.Name" Style="width: 100%;" />
+                </div>
 
-    <div class="form-group">
-        <label for="squareFeet">Square Feet</label>
-        <InputNumber id="squareFeet" class="form-control" @bind-Value="Room.SquareFeet" />
-    </div>
+                <div class="form-group">
+                    <label for="squareFeet">Square Feet</label>
+                    <RadzenNumeric id="squareFeet" @bind-Value="Room.SquareFeet" Style="width: 100%;" />
+                </div>
 
-    <div class="form-group">
-        <label for="length">Length</label>
-        <InputNumber id="length" class="form-control" @bind-Value="Room.Length" />
-    </div>
+                <div class="form-group">
+                    <label for="length">Length</label>
+                    <RadzenNumeric id="length" @bind-Value="Room.Length" Style="width: 100%;" />
+                </div>
 
-    <div class="form-group">
-        <label for="width">Width</label>
-        <InputNumber id="width" class="form-control" @bind-Value="Room.Width" />
-    </div>
+                <div class="form-group">
+                    <label for="width">Width</label>
+                    <RadzenNumeric id="width" @bind-Value="Room.Width" Style="width: 100%;" />
+                </div>
 
-    <div class="form-group">
-        <label for="ceilingHeight">Ceiling Height</label>
-        <InputNumber id="ceilingHeight" class="form-control" @bind-Value="Room.CeilingHeight" />
-    </div>
+                <div class="form-group">
+                    <label for="ceilingHeight">Ceiling Height</label>
+                    <RadzenNumeric id="ceilingHeight" @bind-Value="Room.CeilingHeight" Style="width: 100%;" />
+                </div>
 
-    <div class="form-group">
-        <label for="floorLevel">Floor Level</label>
-        <InputText id="floorLevel" class="form-control" @bind-Value="Room.FloorLevel" />
-    </div>
+                <div class="form-group">
+                    <label for="floorLevel">Floor Level</label>
+                    <RadzenTextBox id="floorLevel" @bind-Value="Room.FloorLevel" Style="width: 100%;" />
+                </div>
 
-    <div class="form-group">
-        <label for="hasNaturalLight">Natural Light</label>
-        <InputCheckbox id="hasNaturalLight" class="form-check-input" @bind-Value="HasNaturalLight" />
-    </div>
+                <div style="margin: 20px 0; display: flex; gap: 20px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label for="hasNaturalLight">Natural Light</label>
+                        <RadzenSwitch id="hasNaturalLight" @bind-Value="HasNaturalLight" />
+                    </div>
 
-    <div class="form-group">
-        <label for="hasPillars">Has Pillars</label>
-        <InputCheckbox id="hasPillars" class="form-check-input" @bind-Value="HasPillars" />
-    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label for="hasPillars">Has Pillars</label>
+                        <RadzenSwitch id="hasPillars" @bind-Value="HasPillars" />
+                    </div>
+                </div>
 
-    <div class="form-group">
-        <label for="roomGroup">Room Group</label>
-        <InputText id="roomGroup" class="form-control" @bind-Value="Room.RoomGroup" />
-    </div>
+                <div class="form-group">
+                    <label for="groupDropdown">Group</label>
+                    <RadzenDropDown id="groupDropdown" @bind-Value="Room.RoomGroup" Data="RoomNamesForGroupDropdown" 
+                                    Placeholder="-- Select Group --" Style="width: 100%;" AllowClear="true" />
+                </div>
+            </RadzenTabsItem>
 
-    <h4>Capacities</h4>
-    <div class="form-group">
-        <label for="banquet">Banquet</label>
-        <InputNumber id="banquet" class="form-control" @bind-Value="Room.Capacities.Banquet" />
-    </div>
-    <div class="form-group">
-        <label for="conference">Conference</label>
-        <InputNumber id="conference" class="form-control" @bind-Value="Room.Capacities.Conference" />
-    </div>
-    <div class="form-group">
-        <label for="square">Square</label>
-        <InputNumber id="square" class="form-control" @bind-Value="Room.Capacities.Square" />
-    </div>
-    <div class="form-group">
-        <label for="reception">Reception</label>
-        <InputNumber id="reception" class="form-control" @bind-Value="Room.Capacities.Reception" />
-    </div>
-    <div class="form-group">
-        <label for="schoolRoom">School Room</label>
-        <InputNumber id="schoolRoom" class="form-control" @bind-Value="Room.Capacities.SchoolRoom" />
-    </div>
-    <div class="form-group">
-        <label for="theatre">Theatre</label>
-        <InputNumber id="theatre" class="form-control" @bind-Value="Room.Capacities.Theatre" />
-    </div>
-    <div class="form-group">
-        <label for="uShape">U-Shape</label>
-        <InputNumber id="uShape" class="form-control" @bind-Value="Room.Capacities.UShape" />
-    </div>
-    <div class="form-group">
-        <label for="hollowSquare">Hollow Square</label>
-        <InputNumber id="hollowSquare" class="form-control" @bind-Value="Room.Capacities.HollowSquare" />
-    </div>
-    <div class="form-group">
-        <label for="boardroom">Boardroom</label>
-        <InputNumber id="boardroom" class="form-control" @bind-Value="Room.Capacities.Boardroom" />
-    </div>
-    <div class="form-group">
-        <label for="crescentRounds">Crescent Rounds</label>
-        <InputNumber id="crescentRounds" class="form-control" @bind-Value="Room.Capacities.CrescentRounds" />
-    </div>
+            <RadzenTabsItem Text="Capacities">
+                <div class="form-group">
+                    <label for="banquet">Banquet</label>
+                    <RadzenNumeric id="banquet" @bind-Value="Room.Capacities.Banquet" Style="width: 100%;" />
+                </div>
+                <div class="form-group">
+                    <label for="conference">Conference</label>
+                    <RadzenNumeric id="conference" @bind-Value="Room.Capacities.Conference" Style="width: 100%;" />
+                </div>
+                <div class="form-group">
+                    <label for="square">Square</label>
+                    <RadzenNumeric id="square" @bind-Value="Room.Capacities.Square" Style="width: 100%;" />
+                </div>
+                <div class="form-group">
+                    <label for="reception">Reception</label>
+                    <RadzenNumeric id="reception" @bind-Value="Room.Capacities.Reception" Style="width: 100%;" />
+                </div>
+                <div class="form-group">
+                    <label for="schoolRoom">School Room</label>
+                    <RadzenNumeric id="schoolRoom" @bind-Value="Room.Capacities.SchoolRoom" Style="width: 100%;" />
+                </div>
+                <div class="form-group">
+                    <label for="theatre">Theatre</label>
+                    <RadzenNumeric id="theatre" @bind-Value="Room.Capacities.Theatre" Style="width: 100%;" />
+                </div>
+                <div class="form-group">
+                    <label for="uShape">U-Shape</label>
+                    <RadzenNumeric id="uShape" @bind-Value="Room.Capacities.UShape" Style="width: 100%;" />
+                </div>
+                <div class="form-group">
+                    <label for="hollowSquare">Hollow Square</label>
+                    <RadzenNumeric id="hollowSquare" @bind-Value="Room.Capacities.HollowSquare" Style="width: 100%;" />
+                </div>
+                <div class="form-group">
+                    <label for="boardroom">Boardroom</label>
+                    <RadzenNumeric id="boardroom" @bind-Value="Room.Capacities.Boardroom" Style="width: 100%;" />
+                </div>
+                <div class="form-group">
+                    <label for="crescentRounds">Crescent Rounds</label>
+                    <RadzenNumeric id="crescentRounds" @bind-Value="Room.Capacities.CrescentRounds" Style="width: 100%;" />
+                </div>
+            </RadzenTabsItem>
+        </Tabs>
+    </RadzenTabs>
 
-    <RadzenButton Text="Save" ButtonStyle="ButtonStyle.Primary" Click="Save" />
-    <RadzenButton Text="Cancel" ButtonStyle="ButtonStyle.Light" Click="Cancel" />
+    <div style="margin-top: 20px;">
+        <RadzenButton Text="Save" ButtonStyle="ButtonStyle.Primary" Click="Save" />
+        <RadzenButton Text="Cancel" ButtonStyle="ButtonStyle.Light" Click="Cancel" />
+    </div>
 </EditForm>
 
 @code {
     [Parameter] public Room Room { get; set; }
+    [Parameter] public List<Room> AllRooms { get; set; } // Pass all rooms to this dialog
+
+    private List<string> RoomNamesForGroupDropdown => 
+        AllRooms?   
+            .Where(r => !string.IsNullOrWhiteSpace(r.Name) && r.Name != Room.Name)
+            .Select(r => r.Name)
+            .Distinct()
+            .OrderBy(n => n)
+            .ToList()
+        ?? new List<string>();
 
     private bool HasNaturalLight
     {
