@@ -1,5 +1,6 @@
 ﻿@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 @using System.Text
+@using System.Collections.Generic
 @using BlazorWebAssemblyPDF.Services
 @using RFPResponsePOC.Client.Models
 @using RFPResponsePOC.Client.Services
@@ -42,7 +43,8 @@
 }
 <br />
 @if (capacityData?.Rooms != null)
-{    
+{
+    <RadzenButton Text="Add Room" Icon="add" Style="margin-bottom: 10px; background-color: green;" ButtonStyle="ButtonStyle.Primary" Click="OpenAddRoomDialog" />
     <RadzenDataGrid @ref="grid" Data="@capacityData.Rooms" TItem="Room" EditMode="DataGridEditMode.Single" AllowPaging="false" AllowColumnResize="true">
         <Columns>
             <RadzenDataGridColumn TItem="Room" Title="Edit" Context="r" Resizable="false" Width="50px">
@@ -341,6 +343,36 @@
         }
     }
 
+    private async Task OpenAddRoomDialog()
+    {
+        if (capacityData == null)
+        {
+            capacityData = new CapacityRoot { Rooms = new List<Room>() };
+        }
+
+        var newRoom = new Room
+        {
+            Capacities = new Capacities()
+        };
+
+        var result = await DialogService.OpenAsync<EditRoomDialog>(
+            "Add Room",
+            new Dictionary<string, object>
+            {
+                { "Room", newRoom },
+                { "AllRooms", capacityData?.Rooms ?? new List<Room>() }
+            },
+            new DialogOptions { Width = "600px", Height = "700px" }
+        );
+
+        if (result is EditRoomDialogResult dialogResult && !dialogResult.IsDeleted)
+        {
+            SaveRoom(dialogResult.Room);
+            await grid.Reload();
+            StateHasChanged();
+        }
+    }
+
     private void SaveRoom(Room room)
     {
         // Update the room in the data source
@@ -349,6 +381,10 @@
         if (index >= 0)
         {
             capacityData.Rooms[index] = room;
+        }
+        else
+        {
+            capacityData.Rooms.Add(room);
         }
 
         // Save changes to the JSON file
