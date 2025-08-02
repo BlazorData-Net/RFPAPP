@@ -1,4 +1,5 @@
 @using RFPResponsePOC.Models
+@using RFPResponsePOC.Client.Models
 
 @inject DialogService DialogService
 
@@ -115,6 +116,7 @@
 
     <div style="margin-top: 20px;">
         <RadzenButton Text="Save" ButtonStyle="ButtonStyle.Primary" ButtonType="ButtonType.Submit" />
+        <RadzenButton Text="Delete" ButtonStyle="ButtonStyle.Danger" Click="ConfirmDelete" />
         <RadzenButton Text="Cancel" ButtonStyle="ButtonStyle.Light" Click="Cancel" />
     </div>
 </EditForm>
@@ -146,7 +148,16 @@
 
     private void HandleValidSubmit()
     {
-        DialogService.Close(Room);
+        DialogService.Close(new EditRoomDialogResult { IsDeleted = false, Room = Room });
+    }
+
+    private async Task ConfirmDelete()
+    {
+        var confirm = await DialogService.Confirm("Are you sure you want to delete this room?", "Confirm Delete");
+        if (confirm == true)
+        {
+            DialogService.Close(new EditRoomDialogResult { IsDeleted = true, Room = Room });
+        }
     }
 
     private void Cancel()
