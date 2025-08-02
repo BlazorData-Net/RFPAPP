@@ -1,6 +1,7 @@
 ﻿@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 @using System.Text
 @using System.Collections.Generic
+@using System.Linq
 @using BlazorWebAssemblyPDF.Services
 @using RFPResponsePOC.Client.Models
 @using RFPResponsePOC.Client.Services
@@ -45,7 +46,46 @@
 @if (capacityData?.Rooms != null)
 {
     <RadzenButton Text="Add Room" Icon="add" Style="margin-bottom: 10px; background-color: green;" ButtonStyle="ButtonStyle.Primary" Click="OpenAddRoomDialog" />
-    <RadzenDataGrid @ref="grid" Data="@capacityData.Rooms" TItem="Room" EditMode="DataGridEditMode.Single" AllowPaging="false" AllowColumnResize="true">
+    <RadzenDataGrid @ref="grid" Data="@ParentRooms" TItem="Room" EditMode="DataGridEditMode.Single" AllowPaging="false" AllowColumnResize="true" ExpandMode="DataGridExpandMode.Single" RowRender="@RowRender" RowExpand="@LoadChildRooms">
+        <Template Context="group">
+            <RadzenDataGrid Data="@GetChildRooms(group)" TItem="Room" AllowPaging="false" AllowColumnResize="true">
+                <Columns>
+                    <RadzenDataGridColumn TItem="Room" Title="Edit" Context="r" Resizable="false" Width="50px">
+                        <Template Context="r">
+                            <RadzenButton Icon="edit" Size="ButtonSize.Small" Click="@(async () => await OpenEditDialog(r))" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="Room" Property="Name" Title="Name" Resizable="true" Width="200px" Sortable="true" />
+                    <RadzenDataGridColumn TItem="Room" Property="RoomGroup" Title="Room Group" Resizable="true" Width="200px" Sortable="true" />
+                    <RadzenDataGridColumn TItem="Room" Title="Details" Resizable="true">
+                        <Template Context="r">
+                            <div>
+                                <strong>Square Feet:</strong> @r.SquareFeet<br />
+                                <strong>Length:</strong> @r.Length<br />
+                                <strong>Width:</strong> @r.Width<br />
+                                <strong>Ceiling Height:</strong> @r.CeilingHeight<br />
+                                <strong>Floor Level:</strong> @r.FloorLevel<br />
+                                <strong>Natural Light:</strong> @(r.HasNaturalLight == true ? "Yes" : "No")<br />
+                                <strong>Has Pillars:</strong> @(r.HasPillars == true ? "Yes" : "No")<br />
+                                <strong>Capacities:</strong>
+                                <ul>
+                                    <li><strong>Banquet:</strong> @r.Capacities.Banquet</li>
+                                    <li><strong>Conference:</strong> @r.Capacities.Conference</li>
+                                    <li><strong>Square:</strong> @r.Capacities.Square</li>
+                                    <li><strong>Reception:</strong> @r.Capacities.Reception</li>
+                                    <li><strong>School Room:</strong> @r.Capacities.SchoolRoom</li>
+                                    <li><strong>Theatre:</strong> @r.Capacities.Theatre</li>
+                                    <li><strong>U-Shape:</strong> @r.Capacities.UShape</li>
+                                    <li><strong>Hollow Square:</strong> @r.Capacities.HollowSquare</li>
+                                    <li><strong>Boardroom:</strong> @r.Capacities.Boardroom</li>
+                                    <li><strong>Crescent Rounds:</strong> @r.Capacities.CrescentRounds</li>
+                                </ul>
+                            </div>
+                        </Template>
+                    </RadzenDataGridColumn>
+                </Columns>
+            </RadzenDataGrid>
+        </Template>
         <Columns>
             <RadzenDataGridColumn TItem="Room" Title="Edit" Context="r" Resizable="false" Width="50px">
                 <Template Context="r">
@@ -53,9 +93,8 @@
                 </Template>
             </RadzenDataGridColumn>
             <RadzenDataGridColumn TItem="Room" Property="Name" Title="Name" Resizable="true" Width="200px" Sortable="true" />
-            <RadzenDataGridColumn TItem="Room" Property="RoomGroup" Title="Room Group" Resizable="true" Width="200px" Sortable="true" />
             <RadzenDataGridColumn TItem="Room" Title="Details" Resizable="true">
-                <Template Context="r">  
+                <Template Context="r">
                     <div>
                         <strong>Square Feet:</strong> @r.SquareFeet<br />
                         <strong>Length:</strong> @r.Length<br />
@@ -109,6 +148,22 @@
     CapacityRoot capacityData;
 
     ZipService objZipService = new ZipService();
+
+    Dictionary<string, IEnumerable<Room>> childRooms = new();
+
+    IEnumerable<Room> ParentRooms => capacityData?.Rooms?.Where(r => string.IsNullOrEmpty(r.RoomGroup)) ?? Enumerable.Empty<Room>();
+
+    IEnumerable<Room> GetChildRooms(Room group) => childRooms.TryGetValue(group.Name, out var rooms) ? rooms : Enumerable.Empty<Room>();
+
+    void RowRender(RowRenderEventArgs<Room> args)
+    {
+        args.Expandable = capacityData?.Rooms?.Any(r => r.RoomGroup == args.Data.Name) == true;
+    }
+
+    void LoadChildRooms(Room room)
+    {
+        childRooms[room.Name] = capacityData?.Rooms?.Where(r => r.RoomGroup == room.Name).ToList();
+    }
 
     private bool InProgress = false;
     private string CurrentStatus = "";
@@ -339,6 +394,7 @@
                 SaveRoom(dialogResult.Room);
             }
             await grid.Reload();
+            childRooms.Clear();
             StateHasChanged();
         }
     }
@@ -369,6 +425,7 @@
         {
             SaveRoom(dialogResult.Room);
             await grid.Reload();
+            childRooms.Clear();
             StateHasChanged();
         }
     }
