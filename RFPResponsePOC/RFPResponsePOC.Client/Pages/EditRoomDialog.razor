@@ -116,7 +116,10 @@
 
     <div style="margin-top: 20px;">
         <RadzenButton Text="Save" ButtonStyle="ButtonStyle.Primary" ButtonType="ButtonType.Submit" />
-        <RadzenButton Text="Delete" ButtonStyle="ButtonStyle.Danger" Click="ConfirmDelete" />
+        @if (IsExistingRoom)
+        {
+            <RadzenButton Text="Delete" ButtonStyle="ButtonStyle.Danger" Click="ConfirmDelete" />
+        }
         <RadzenButton Text="Cancel" ButtonStyle="ButtonStyle.Light" Click="Cancel" />
     </div>
 </EditForm>
@@ -124,6 +127,8 @@
 @code {
     [Parameter] public Room Room { get; set; }
     [Parameter] public List<Room> AllRooms { get; set; } // Pass all rooms to this dialog
+
+    private bool IsExistingRoom => AllRooms?.Contains(Room) == true;
 
     private List<string> RoomNamesForGroupDropdown => 
         AllRooms?   
