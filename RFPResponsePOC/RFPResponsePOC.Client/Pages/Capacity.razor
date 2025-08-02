@@ -47,7 +47,7 @@
         <Columns>
             <RadzenDataGridColumn TItem="Room" Title="Edit" Context="r" Resizable="false" Width="50px">
                 <Template Context="r">
-                    <RadzenButton Icon="edit" Size="ButtonSize.Small" Click="@(() => OpenEditDialog(r))" />
+                    <RadzenButton Icon="edit" Size="ButtonSize.Small" Click="@(async () => await OpenEditDialog(r))" />
                 </Template>
             </RadzenDataGridColumn>
             <RadzenDataGridColumn TItem="Room" Property="Name" Title="Name" Resizable="true" Width="200px" Sortable="true" />
@@ -309,7 +309,7 @@
 
     private Room selectedRoom;
 
-    private void OpenEditDialog(Room room)
+    private async Task OpenEditDialog(Room room)
     {
         selectedRoom = room;
 
@@ -317,14 +317,21 @@
         Console.WriteLine($"Opening dialog for room: {room?.Name}");
         Console.WriteLine($"Total rooms available: {capacityData?.Rooms?.Count ?? 0}");
 
-        DialogService.Open<EditRoomDialog>(
+        var result = await DialogService.OpenAsync<EditRoomDialog>(
             "Edit Room",
-            new Dictionary<string, object> { 
-                { "Room", selectedRoom }, 
-                { "AllRooms", capacityData?.Rooms ?? new List<Room>() } 
+            new Dictionary<string, object> {
+                { "Room", selectedRoom },
+                { "AllRooms", capacityData?.Rooms ?? new List<Room>() }
             },
             new DialogOptions { Width = "600px", Height = "700px" }
         );
+
+        if (result is Room updatedRoom)
+        {
+            SaveRoom(updatedRoom);
+            await grid.Reload();
+            StateHasChanged();
+        }
     }
 
     private void SaveRoom(Room room)

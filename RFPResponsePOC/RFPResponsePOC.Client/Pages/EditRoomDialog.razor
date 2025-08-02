@@ -114,7 +114,7 @@
     </RadzenTabs>
 
     <div style="margin-top: 20px;">
-        <RadzenButton Text="Save" ButtonStyle="ButtonStyle.Primary" Click="Save" />
+        <RadzenButton Text="Save" ButtonStyle="ButtonStyle.Primary" ButtonType="ButtonType.Submit" />
         <RadzenButton Text="Cancel" ButtonStyle="ButtonStyle.Light" Click="Cancel" />
     </div>
 </EditForm>
@@ -145,11 +145,6 @@
     }
 
     private void HandleValidSubmit()
-    {
-        DialogService.Close(Room);
-    }
-
-    private void Save()
     {
         DialogService.Close(Room);
     }
