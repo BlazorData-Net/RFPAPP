@@ -34,8 +34,8 @@
 @if (@InProgress)
 {
     <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background-color: rgba(0,0,0,0.5); z-index: 1000;
-    display: flex; align-items: center; justify-content: center;">
+        background-color: rgba(0,0,0,0.5); z-index: 1000;
+        display: flex; align-items: center; justify-content: center;">
         <div class="rz-card" style="padding: 20px;">
             <RadzenText Text="@CurrentStatus" class="rz-m-10" Style="text-align: center" />
             <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
@@ -56,30 +56,11 @@
                         </Template>
                     </RadzenDataGridColumn>
                     <RadzenDataGridColumn TItem="Room" Property="Name" Title="Name" Resizable="true" Width="200px" Sortable="true" />
-                    <RadzenDataGridColumn TItem="Room" Property="RoomGroup" Title="Room Group" Resizable="true" Width="200px" Sortable="true" />
                     <RadzenDataGridColumn TItem="Room" Title="Details" Resizable="true">
                         <Template Context="r">
-                            <div>
-                                <strong>Square Feet:</strong> @r.SquareFeet<br />
-                                <strong>Length:</strong> @r.Length<br />
-                                <strong>Width:</strong> @r.Width<br />
-                                <strong>Ceiling Height:</strong> @r.CeilingHeight<br />
-                                <strong>Floor Level:</strong> @r.FloorLevel<br />
-                                <strong>Natural Light:</strong> @(r.HasNaturalLight == true ? "Yes" : "No")<br />
-                                <strong>Has Pillars:</strong> @(r.HasPillars == true ? "Yes" : "No")<br />
-                                <strong>Capacities:</strong>
-                                <ul>
-                                    <li><strong>Banquet:</strong> @r.Capacities.Banquet</li>
-                                    <li><strong>Conference:</strong> @r.Capacities.Conference</li>
-                                    <li><strong>Square:</strong> @r.Capacities.Square</li>
-                                    <li><strong>Reception:</strong> @r.Capacities.Reception</li>
-                                    <li><strong>School Room:</strong> @r.Capacities.SchoolRoom</li>
-                                    <li><strong>Theatre:</strong> @r.Capacities.Theatre</li>
-                                    <li><strong>U-Shape:</strong> @r.Capacities.UShape</li>
-                                    <li><strong>Hollow Square:</strong> @r.Capacities.HollowSquare</li>
-                                    <li><strong>Boardroom:</strong> @r.Capacities.Boardroom</li>
-                                    <li><strong>Crescent Rounds:</strong> @r.Capacities.CrescentRounds</li>
-                                </ul>
+                            <div style="white-space: pre-wrap;">Square Feet: <b>@($"{r.SquareFeet ?? 0}")</b> Length: <b>@($"{r.Length ?? 0}")</b> Width: <b>@($"{r.Width ?? 0}")</b> Ceiling Height: <b>@($"{r.CeilingHeight ?? 0}")</b> Floor Level: <b>@($"{r.FloorLevel ?? "0"}")</b> Natural Light: <b>@($"{(r.HasNaturalLight == true ? "Yes" : "No")}")</b> Has Pillars: <b>@($"{(r.HasPillars == true ? "Yes" : "No")}")</b><br /><br />
+                            </div>
+                            <div style="white-space: pre-wrap;">Banquet: <b>@($"{r.Capacities.Banquet ?? 0}")</b> Conference: <b>@($"{r.Capacities.Conference ?? 0}")</b> Square: <b>@($"{r.Capacities.Square ?? 0}")</b> Reception: <b>@($"{r.Capacities.Reception ?? 0}")</b> School Room: <b>@($"{r.Capacities.SchoolRoom ?? 0}")</b> Theatre: <b>@($"{r.Capacities.Theatre ?? 0}")</b> U-Shape: <b>@($"{r.Capacities.UShape ?? 0}")</b> Hollow Square: <b>@($"{r.Capacities.HollowSquare ?? 0}")</b> Boardroom: <b>@($"{r.Capacities.Boardroom ?? 0}")</b> Crescent Rounds: <b>@($"{r.Capacities.CrescentRounds ?? 0}")</b>
                             </div>
                         </Template>
                     </RadzenDataGridColumn>
@@ -95,27 +76,9 @@
             <RadzenDataGridColumn TItem="Room" Property="Name" Title="Name" Resizable="true" Width="200px" Sortable="true" />
             <RadzenDataGridColumn TItem="Room" Title="Details" Resizable="true">
                 <Template Context="r">
-                    <div>
-                        <strong>Square Feet:</strong> @r.SquareFeet<br />
-                        <strong>Length:</strong> @r.Length<br />
-                        <strong>Width:</strong> @r.Width<br />
-                        <strong>Ceiling Height:</strong> @r.CeilingHeight<br />
-                        <strong>Floor Level:</strong> @r.FloorLevel<br />
-                        <strong>Natural Light:</strong> @(r.HasNaturalLight == true ? "Yes" : "No")<br />
-                        <strong>Has Pillars:</strong> @(r.HasPillars == true ? "Yes" : "No")<br />
-                        <strong>Capacities:</strong>
-                        <ul>
-                            <li><strong>Banquet:</strong> @r.Capacities.Banquet</li>
-                            <li><strong>Conference:</strong> @r.Capacities.Conference</li>
-                            <li><strong>Square:</strong> @r.Capacities.Square</li>
-                            <li><strong>Reception:</strong> @r.Capacities.Reception</li>
-                            <li><strong>School Room:</strong> @r.Capacities.SchoolRoom</li>
-                            <li><strong>Theatre:</strong> @r.Capacities.Theatre</li>
-                            <li><strong>U-Shape:</strong> @r.Capacities.UShape</li>
-                            <li><strong>Hollow Square:</strong> @r.Capacities.HollowSquare</li>
-                            <li><strong>Boardroom:</strong> @r.Capacities.Boardroom</li>
-                            <li><strong>Crescent Rounds:</strong> @r.Capacities.CrescentRounds</li>
-                        </ul>
+                    <div style="white-space: pre-wrap;">Square Feet: <b>@($"{r.SquareFeet ?? 0}")</b> Length: <b>@($"{r.Length ?? 0}")</b> Width: <b>@($"{r.Width ?? 0}")</b> Ceiling Height: <b>@($"{r.CeilingHeight ?? 0}")</b> Floor Level: <b>@($"{r.FloorLevel ?? "0"}")</b> Natural Light: <b>@($"{(r.HasNaturalLight == true ? "Yes" : "No")}")</b> Has Pillars: <b>@($"{(r.HasPillars == true ? "Yes" : "No")}")</b><br /><br />
+                    </div>
+                    <div style="white-space: pre-wrap;">Banquet: <b>@($"{r.Capacities.Banquet ?? 0}")</b> Conference: <b>@($"{r.Capacities.Conference ?? 0}")</b> Square: <b>@($"{r.Capacities.Square ?? 0}")</b> Reception: <b>@($"{r.Capacities.Reception ?? 0}")</b> School Room: <b>@($"{r.Capacities.SchoolRoom ?? 0}")</b> Theatre: <b>@($"{r.Capacities.Theatre ?? 0}")</b> U-Shape: <b>@($"{r.Capacities.UShape ?? 0}")</b> Hollow Square: <b>@($"{r.Capacities.HollowSquare ?? 0}")</b> Boardroom: <b>@($"{r.Capacities.Boardroom ?? 0}")</b> Crescent Rounds: <b>@($"{r.Capacities.CrescentRounds ?? 0}")</b>
                     </div>
                 </Template>
             </RadzenDataGridColumn>
@@ -131,7 +94,7 @@
 <!-- hidden canvas used for PDF conversions to PNG -->
 <canvas id="pdfCanvas" style="display:none; border:1px solid #ccc;"></canvas>
 @code {
-    #nullable disable
+#nullable disable
     private IDisposable registration;
 
     string BasePath = @"/RFPResponsePOC";
