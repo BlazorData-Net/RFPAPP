@@ -46,7 +46,8 @@
 @if (capacityData?.Rooms != null)
 {
     <RadzenButton Text="Add Room" Icon="add" Style="margin-bottom: 10px; background-color: green;" ButtonStyle="ButtonStyle.Primary" Click="OpenAddRoomDialog" />
-    <RadzenDataGrid @ref="grid" Data="@ParentRooms" TItem="Room" EditMode="DataGridEditMode.Single" AllowPaging="false" AllowColumnResize="true" ExpandMode="DataGridExpandMode.Single" RowRender="@RowRender" RowExpand="@LoadChildRooms">
+    <RadzenButton Text="Print Chart" Icon="picture_as_pdf" Style="margin-left: 10px; margin-bottom: 10px;" ButtonStyle="ButtonStyle.Secondary" Click="PrintCapacityChart" />
+    <RadzenDataGrid id="capacityGrid" @ref="grid" Data="@ParentRooms" TItem="Room" EditMode="DataGridEditMode.Single" AllowPaging="false" AllowColumnResize="true" ExpandMode="DataGridExpandMode.Single" RowRender="@RowRender" RowExpand="@LoadChildRooms">
         <Template Context="group">
             <RadzenDataGrid Data="@GetChildRooms(group)" TItem="Room" AllowPaging="false" AllowColumnResize="true">
                 <Columns>
@@ -126,6 +127,11 @@
     void LoadChildRooms(Room room)
     {
         childRooms[room.Name] = capacityData?.Rooms?.Where(r => r.RoomGroup == room.Name).ToList();
+    }
+
+    private async Task PrintCapacityChart()
+    {
+        await JsRuntime.InvokeVoidAsync("pdfInterop.exportElementToPdf", "capacityGrid");
     }
 
     private bool InProgress = false;
