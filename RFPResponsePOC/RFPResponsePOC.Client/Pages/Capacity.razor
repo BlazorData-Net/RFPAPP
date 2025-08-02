@@ -131,7 +131,7 @@
 
     private async Task PrintCapacityChart()
     {
-        await JsRuntime.InvokeVoidAsync("pdfInterop.exportElementToPdf", "capacityGrid");
+        await JsRuntime.InvokeVoidAsync("pdfInterop.exportRoomsToPdf", ParentRooms);
     }
 
     private bool InProgress = false;
