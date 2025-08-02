@@ -55,15 +55,14 @@
 
                 <div class="form-group">
                     <label for="groupDropdown">Room Group</label>
-                    <RadzenDropDown @bind-Value="SelectedRoomGroup" 
+                    <RadzenDropDown @bind-Value="Room.RoomGroup"
                                     Data="RoomNamesForGroupDropdown" 
                                     TValue="string"
                                     TextProperty=""
                                     ValueProperty=""
                                     Placeholder="-- Select Room Group --" 
                                     Style="width: 100%;" 
-                                    AllowClear="true" 
-                                    Change="@OnRoomGroupChanged" />
+                                    AllowClear="true" />
                 </div>
             </RadzenTabsItem>
 
@@ -132,33 +131,6 @@
             .OrderBy(n => n)
             .ToList()
         ?? new List<string>();
-
-    private string _selectedRoomGroup;
-    private string SelectedRoomGroup
-    {
-        get => _selectedRoomGroup ?? Room?.RoomGroup;
-        set 
-        { 
-            _selectedRoomGroup = value;
-            if (Room != null)
-                Room.RoomGroup = value;
-            StateHasChanged();
-        }
-    }
-
-    protected override void OnParametersSet()
-    {
-        if (Room != null)
-        {
-            _selectedRoomGroup = Room.RoomGroup;
-        }
-    }
-
-    private void OnRoomGroupChanged(object value)
-    {
-        var stringValue = value?.ToString();
-        SelectedRoomGroup = stringValue;
-    }
 
     private bool HasNaturalLight
     {
