@@ -18,7 +18,17 @@
     <Routes @rendermode="InteractiveWebAssembly" />
     <script src="_framework/blazor.web.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/5.4.54/pdf.min.mjs"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="js/pdfInterop.js"></script>
+    <script>
+        // Initialize jsPDF from the UMD module after it loads
+        window.addEventListener('DOMContentLoaded', function () {
+            if (window.jspdf && window.jspdf.jsPDF) {
+                window.jsPDF = window.jspdf.jsPDF;
+            }
+        });
+    </script>
     <script src="_content/Radzen.Blazor/Radzen.Blazor.js?v=@(typeof(Radzen.Colors).Assembly.GetName().Version)"></script>
     <script>
         window.saveAsFile = async (filename, base64String) => {

@@ -45,26 +45,45 @@ window.pdfInterop = {
     },
     exportElementToPdf: async function(elementId) {
         const element = document.getElementById(elementId);
-        if (!element) return;
+        if (!element) {
+            console.error("Element not found:", elementId);
+            return;
+        }
 
+        // Check if html2canvas is available
         if (!window.html2canvas) {
-            const html2canvasModule = await import('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
-            window.html2canvas = html2canvasModule.default;
+            console.error("html2canvas is not loaded. Ensure the library is included.");
+            return;
         }
 
+        // Initialize jsPDF if needed
         if (!window.jsPDF) {
-            const jsPDFModule = await import('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
-            window.jsPDF = jsPDFModule.jsPDF;
+            if (window.jspdf && window.jspdf.jsPDF) {
+                window.jsPDF = window.jspdf.jsPDF;
+            } else {
+                console.error("jsPDF is not loaded. Ensure the library is included.");
+                return;
+            }
         }
 
-        const canvas = await window.html2canvas(element);
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new window.jsPDF({
-            orientation: 'landscape',
-            unit: 'pt',
-            format: [canvas.width, canvas.height]
-        });
-        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-        pdf.save('capacity-chart.pdf');
+        try {
+            const canvas = await window.html2canvas(element, {
+                scale: 1,
+                useCORS: true,
+                allowTaint: true
+            });
+            
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new window.jsPDF({
+                orientation: 'landscape',
+                unit: 'pt',
+                format: [canvas.width, canvas.height]
+            });
+            
+            pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+            pdf.save('capacity-chart.pdf');
+        } catch (error) {
+            console.error("Error generating PDF:", error);
+        }
     }
 };
