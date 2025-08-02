@@ -326,9 +326,16 @@
             new DialogOptions { Width = "600px", Height = "700px" }
         );
 
-        if (result is Room updatedRoom)
+        if (result is EditRoomDialogResult dialogResult)
         {
-            SaveRoom(updatedRoom);
+            if (dialogResult.IsDeleted)
+            {
+                DeleteRoom(dialogResult.Room);
+            }
+            else
+            {
+                SaveRoom(dialogResult.Room);
+            }
             await grid.Reload();
             StateHasChanged();
         }
@@ -342,6 +349,24 @@
         if (index >= 0)
         {
             capacityData.Rooms[index] = room;
+        }
+
+        // Save changes to the JSON file
+        Task.Run(async () =>
+        {
+            var json = JsonConvert.SerializeObject(capacityData, Formatting.Indented);
+            await File.WriteAllTextAsync($"{BasePath}//Capacity.json", json);
+        });
+    }
+
+    private void DeleteRoom(Room room)
+    {
+        // Remove the room from the data source
+        var index = capacityData.Rooms.FindIndex(r => r.Name == room.Name);
+
+        if (index >= 0)
+        {
+            capacityData.Rooms.RemoveAt(index);
         }
 
         // Save changes to the JSON file
