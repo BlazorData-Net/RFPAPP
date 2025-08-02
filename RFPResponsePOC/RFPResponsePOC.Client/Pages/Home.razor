@@ -2,6 +2,7 @@
 @page "/"
 @using System.Text
 @using System.IO.Compression
+@using Newtonsoft.Json
 @using RFPResponsePOC.Client.Services
 @using RFPResponsePOC.Model
 @using RFPResponsePOC.Models
@@ -183,7 +184,26 @@ else
             // Check if there is a Capacity Chart file
             if (File.Exists($"{BasePath}//Capacity.json"))
             {
-                CapacityFileExists = true;
+                // count how many records are in the file
+                var capacityFileContent = await File.ReadAllTextAsync($"{BasePath}//Capacity.json");
+                if (!string.IsNullOrEmpty(capacityFileContent))
+                {
+                    try
+                    {
+                        // Deserialize the content to check if it is valid JSON
+                        var capacityData = JsonConvert.DeserializeObject<CapacityRoot>(capacityFileContent);
+                        
+                        if (capacityData != null && capacityData.Rooms.Count > 0)
+                        {
+                            CapacityFileExists = true;
+                        }
+                    }
+                    catch (System.Text.Json.JsonException)
+                    {
+                        // If deserialization fails, treat it as no valid data
+                        CapacityFileExists = false;
+                    }
+                }
             }
 
             StateHasChanged();

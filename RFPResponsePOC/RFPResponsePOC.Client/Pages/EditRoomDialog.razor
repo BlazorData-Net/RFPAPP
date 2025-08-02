@@ -115,12 +115,12 @@
     </RadzenTabs>
 
     <div style="margin-top: 20px;">
-        <RadzenButton Text="Save" ButtonStyle="ButtonStyle.Primary" ButtonType="ButtonType.Submit" />
+        <RadzenButton Text="Save" ButtonStyle="ButtonStyle.Primary" ButtonType="ButtonType.Submit" style="margin-left: 10px; background-color: green;" />
         @if (IsExistingRoom)
         {
-            <RadzenButton Text="Delete" ButtonStyle="ButtonStyle.Danger" Click="ConfirmDelete" />
+            <RadzenButton Text="Delete" ButtonStyle="ButtonStyle.Danger" Click="ConfirmDelete" style="margin-left: 10px;" />
         }
-        <RadzenButton Text="Cancel" ButtonStyle="ButtonStyle.Light" Click="Cancel" />
+        <RadzenButton Text="Cancel" ButtonStyle="ButtonStyle.Light" Click="Cancel" style="margin-left: 10px;" />
     </div>
 </EditForm>
 
