@@ -20,7 +20,7 @@
 @inject PdfToPngService PdfService
 @inject IJSRuntime JsRuntime
 @inject HttpClient Http
-<h3>Capacity</h3>
+<h3>Capacity Page</h3>
 <br />
 <RadzenUpload @ref="uploader"
               ChooseText="Upload capacity chart (.pdf/.png/.jpg/.jpeg)" Accept=".png,.jpg,.jpeg,.pdf"
@@ -43,9 +43,10 @@
     </div>
 }
 <br />
+<RadzenButton Text="Add Room" Icon="add" Style="margin-bottom: 10px; background-color: green;" ButtonStyle="ButtonStyle.Primary" Click="OpenAddRoomDialog" />
+
 @if (capacityData?.Rooms != null)
 {
-    <RadzenButton Text="Add Room" Icon="add" Style="margin-bottom: 10px; background-color: green;" ButtonStyle="ButtonStyle.Primary" Click="OpenAddRoomDialog" />
     @if (ParentRooms.Count() >= 1)
     {
         <RadzenButton Text="Print Chart" Icon="picture_as_pdf" Style="margin-left: 10px; margin-bottom: 10px;" ButtonStyle="ButtonStyle.Secondary" Click="PrintCapacityChart" />
