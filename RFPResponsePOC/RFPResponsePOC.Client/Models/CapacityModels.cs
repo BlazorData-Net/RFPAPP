@@ -1,5 +1,6 @@
 using Newtonsoft.Json;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations; // Add this for validation attributes
 
 namespace RFPResponsePOC.Models
 {
@@ -10,6 +11,7 @@ namespace RFPResponsePOC.Models
 
     public class Room
     {
+        [Required(ErrorMessage = "Room name is required")] // Make Name required
         [JsonProperty("name")] public string Name { get; set; }
         [JsonProperty("roomGroup")] public string RoomGroup { get; set; }
         [JsonProperty("squareFeet")] public double? SquareFeet { get; set; }
