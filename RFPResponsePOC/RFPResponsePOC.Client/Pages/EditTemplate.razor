@@ -1,6 +1,12 @@
-@using System.IO
+@using System.Net.Http
+@using RFPResponsePOC.Client.Services
+@inject HttpClient Http
 @inject DialogService DialogService
 @inject NotificationService NotificationService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@inject RFPResponsePOC.Model.SettingsService _SettingsService
+@inject RFPResponsePOC.Model.LogService LogService
+@inject IJSRuntime JsRuntime
 
 <RadzenTextArea @bind-Value="templateContent" Rows="20" Style="width:100%; min-height:400px;" />
 <div style="margin-top:10px;">
@@ -9,27 +15,32 @@
 </div>
 
 @code {
-    string BasePath = @"/RFPResponsePOC";
+    string BasePath = "/RFPResponsePOC";
     string templateContent;
     string TemplateFile => $"{BasePath}/Template.txt";
-    string DefaultTemplateFile => $"{BasePath}/DefaultTemplate.txt";
+    string DefaultTemplateUrl => "Templates/DefaultTemplate.txt";
+    RFPResponsePOC.Client.Services.ZipService objZipService = new RFPResponsePOC.Client.Services.ZipService();
 
     protected override async Task OnInitializedAsync()
     {
-        if (!Directory.Exists(BasePath))
-        {
-            Directory.CreateDirectory(BasePath);
-        }
+        objZipService = new RFPResponsePOC.Client.Services.ZipService(JsRuntime, localStorage, _SettingsService, LogService);
+        await objZipService.UnzipFile();
 
-        if (!File.Exists(TemplateFile))
+        if (File.Exists(TemplateFile))
         {
-            var defaultContent = File.Exists(DefaultTemplateFile)
-                ? await File.ReadAllTextAsync(DefaultTemplateFile)
-                : string.Empty;
-            await File.WriteAllTextAsync(TemplateFile, defaultContent);
+            templateContent = await File.ReadAllTextAsync(TemplateFile);
         }
-
-        templateContent = await File.ReadAllTextAsync(TemplateFile);
+        else
+        {
+            try
+            {
+                templateContent = await Http.GetStringAsync(DefaultTemplateUrl);
+            }
+            catch
+            {
+                templateContent = string.Empty;
+            }
+        }
     }
 
     private async Task SaveTemplate()
