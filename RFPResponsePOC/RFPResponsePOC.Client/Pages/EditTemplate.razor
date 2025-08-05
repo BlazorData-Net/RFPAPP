@@ -1,0 +1,52 @@
+@using System.IO
+@inject DialogService DialogService
+@inject NotificationService NotificationService
+
+<RadzenTextArea @bind-Value="templateContent" Rows="20" Style="width:100%; min-height:400px;" />
+<div style="margin-top:10px;">
+    <RadzenButton Text="Save" Style="background-color: green;" ButtonStyle="ButtonStyle.Primary" Click="SaveTemplate" />
+    <RadzenButton Text="Cancel" Style="margin-left:10px;" ButtonStyle="ButtonStyle.Light" Click="Cancel" />
+</div>
+
+@code {
+    string BasePath = @"/RFPResponsePOC";
+    string templateContent;
+    string TemplateFile => $"{BasePath}/Template.txt";
+    string DefaultTemplateFile => $"{BasePath}/DefaultTemplate.txt";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!Directory.Exists(BasePath))
+        {
+            Directory.CreateDirectory(BasePath);
+        }
+
+        if (!File.Exists(TemplateFile))
+        {
+            var defaultContent = File.Exists(DefaultTemplateFile)
+                ? await File.ReadAllTextAsync(DefaultTemplateFile)
+                : string.Empty;
+            await File.WriteAllTextAsync(TemplateFile, defaultContent);
+        }
+
+        templateContent = await File.ReadAllTextAsync(TemplateFile);
+    }
+
+    private async Task SaveTemplate()
+    {
+        await File.WriteAllTextAsync(TemplateFile, templateContent);
+        NotificationService.Notify(new NotificationMessage
+        {
+            Severity = NotificationSeverity.Success,
+            Summary = "Saved",
+            Detail = "Template updated",
+            Duration = 4000
+        });
+        DialogService.Close(true);
+    }
+
+    private void Cancel()
+    {
+        DialogService.Close(false);
+    }
+}
