@@ -1,5 +1,6 @@
 ﻿@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 @using System.Text
+@using System.Collections.Generic
 @using RFPResponsePOC.Client.Services
 @using RFPResponsePOC.Model
 @using Microsoft.AspNetCore.Components.Forms
@@ -8,14 +9,12 @@
 @inject DialogService DialogService
 @inject IJSRuntime JsRuntime
 @inject LogService LogService
-@inject NotificationService NotificationService
-@inject DialogService DialogService
 @inject Blazored.LocalStorage.ILocalStorageService localStorage
 @inject SettingsService _SettingsService
 @inject NavigationManager Navigation
-@inject IJSRuntime JsRuntime
 @inject HttpClient Http
 <h3>Proposal</h3>
+<RadzenButton Text="Edit Template" Icon="edit" Style="background-color: green; margin-top:10px;" ButtonStyle="ButtonStyle.Primary" Click="EditTemplate" />
 <br />
 <br />
 <h4>Coming Soon</h4>
@@ -49,6 +48,14 @@
             // Initialize the ZipService
             objZipService = new ZipService(JsRuntime, localStorage, _SettingsService, LogService);
         }
+    }
+
+    async Task EditTemplate(MouseEventArgs args)
+    {
+        await DialogService.OpenAsync<EditTemplate>(
+            "Edit Template",
+            new Dictionary<string, object>(),
+            new DialogOptions { Width = "700px", Height = "600px" });
     }
 
     #region JavaScript
