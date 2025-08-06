@@ -149,4 +149,54 @@ window.pdfInterop = {
 
         doc.save('parent-rooms.pdf');
     }
+    ,
+    downloadRoomsCsv: function (rooms) {
+        if (!rooms || rooms.length === 0) {
+            console.error("No rooms provided for CSV export.");
+            return;
+        }
+
+        const headers = [
+            'Name','SquareFeet','Length','Width','CeilingHeight','FloorLevel','NaturalLight','HasPillars',
+            'Banquet','Conference','Square','Reception','SchoolRoom','Theatre','UShape','HollowSquare','Boardroom','CrescentRounds'
+        ];
+
+        const rows = [headers.join(',')];
+
+        rooms.forEach(room => {
+            const capacities = room.capacities || room.Capacities || {};
+            const row = [
+                room.name || room.Name || '',
+                room.squareFeet ?? room.SquareFeet ?? '',
+                room.length ?? room.Length ?? '',
+                room.width ?? room.Width ?? '',
+                room.ceilingHeight ?? room.CeilingHeight ?? '',
+                room.floorLevel ?? room.FloorLevel ?? '',
+                (room.hasNaturalLight ?? room.HasNaturalLight) ? 'Yes' : 'No',
+                (room.hasPillars ?? room.HasPillars) ? 'Yes' : 'No',
+                capacities.banquet ?? capacities.Banquet ?? 0,
+                capacities.conference ?? capacities.Conference ?? 0,
+                capacities.square ?? capacities.Square ?? 0,
+                capacities.reception ?? capacities.Reception ?? 0,
+                capacities.schoolRoom ?? capacities.SchoolRoom ?? 0,
+                capacities.theatre ?? capacities.Theatre ?? 0,
+                capacities.uShape ?? capacities.UShape ?? 0,
+                capacities.hollowSquare ?? capacities.HollowSquare ?? 0,
+                capacities.boardroom ?? capacities.Boardroom ?? 0,
+                capacities.crescentRounds ?? capacities.CrescentRounds ?? 0
+            ];
+            rows.push(row.join(','));
+        });
+
+        const csvContent = rows.join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'rooms.csv');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
 };
