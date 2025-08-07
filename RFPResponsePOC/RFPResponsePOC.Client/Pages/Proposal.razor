@@ -7,6 +7,8 @@
 @using RFPResponsePOC.Model
 @using Microsoft.AspNetCore.Components.Forms
 @using RFPResponsePOC.AI
+@using System.IO
+@using Openize.Words
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 @inject IJSRuntime JsRuntime
@@ -56,6 +58,8 @@
     private string CurrentStatus = "";
 
     AIResponse result = new AIResponse();
+
+    string ocrResult = string.Empty;
 
     ZipService objZipService = new ZipService();
 
@@ -130,42 +134,59 @@
                 return;
             }
 
-            byte[] pdfBytes;
-
-            // If file type is PDF convert it to PNG first
-            if (file.ContentType == "application/pdf")
-            {
-                var pdfUrl = await PdfService.GetPdfDataUrlAsync(file);
-                if (pdfUrl != null)
-                {
-                    await PdfService.RenderPdfToCanvasAsync(pdfUrl, "pdfCanvas");
-                    pdfBytes = await PdfService.GetCanvasPngBytesAsync("pdfCanvas");
-                }
-                else
-                {
-                    InProgress = false;
-                    StateHasChanged();
-                    return;
-                }
-            }
-            else
-            {
-                // Read the file as a byte array
-                using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024); // 10MB limit
-                using var ms = new MemoryStream();
-                await stream.CopyToAsync(ms);
-                pdfBytes = ms.ToArray();
-            }
-
-            // Read the contents 
-            var OCRprompt = await Http.GetStringAsync("Prompts/OCR.prompt");
-
-            // Instantiate orchestrator and settings
             var objOrchestratorMethods = new OrchestratorMethods(_SettingsService, LogService);
             var settingsService = new SettingsService();
 
-            // Call the OpenAIFileAsync method with the settings, prompt, and PDF bytes
-            result = await objOrchestratorMethods.CallOpenAIFileAsync(settingsService, OCRprompt, pdfBytes);
+            if (Path.GetExtension(file.Name).Equals(".docx", StringComparison.OrdinalIgnoreCase))
+            {
+                using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
+                using var ms = new MemoryStream();
+                await stream.CopyToAsync(ms);
+                ms.Position = 0;
+                var doc = new Document(ms);
+                var body = new Body(doc);
+                var sb = new StringBuilder();
+                foreach (var paragraph in body.Paragraphs)
+                {
+                    foreach (var run in paragraph.Runs)
+                    {
+                        sb.Append(run.Text);
+                    }
+                    sb.AppendLine();
+                }
+                ocrResult = sb.ToString();
+            }
+            else
+            {
+                byte[] pdfBytes;
+                if (file.ContentType == "application/pdf")
+                {
+                    var pdfUrl = await PdfService.GetPdfDataUrlAsync(file);
+                    if (pdfUrl != null)
+                    {
+                        await PdfService.RenderPdfToCanvasAsync(pdfUrl, "pdfCanvas");
+                        pdfBytes = await PdfService.GetCanvasPngBytesAsync("pdfCanvas");
+                    }
+                    else
+                    {
+                        InProgress = false;
+                        StateHasChanged();
+                        return;
+                    }
+                }
+                else
+                {
+                    // Read the file as a byte array
+                    using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024); // 10MB limit
+                    using var ms = new MemoryStream();
+                    await stream.CopyToAsync(ms);
+                    pdfBytes = ms.ToArray();
+                }
+
+                var OCRprompt = await Http.GetStringAsync("Prompts/OCR.prompt");
+                result = await objOrchestratorMethods.CallOpenAIFileAsync(settingsService, OCRprompt, pdfBytes);
+                ocrResult = result.Response;
+            }
 
             // Process the OCR result
 
@@ -176,7 +197,7 @@
             var Proposalprompt = await Http.GetStringAsync("Prompts/Proposal.prompt");
 
             // Replace the placeholder in the prompt with the OCR result
-            Proposalprompt = Proposalprompt.Replace("{{OCRResult}}", result.Response);
+            Proposalprompt = Proposalprompt.Replace("{{OCRResult}}", ocrResult);
 
             // Call the OpenAIChatAsync method with the settings, prompt, and OCR result
             result = await objOrchestratorMethods.CallOpenAIAsync(settingsService, Proposalprompt);

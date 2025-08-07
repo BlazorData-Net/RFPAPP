@@ -16,7 +16,8 @@
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.7" />
 	  <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />	
 	  <PackageReference Include="DocX" Version="4.0.25105.5786" />	 
-	  <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+	  <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />	 
+	  <PackageReference Include="Openize.OpenXML-SDK" Version="25.7.0" />
 	  <PackageReference Include="Radzen.Blazor" Version="7.1.5" />
 	  <PackageReference Include="Azure.AI.OpenAI" Version="2.1.0" />
 	  <PackageReference Include="Azure.Identity" Version="1.13.2" />
