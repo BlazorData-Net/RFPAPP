@@ -45,6 +45,12 @@
     </div>
 }
 <br />
+@if (!string.IsNullOrEmpty(RFPText))
+{
+    <RadzenCard>
+        <RadzenTextArea @bind-Value="RFPText" Rows="10" Style="width: 100%; height: 300px;" />
+    </RadzenCard>
+}
 <!-- hidden canvas used for PDF conversions to PNG -->
 <canvas id="pdfCanvas" style="display:none; border:1px solid #ccc;"></canvas>
 @code {
@@ -54,6 +60,7 @@
     // Allow access to the JSRuntime
     private DotNetObjectReference<Proposal> objRef;
 
+    private string RFPText = string.Empty;
     private bool InProgress = false;
     private string CurrentStatus = "";
 
@@ -202,11 +209,7 @@
             // Call the OpenAIChatAsync method with the settings, prompt, and OCR result
             result = await objOrchestratorMethods.CallOpenAIAsync(settingsService, Proposalprompt);
 
-            // Parse the JSON into objects for display
-            //var TempProposalData = JsonConvert.DeserializeObject<ProposalRoot>(result.Response);
-
-            // Remove from TempProposalData any room that has the word "and" or an "&" or a "+" in the room name
-            // and build ProposalData
+            RFPText = result.Response;
 
             CurrentStatus = "Processing Proposal chart...";
             StateHasChanged();
