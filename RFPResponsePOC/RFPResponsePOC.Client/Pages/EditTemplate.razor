@@ -1,8 +1,10 @@
 @using System.Net.Http
+@using Newtonsoft.Json
 @using RFPResponsePOC.Client.Services
 @inject HttpClient Http
 @inject DialogService DialogService
 @inject NotificationService NotificationService
+@inject NavigationManager Navigation
 @inject Blazored.LocalStorage.ILocalStorageService localStorage
 @inject RFPResponsePOC.Model.SettingsService _SettingsService
 @inject RFPResponsePOC.Model.LogService LogService
@@ -15,34 +17,82 @@
 </div>
 
 @code {
+    private IDisposable registration;
     string BasePath = "/RFPResponsePOC";
     string templateContent;
     string TemplateFile => $"{BasePath}/Template.txt";
     string DefaultTemplateUrl => "Templates/DefaultTemplate.txt";
+
+    // Allow access to the JSRuntime
+    private DotNetObjectReference<EditTemplate> objRef;
+
     RFPResponsePOC.Client.Services.ZipService objZipService = new RFPResponsePOC.Client.Services.ZipService();
 
-    protected override async Task OnInitializedAsync()
+     // Run on page load
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        objZipService = new RFPResponsePOC.Client.Services.ZipService(JsRuntime, localStorage, _SettingsService, LogService);
-        await objZipService.UnzipFile();
+        if (firstRender)
+        {
+            // Set a reference to the current instance 
+            objRef = DotNetObjectReference.Create(this);
 
-        if (File.Exists(TemplateFile))
-        {
-            templateContent = await File.ReadAllTextAsync(TemplateFile);
-        }
-        else
-        {
-            try
+            // Register the beforeunload event with JavaScript
+            await JsRuntime.InvokeVoidAsync("setupBeforeUnload", objRef);
+
+            // Register the location changing handler
+            registration =
+            Navigation.RegisterLocationChangingHandler(OnLocationChanging);
+
+            // Initialize the ZipService
+            objZipService = new ZipService(JsRuntime, localStorage, _SettingsService, LogService);
+
+            // Check if Capacity.json exists and load it
+            var TemplateTxt = await GetEditTemplateJsonAsync();
+
+            if (!string.IsNullOrEmpty(TemplateTxt))
             {
-                templateContent = await Http.GetStringAsync(DefaultTemplateUrl);
+                templateContent = TemplateTxt;
+                StateHasChanged();
             }
-            catch
+            else
             {
-                templateContent = string.Empty;
+                try
+                {
+                    templateContent = await Http.GetStringAsync(DefaultTemplateUrl);
+                }
+                catch
+                {
+                    templateContent = string.Empty;
+                }
             }
         }
-        StateHasChanged();
     }
+
+    #region JavaScript
+    private ValueTask OnLocationChanging(LocationChangingContext context)
+    {
+        // Get the base URL
+        string baseUrl = Navigation.BaseUri;
+
+        // Detect that user is going to counter page
+        if (context.TargetLocation != baseUrl)
+        {
+            // User is navigating away from the page - Zip any files
+            // Zip up any files and store in LocalStorage
+            Task.Run(async () => await objZipService.ZipTheFiles());
+        }
+
+        return ValueTask.CompletedTask;
+    }
+
+    [JSInvokable]
+    public async Task HandleBeforeUnload()
+    {
+        // User is navigating away from the page - Zip any files
+        // Zip up any files and store in LocalStorage
+        await objZipService.ZipTheFiles();
+    }
+    #endregion
 
     private async Task SaveTemplate()
     {
@@ -60,5 +110,27 @@
     private void Cancel()
     {
         DialogService.Close(false);
+    }
+
+    private async Task<string> GetEditTemplateJsonAsync()
+    {
+        try
+        {
+            if (File.Exists($"{BasePath}//Template.txt"))
+            {
+                return await File.ReadAllTextAsync($"{BasePath}//Template.txt");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Log the exception if necessary
+            Console.WriteLine($"Error reading Template.txt: {ex.Message}");
+        }
+        return null;
+    }
+
+    public void Dispose()
+    {
+        objRef?.Dispose();
     }
 }
