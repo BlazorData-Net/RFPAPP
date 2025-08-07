@@ -1,0 +1,30 @@
+﻿Please parse the contents of this Request For Proposal into the following JSON format, which matches the expected structure for a room request.
+
+### RFP CONTENTS START
+{{OCRResult}}
+### RFP CONTENTS STOP
+
+### JSON FORMAT START
+[
+  {
+    "name": "Main Ballroom",
+    "start_date": "2025-09-10",
+    "start_time": "18:00:00",
+    "end_date": "2025-09-10",
+    "end_time": "22:00:00",
+    "room_type": "Banquet",
+    "attendance": 150,
+    "notes": "Setup should include round tables for dinner and a stage for presentations."
+  },
+  {
+    "name": "Conference Room A",
+    "start_date": "2025-09-11",
+    "start_time": "09:00:00",
+    "end_date": "2025-09-11",
+    "end_time": "12:00:00",
+    "room_type": "Conference",
+    "attendance": 30,
+    "notes": "Require projector and whiteboard. Light refreshments served."
+  }
+]
+### JSON FORMAT STOP

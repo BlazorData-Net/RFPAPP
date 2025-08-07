@@ -1,6 +1,8 @@
 ﻿@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 @using System.Text
 @using System.Collections.Generic
+@using BlazorWebAssemblyPDF.Services
+@using Newtonsoft.Json
 @using RFPResponsePOC.Client.Services
 @using RFPResponsePOC.Model
 @using Microsoft.AspNetCore.Components.Forms
@@ -12,19 +14,46 @@
 @inject Blazored.LocalStorage.ILocalStorageService localStorage
 @inject SettingsService _SettingsService
 @inject NavigationManager Navigation
+@inject PdfToPngService PdfService
+@inject IJSRuntime JsRuntime
 @inject HttpClient Http
 <h3>Proposal</h3>
 <RadzenButton Text="Edit Template" Icon="edit" Style="background-color: green; margin-top:10px;" ButtonStyle="ButtonStyle.Primary" Click="EditTemplate" />
 <br />
 <br />
-<h4>Coming Soon</h4>
-
+<RadzenUpload @ref="uploader"
+              ChooseText="Upload Proposal chart (.pdf/.png/.jpg/.jpeg)" Accept=".png,.jpg,.jpeg,.pdf"
+              Change=@OnProposalChartUpload
+              Multiple="false"
+              Auto="true"
+              Style="width: 100%"
+              InputAttributes="@(new Dictionary<string,object>{ { "aria-label", "select file" }})">
+</RadzenUpload>
+<br />
+<br />
+@if (@InProgress)
+{
+    <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.5); z-index: 1000;
+            display: flex; align-items: center; justify-content: center;">
+        <div class="rz-card" style="padding: 20px;">
+            <RadzenText Text="@CurrentStatus" class="rz-m-10" Style="text-align: center" />
+            <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+        </div>
+    </div>
+}
+<br />
+<!-- hidden canvas used for PDF conversions to PNG -->
+<canvas id="pdfCanvas" style="display:none; border:1px solid #ccc;"></canvas>
 @code {
 #nullable disable
     private IDisposable registration;
-
+    Radzen.Blazor.RadzenUpload uploader;
     // Allow access to the JSRuntime
     private DotNetObjectReference<Proposal> objRef;
+
+    private bool InProgress = false;
+    private string CurrentStatus = "";
 
     AIResponse result = new AIResponse();
 
@@ -83,6 +112,126 @@
         await objZipService.ZipTheFiles();
     }
     #endregion
+
+    private async Task OnProposalChartUpload(UploadChangeEventArgs e)
+    {
+        try
+        {
+            InProgress = true;
+            CurrentStatus = "Reading Proposal chart...";
+            StateHasChanged();
+
+            var file = e.Files.FirstOrDefault();
+
+            if (file is null)
+            {
+                InProgress = false;
+                StateHasChanged();
+                return;
+            }
+
+            byte[] pdfBytes;
+
+            // If file type is PDF convert it to PNG first
+            if (file.ContentType == "application/pdf")
+            {
+                var pdfUrl = await PdfService.GetPdfDataUrlAsync(file);
+                if (pdfUrl != null)
+                {
+                    await PdfService.RenderPdfToCanvasAsync(pdfUrl, "pdfCanvas");
+                    pdfBytes = await PdfService.GetCanvasPngBytesAsync("pdfCanvas");
+                }
+                else
+                {
+                    InProgress = false;
+                    StateHasChanged();
+                    return;
+                }
+            }
+            else
+            {
+                // Read the file as a byte array
+                using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024); // 10MB limit
+                using var ms = new MemoryStream();
+                await stream.CopyToAsync(ms);
+                pdfBytes = ms.ToArray();
+            }
+
+            // Read the contents 
+            var OCRprompt = await Http.GetStringAsync("Prompts/OCR.prompt");
+
+            // Instantiate orchestrator and settings
+            var objOrchestratorMethods = new OrchestratorMethods(_SettingsService, LogService);
+            var settingsService = new SettingsService();
+
+            // Call the OpenAIFileAsync method with the settings, prompt, and PDF bytes
+            result = await objOrchestratorMethods.CallOpenAIFileAsync(settingsService, OCRprompt, pdfBytes);
+
+            // Process the OCR result
+
+            CurrentStatus = "Converting...";
+            StateHasChanged();
+
+            // Read the contents of \Prompts\Proposal.prompt into prompt
+            var Proposalprompt = await Http.GetStringAsync("Prompts/Proposal.prompt");
+
+            // Replace the placeholder in the prompt with the OCR result
+            Proposalprompt = Proposalprompt.Replace("{{OCRResult}}", result.Response);
+
+            // Call the OpenAIChatAsync method with the settings, prompt, and OCR result
+            result = await objOrchestratorMethods.CallOpenAIAsync(settingsService, Proposalprompt);
+
+            // Parse the JSON into objects for display
+            //var TempProposalData = JsonConvert.DeserializeObject<ProposalRoot>(result.Response);
+
+            // Remove from TempProposalData any room that has the word "and" or an "&" or a "+" in the room name
+            // and build ProposalData
+
+            CurrentStatus = "Processing Proposal chart...";
+            StateHasChanged();
+
+            InProgress = false;
+            StateHasChanged();
+
+            // Handle result (show notification, update UI, etc.)
+            if (result.Error == "")
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = "Success",
+                    Detail = "Proposal chart uploaded and processed.",
+                    Duration = 4000
+                });
+            }
+            else
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "Error",
+                    Detail = $"Failed to process the Proposal chart. {result.Error}",
+                    Duration = 4000
+                });
+            }
+
+            // Clear the selected files so the list is removed
+            await uploader.ClearFiles();
+        }
+        catch (Exception ex)
+        {
+            InProgress = false;
+            StateHasChanged();
+
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Error",
+                Detail = ex.Message,
+                Duration = 8000
+            });
+        }
+    }
 
     public void Dispose()
     {
