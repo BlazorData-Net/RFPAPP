@@ -24,14 +24,13 @@
 <br />
 <br />
 <RadzenUpload @ref="uploader"
-              ChooseText="Upload Proposal chart (.docx/ .pdf/.png/.jpg/.jpeg)" Accept=".docx,.png,.jpg,.jpeg,.pdf"
-              Change=@OnProposalChartUpload
+              ChooseText="Upload Proposal chart (.docx/.pdf/.png/.jpg/.jpeg)" Accept=".docx,.png,.jpg,.jpeg,.pdf"
+              Change=@OnProposalUpload
               Multiple="false"
               Auto="true"
               Style="width: 100%"
               InputAttributes="@(new Dictionary<string,object>{ { "aria-label", "select file" }})">
 </RadzenUpload>
-<br />
 <br />
 @if (@InProgress)
 {
@@ -54,7 +53,7 @@
 <!-- hidden canvas used for PDF conversions to PNG -->
 <canvas id="pdfCanvas" style="display:none; border:1px solid #ccc;"></canvas>
 @code {
-#nullable disable
+    #nullable disable
     private IDisposable registration;
     Radzen.Blazor.RadzenUpload uploader;
     // Allow access to the JSRuntime
@@ -65,8 +64,6 @@
     private string CurrentStatus = "";
 
     AIResponse result = new AIResponse();
-
-    string ocrResult = string.Empty;
 
     ZipService objZipService = new ZipService();
 
@@ -124,12 +121,12 @@
     }
     #endregion
 
-    private async Task OnProposalChartUpload(UploadChangeEventArgs e)
+    private async Task OnProposalUpload(UploadChangeEventArgs e)
     {
         try
         {
             InProgress = true;
-            CurrentStatus = "Reading Proposal chart...";
+            CurrentStatus = "Reading RFP...";
             StateHasChanged();
 
             var file = e.Files.FirstOrDefault();
@@ -141,9 +138,6 @@
                 return;
             }
 
-            var objOrchestratorMethods = new OrchestratorMethods(_SettingsService, LogService);
-            var settingsService = new SettingsService();
-
             if (Path.GetExtension(file.Name).Equals(".docx", StringComparison.OrdinalIgnoreCase))
             {
                 using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
@@ -153,6 +147,7 @@
                 var doc = new Document(ms);
                 var body = new Body(doc);
                 var sb = new StringBuilder();
+
                 foreach (var paragraph in body.Paragraphs)
                 {
                     foreach (var run in paragraph.Runs)
@@ -161,7 +156,8 @@
                     }
                     sb.AppendLine();
                 }
-                ocrResult = sb.ToString();
+
+                RFPText = sb.ToString();
             }
             else
             {
@@ -191,56 +187,17 @@
                 }
 
                 var OCRprompt = await Http.GetStringAsync("Prompts/OCR.prompt");
+
+                var objOrchestratorMethods = new OrchestratorMethods(_SettingsService, LogService);
+                var settingsService = new SettingsService();
+
                 result = await objOrchestratorMethods.CallOpenAIFileAsync(settingsService, OCRprompt, pdfBytes);
-                ocrResult = result.Response;
-            }
-
-            // Process the OCR result
-
-            CurrentStatus = "Converting...";
-            StateHasChanged();
-
-            // Read the contents of \Prompts\Proposal.prompt into prompt
-            var Proposalprompt = await Http.GetStringAsync("Prompts/Proposal.prompt");
-
-            // Replace the placeholder in the prompt with the OCR result
-            Proposalprompt = Proposalprompt.Replace("{{OCRResult}}", ocrResult);
-
-            // Call the OpenAIChatAsync method with the settings, prompt, and OCR result
-            result = await objOrchestratorMethods.CallOpenAIAsync(settingsService, Proposalprompt);
-
-            RFPText = result.Response;
-
-            CurrentStatus = "Processing Proposal chart...";
-            StateHasChanged();
-
-            InProgress = false;
-            StateHasChanged();
-
-            // Handle result (show notification, update UI, etc.)
-            if (result.Error == "")
-            {
-                NotificationService.Notify(new NotificationMessage
-                {
-                    Severity = NotificationSeverity.Success,
-                    Summary = "Success",
-                    Detail = "Proposal chart uploaded and processed.",
-                    Duration = 4000
-                });
-            }
-            else
-            {
-                NotificationService.Notify(new NotificationMessage
-                {
-                    Severity = NotificationSeverity.Error,
-                    Summary = "Error",
-                    Detail = $"Failed to process the Proposal chart. {result.Error}",
-                    Duration = 4000
-                });
-            }
+                RFPText = result.Response;
+            }            
 
             // Clear the selected files so the list is removed
             await uploader.ClearFiles();
+            StateHasChanged();
         }
         catch (Exception ex)
         {
@@ -253,6 +210,56 @@
                 Summary = "Error",
                 Detail = ex.Message,
                 Duration = 8000
+            });
+        }
+    }
+
+    private async Task ProcessOCRText()
+    {
+        // Process the OCR text
+        var objOrchestratorMethods = new OrchestratorMethods(_SettingsService, LogService);
+        var settingsService = new SettingsService();
+
+        InProgress = true;
+        CurrentStatus = "Converting...";
+        StateHasChanged();
+
+        // Read the contents of \Prompts\Proposal.prompt into prompt
+        var Proposalprompt = await Http.GetStringAsync("Prompts/Proposal.prompt");
+
+        // Replace the placeholder in the prompt with the OCR result
+        Proposalprompt = Proposalprompt.Replace("{{OCRResult}}", RFPText);
+
+        // Call the OpenAIChatAsync method with the settings, prompt, and OCR result
+        result = await objOrchestratorMethods.CallOpenAIAsync(settingsService, Proposalprompt);
+
+        var LLMResult = result.Response;
+
+        CurrentStatus = "Processing RFP...";
+        StateHasChanged();
+
+        InProgress = false;
+        StateHasChanged();
+
+        // Handle result (show notification, update UI, etc.)
+        if (result.Error == "")
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Success",
+                Detail = "Uploaded and processed.",
+                Duration = 4000
+            });
+        }
+        else
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Error",
+                Detail = $"Failed to process... {result.Error}",
+                Duration = 4000
             });
         }
     }
