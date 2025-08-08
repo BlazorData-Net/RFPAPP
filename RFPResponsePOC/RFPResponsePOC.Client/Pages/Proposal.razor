@@ -23,6 +23,8 @@
 @inject HttpClient Http
 <h3>Proposal</h3>
 <RadzenButton Text="Edit Template" Icon="edit" Style="background-color: green; margin-top:10px;" ButtonStyle="ButtonStyle.Primary" Click="EditTemplate" />
+<span>&nbsp;</span>
+<RadzenButton Text="Detect Room Requests" Icon="add" Style="margin-bottom: 10px; background-color: orange;" ButtonStyle="ButtonStyle.Primary" Click="ProcessOCRText" />
 <br />
 <br />
 <RadzenUpload @ref="uploader"
@@ -37,8 +39,8 @@
 @if (InProgress)
 {
     <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.5); z-index: 1000;
-            display: flex; align-items: center; justify-content: center;">
+                background-color: rgba(0,0,0,0.5); z-index: 1000;
+                display: flex; align-items: center; justify-content: center;">
         <div class="rz-card" style="padding: 20px;">
             <RadzenText Text="@CurrentStatus" class="rz-m-10" Style="text-align: center" />
             <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
@@ -46,16 +48,15 @@
     </div>
 }
 <br />
-@if (!string.IsNullOrEmpty(RFPText))
-{
-    <RadzenCard>
-        <RadzenTextArea @bind-Value="RFPText" Rows="10" Style="width: 100%; height: 300px;" />
-    </RadzenCard>
-}
+
+<RadzenCard>
+    <RadzenTextArea @bind-Value="RFPText" Rows="10" Style="width: 100%; height: 300px;" />
+</RadzenCard>
+
 <!-- hidden canvas used for PDF conversions to PNG -->
 <canvas id="pdfCanvas" style="display:none; border:1px solid #ccc;"></canvas>
 @code {
-    #nullable disable
+#nullable disable
     private IDisposable registration;
     Radzen.Blazor.RadzenUpload uploader;
     // Allow access to the JSRuntime
@@ -227,7 +228,7 @@
 
                 result = await objOrchestratorMethods.CallOpenAIFileAsync(settingsService, OCRprompt, pdfBytes);
                 RFPText = result.Response;
-            }            
+            }
 
             // Clear the selected files so the list is removed
             await uploader.ClearFiles();
@@ -267,7 +268,7 @@
         // Call the OpenAIChatAsync method with the settings, prompt, and OCR result
         result = await objOrchestratorMethods.CallOpenAIAsync(settingsService, Proposalprompt);
 
-        var LLMResult = result.Response;
+        RFPText = result.Response;
 
         CurrentStatus = "Processing RFP...";
         StateHasChanged();

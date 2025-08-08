@@ -1,8 +1,10 @@
-﻿Please parse the contents of this Request For Proposal into the following JSON format, which matches the expected structure for a room request.
+﻿Please parse the contents of this Request For Proposal (RFP):
 
 ### RFP CONTENTS START
 {{OCRResult}}
 ### RFP CONTENTS STOP
+
+Into the following JSON format, which matches the expected structure for a venue room request.
 
 ### JSON FORMAT START
 [
@@ -28,3 +30,118 @@
   }
 ]
 ### JSON FORMAT STOP
+
+#1 First determine the number of days in the conference or event. Each day will have its own set of rooms and times.
+#2 For each day, create a room entry for each activity or session specified in the RFP.
+#3 Each room entry should include:
+- `name`: A descriptive name for the room or session.
+- `start_date`: The date the session starts (leave empty if not specified).
+- `start_time`: The time the session starts (in HH:MM:SS format).
+- `end_date`: The date the session ends (leave empty if not specified).
+- `end_time`: The time the session ends (in HH:MM:SS format).
+- `room_type`: The type of room (e.g., "Conference", "Banquet").
+- `attendance`: The expected number of attendees for the session.
+- `notes`: Additional notes about the session, including any special requirements or setup.
+#4 If the RFP specifies multiple tracks or sessions, create separate entries for each track/session.
+#5 Ensure that the JSON output is well-structured and valid, with all required fields filled in appropriately.
+#6 If the RFP mentions breaks or meals, create separate entries for those as well, specifying the type of room and expected attendance.
+
+For example, if ### RFP CONTENTS contains:
+
+3 day conference for elevator engineers. Please have 2 tracks for 1 1/2 hour sessions from 8:00am to 5:00pm with 15 breaks and a 1 hour lunch for 300 attendees. The session rooms are theatre style with max 150 people.
+
+The expected JSON output would be:
+```json
+[
+ {
+    "name": "Session Room Track 1 - Day 1",
+    "start_date": "",
+    "start_time": "08:00:00",
+    "end_date": "",
+    "end_time": "17:00:00",
+    "room_type": "Conference",
+    "attendance": 150,
+    "notes": "3-day elevator engineering conference; 1.5h sessions in Track 1, theatre style seating, 15 breaks, 1h lunch"
+  },
+  {
+    "name": "Session Room Track 2 - Day 1",
+    "start_date": "",
+    "start_time": "08:00:00",
+    "end_date": "",
+    "end_time": "17:00:00",
+    "room_type": "Conference",
+    "attendance": 150,
+    "notes": "3-day elevator engineering conference; 1.5h sessions in Track 2, theatre style seating, 15 breaks, 1h lunch"
+  },
+  {
+    "name": "Lunch - Day 1",
+    "start_date": "",
+    "start_time": "12:00:00",
+    "end_date": "",
+    "end_time": "13:00:00",
+    "room_type": "Banquet",
+    "attendance": 300,
+    "notes": "3-day elevator engineering conference; Banquet style seating, 1h lunch"
+  },
+  {
+    "name": "Session Room Track 1 - Day 2",
+    "start_date": "",
+    "start_time": "08:00:00",
+    "end_date": "",
+    "end_time": "17:00:00",
+    "room_type": "Conference",
+    "attendance": 150,
+    "notes": "3-day elevator engineering conference; 1.5h sessions in Track 1, theatre style seating, 15 breaks, 1h lunch"
+  },
+  {
+    "name": "Session Room Track 2 - Day 2",
+    "start_date": "",
+    "start_time": "08:00:00",
+    "end_date": "",
+    "end_time": "17:00:00",
+    "room_type": "Conference",
+    "attendance": 150,
+    "notes": "3-day elevator engineering conference; 1.5h sessions in Track 2, theatre style seating, 15 breaks, 1h lunch"
+  },
+  {
+    "name": "Lunch - Day 2",
+    "start_date": "",
+    "start_time": "12:00:00",
+    "end_date": "",
+    "end_time": "13:00:00",
+    "room_type": "Banquet",
+    "attendance": 300,
+    "notes": "3-day elevator engineering conference; Banquet style seating, 1h lunch"
+  },
+  {
+    "name": "Session Room Track 1 - Day 3",
+    "start_date": "",
+    "start_time": "08:00:00",
+    "end_date": "",
+    "end_time": "17:00:00",
+    "room_type": "Conference",
+    "attendance": 150,
+    "notes": "3-day elevator engineering conference; 1.5h sessions in Track 1, theatre style seating, 15 breaks, 1h lunch"
+  },
+  {
+    "name": "Session Room Track 2 - Day 3",
+    "start_date": "",
+    "start_time": "08:00:00",
+    "end_date": "",
+    "end_time": "17:00:00",
+    "room_type": "Conference",
+    "attendance": 150,
+    "notes": "3-day elevator engineering conference; 1.5h sessions in Track 2, theatre style seating, 15 breaks, 1h lunch"
+  },
+  {
+    "name": "Lunch - Day 3",
+    "start_date": "",
+    "start_time": "12:00:00",
+    "end_date": "",
+    "end_time": "13:00:00",
+    "room_type": "Banquet",
+    "attendance": 300,
+    "notes": "3-day elevator engineering conference; Banquet style seating, 1h lunch"
+  }
+]
+```json
