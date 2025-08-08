@@ -9,6 +9,7 @@
 @using RFPResponsePOC.AI
 @using System.IO
 @using Openize.Words
+@using Microsoft.AspNetCore.Components.Web
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 @inject IJSRuntime JsRuntime
@@ -17,7 +18,6 @@
 @inject SettingsService _SettingsService
 @inject NavigationManager Navigation
 @inject PdfToPngService PdfService
-@inject IJSRuntime JsRuntime
 @inject HttpClient Http
 <h3>Proposal</h3>
 <RadzenButton Text="Edit Template" Icon="edit" Style="background-color: green; margin-top:10px;" ButtonStyle="ButtonStyle.Primary" Click="EditTemplate" />
@@ -32,7 +32,7 @@
               InputAttributes="@(new Dictionary<string,object>{ { "aria-label", "select file" }})">
 </RadzenUpload>
 <br />
-@if (@InProgress)
+@if (InProgress)
 {
     <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background-color: rgba(0,0,0,0.5); z-index: 1000;
@@ -148,6 +148,9 @@
                 var body = new Body(doc);
                 var sb = new StringBuilder();
 
+                // Process all body elements in order
+
+                // Process paragraphs
                 foreach (var paragraph in body.Paragraphs)
                 {
                     foreach (var run in paragraph.Runs)
@@ -155,6 +158,28 @@
                         sb.Append(run.Text);
                     }
                     sb.AppendLine();
+                }
+                
+                // Process tables
+                foreach (var table in body.Tables)
+                {
+                    foreach (var row in table.Rows)
+                    {
+                        foreach (var cell in row.Cells)
+                        {
+                            // Get text from cells which may contain paragraphs
+                            foreach (var para in cell.Paragraphs)
+                            {
+                                foreach (var run in para.Runs)
+                                {
+                                    sb.Append(run.Text);
+                                }
+                                sb.Append("\t"); // Tab between cells
+                            }
+                        }
+                        sb.AppendLine(); // New line after each row
+                    }
+                    sb.AppendLine(); // Extra line after table
                 }
 
                 RFPText = sb.ToString();
