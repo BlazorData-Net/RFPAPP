@@ -9,6 +9,8 @@
 @using RFPResponsePOC.AI
 @using System.IO
 @using Openize.Words
+@using System.IO.Compression
+@using System.Xml.Linq
 @using Microsoft.AspNetCore.Components.Web
 @inject NotificationService NotificationService
 @inject DialogService DialogService
@@ -144,45 +146,52 @@
                 using var ms = new MemoryStream();
                 await stream.CopyToAsync(ms);
                 ms.Position = 0;
-                var doc = new Document(ms);
-                var body = new Body(doc);
-                var sb = new StringBuilder();
 
-                // Process all body elements in order
+                // Use ZipArchive and LINQ to XML to read body elements
+                using var archive = new ZipArchive(ms, ZipArchiveMode.Read, leaveOpen: true);
+                var entry = archive.GetEntry("word/document.xml");
 
-                // Process paragraphs
-                foreach (var paragraph in body.Paragraphs)
+                if (entry != null)
                 {
-                    foreach (var run in paragraph.Runs)
+                    using var entryStream = entry.Open();
+                    var xdoc = XDocument.Load(entryStream);
+                    XNamespace w = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+                    var sb = new StringBuilder();
+
+                    var body = xdoc.Root?.Element(w + "body");
+                    if (body != null)
                     {
-                        sb.Append(run.Text);
-                    }
-                    sb.AppendLine();
-                }
-                
-                // Process tables
-                foreach (var table in body.Tables)
-                {
-                    foreach (var row in table.Rows)
-                    {
-                        foreach (var cell in row.Cells)
+                        foreach (var element in body.Elements())
                         {
-                            // Get text from cells which may contain paragraphs
-                            foreach (var para in cell.Paragraphs)
+                            if (element.Name == w + "p")
                             {
-                                foreach (var run in para.Runs)
+                                foreach (var text in element.Descendants(w + "t"))
                                 {
-                                    sb.Append(run.Text);
+                                    sb.Append(text.Value);
                                 }
-                                sb.Append("\t"); // Tab between cells
+                                sb.AppendLine();
+                            }
+                            else if (element.Name == w + "tbl")
+                            {
+                                foreach (var row in element.Elements(w + "tr"))
+                                {
+                                    foreach (var cell in row.Elements(w + "tc"))
+                                    {
+                                        foreach (var text in cell.Descendants(w + "t"))
+                                        {
+                                            sb.Append(text.Value);
+                                        }
+                                        sb.Append("\t");
+                                    }
+                                    sb.AppendLine();
+                                }
+                                sb.AppendLine();
                             }
                         }
-                        sb.AppendLine(); // New line after each row
                     }
-                    sb.AppendLine(); // Extra line after table
-                }
 
-                RFPText = sb.ToString();
+                    RFPText = sb.ToString();
+                }
             }
             else
             {
