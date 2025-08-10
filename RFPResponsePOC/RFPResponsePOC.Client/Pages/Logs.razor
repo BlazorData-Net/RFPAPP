@@ -110,13 +110,13 @@
                 return;
             }
 
-            // Create CSV content
-            var csvContent = string.Join("\n", RFPResponsePOCLog);
-            var bytes = Encoding.UTF8.GetBytes(csvContent);
+            // Create text content with double line breaks
+            var textContent = string.Join("\n\n", RFPResponsePOCLog) + "\n\n";
+            var bytes = Encoding.UTF8.GetBytes(textContent);
             var base64String = Convert.ToBase64String(bytes);
 
             // Generate filename with timestamp
-            var fileName = $"RFPResponsePOC_Log_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
+            var fileName = $"RFPResponsePOC_Log_{DateTime.Now:yyyyMMdd_HHmmss}.txt";
 
             // Use JavaScript to download the file
             await JsRuntime.InvokeVoidAsync("eval", $@"
@@ -126,7 +126,7 @@
                     byteNumbers[i] = bytes.charCodeAt(i);
                 }}
                 const byteArray = new Uint8Array(byteNumbers);
-                const blob = new Blob([byteArray], {{ type: 'text/csv;charset=utf-8;' }});
+                const blob = new Blob([byteArray], {{ type: 'text/plain;charset=utf-8;' }});
                 const link = document.createElement('a');
                 const url = URL.createObjectURL(blob);
                 link.setAttribute('href', url);
