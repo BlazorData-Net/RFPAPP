@@ -6,6 +6,9 @@
 <h3>Logs</h3>
 <div class="row">
     <div class="col">
+        <RadzenButton Text="Download Logs" ButtonStyle="ButtonStyle.Success"
+                      Click="DownloadLogs"
+                      Style="margin-bottom: 10px; width: 150px" />&nbsp;&nbsp;
         <RadzenButton Text="Clear Log" ButtonStyle="ButtonStyle.Danger"
                       Click="ClearLog"
                       Style="margin-bottom: 10px; width: 150px" />&nbsp;&nbsp;
@@ -86,6 +89,69 @@
                 Severity = NotificationSeverity.Error,
                 Summary = "Error",
                 Detail = ex.Message,
+                Duration = 4000
+            });
+        }
+    }
+
+    private async Task DownloadLogs()
+    {
+        try
+        {
+            if (RFPResponsePOCLog == null || RFPResponsePOCLog.Length == 0)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = "Warning",
+                    Detail = "No logs available to download",
+                    Duration = 4000
+                });
+                return;
+            }
+
+            // Create CSV content
+            var csvContent = string.Join("\n", RFPResponsePOCLog);
+            var bytes = Encoding.UTF8.GetBytes(csvContent);
+            var base64String = Convert.ToBase64String(bytes);
+
+            // Generate filename with timestamp
+            var fileName = $"RFPResponsePOC_Log_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
+
+            // Use JavaScript to download the file
+            await JsRuntime.InvokeVoidAsync("eval", $@"
+                const bytes = atob('{base64String}');
+                const byteNumbers = new Array(bytes.length);
+                for (let i = 0; i < bytes.length; i++) {{
+                    byteNumbers[i] = bytes.charCodeAt(i);
+                }}
+                const byteArray = new Uint8Array(byteNumbers);
+                const blob = new Blob([byteArray], {{ type: 'text/csv;charset=utf-8;' }});
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', '{fileName}');
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            ");
+
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Success",
+                Detail = "Logs downloaded successfully",
+                Duration = 4000
+            });
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Error",
+                Detail = $"Failed to download logs: {ex.Message}",
                 Duration = 4000
             });
         }
