@@ -331,7 +331,8 @@ namespace RFPResponsePOC.Client.Services
 
         /// <summary>
         /// Blocks a room and all related spaces during the specified time period.
-        /// Handles room groups and child rooms to prevent double-booking of connected spaces.
+        /// When a parent room is booked, all child rooms are blocked.
+        /// When a child room is booked, the parent room is also blocked.
         /// </summary>
         /// <param name="room">The room to block</param>
         /// <param name="start">Start time of the booking</param>
@@ -345,14 +346,14 @@ namespace RFPResponsePOC.Client.Services
                 // Block the specific room
                 AddEntry(room.Name, start, end, schedule);
 
-                // Block the room group if this room belongs to one
-                // This prevents other rooms in the group from being booked
+                // If this room belongs to a group (is a child room), block the parent room
+                // This prevents the parent room from being booked when a child is in use
                 if (!string.IsNullOrEmpty(room.RoomGroup))
                 {
                     AddEntry(room.RoomGroup, start, end, schedule);
                 }
 
-                // Block all child rooms if this room acts as a group
+                // Block all child rooms if this room acts as a group (parent room)
                 // This prevents individual rooms from being booked when the group is reserved
                 var children = allRooms.Where(r => r.RoomGroup == room.Name).Select(r => r.Name);
                 foreach (var child in children)
