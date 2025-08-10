@@ -256,6 +256,10 @@
     {
         try
         {
+            InProgress = true;
+            CurrentStatus = "Calculating...";
+            StateHasChanged();
+
             await LogService.WriteToLogAsync($"[{DateTime.Now}] CalculateProposal method started");
             
             // Log the current RFPText content to help debug the JSON structure
@@ -309,7 +313,7 @@
                 {
                     Severity = NotificationSeverity.Error,
                     Summary = "JSON Format Error",
-                    Detail = "The text does not contain valid JSON. Please process the proposal first using 'Detect Room Requests'.",
+                    Detail = "The text does not contain valid JSON.",
                     Duration = 8000
                 });
                 return;
@@ -354,6 +358,9 @@
                 Duration = 8000
             });
         }
+
+        InProgress = false;
+        StateHasChanged();
     }
 
     private async Task ProcessOCRText()
