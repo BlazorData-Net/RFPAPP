@@ -232,12 +232,15 @@
 
             // Clear the selected files so the list is removed
             await uploader.ClearFiles();
+            InProgress = false;
             StateHasChanged();
         }
         catch (Exception ex)
         {
             InProgress = false;
             StateHasChanged();
+
+            await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Exception in OnProposalUpload - {ex.Message}");
 
             NotificationService.Notify(new NotificationMessage
             {
@@ -253,9 +256,73 @@
     {
         try
         {
-            var calculator = new CalculateProposale();
+            await LogService.WriteToLogAsync($"[{DateTime.Now}] CalculateProposal method started");
+            
+            // Log the current RFPText content to help debug the JSON structure
+            await LogService.WriteToLogAsync($"[{DateTime.Now}] RFPText content (first 500 chars): {RFPText?.Substring(0, Math.Min(500, RFPText?.Length ?? 0))}");
+
+            // Check if RFPText is empty or null
+            if (string.IsNullOrWhiteSpace(RFPText))
+            {
+                await LogService.WriteToLogAsync($"[{DateTime.Now}] WARNING: RFPText is empty or null in CalculateProposal");
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = "Warning",
+                    Detail = "Please upload and process a proposal first.",
+                    Duration = 4000
+                });
+                return;
+            }
+
+            // Try to parse the JSON to determine its structure
+            try
+            {
+                // First, let's check if it's already a valid JSON array
+                var testParse = JsonConvert.DeserializeObject(RFPText);
+                await LogService.WriteToLogAsync($"[{DateTime.Now}] JSON parsing test successful. Object type: {testParse?.GetType().Name}");
+                
+                // Check if it's an object that contains an array property
+                if (testParse is Newtonsoft.Json.Linq.JObject jObject)
+                {
+                    await LogService.WriteToLogAsync($"[{DateTime.Now}] Detected JSON object. Properties: {string.Join(", ", jObject.Properties().Select(p => p.Name))}");
+                    
+                    // Look for potential array properties
+                    var arrayProperty = jObject.Properties().FirstOrDefault(p => p.Value is Newtonsoft.Json.Linq.JArray);
+                    if (arrayProperty != null)
+                    {
+                        await LogService.WriteToLogAsync($"[{DateTime.Now}] Found array property: {arrayProperty.Name}");
+                        RFPText = arrayProperty.Value.ToString();
+                    }
+                    else
+                    {
+                        // Check if the object itself can be converted to an array (wrap in array)
+                        await LogService.WriteToLogAsync($"[{DateTime.Now}] No array property found, wrapping object in array");
+                        RFPText = $"[{RFPText}]";
+                    }
+                }
+            }
+            catch (JsonReaderException jsonReadEx)
+            {
+                await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: JSON format is invalid - {jsonReadEx.Message}");
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "JSON Format Error",
+                    Detail = "The text does not contain valid JSON. Please process the proposal first using 'Detect Room Requests'.",
+                    Duration = 8000
+                });
+                return;
+            }
+
+            // Create calculator with LogService
+            var calculator = new CalculateProposale("/RFPResponsePOC", LogService);
             var assigned = await calculator.CalculateAsync(RFPText);
+            
+            // Convert results back to JSON for display
             RFPText = JsonConvert.SerializeObject(assigned, Formatting.Indented);
+
+            await LogService.WriteToLogAsync($"[{DateTime.Now}] CalculateProposal completed successfully with {assigned.Count} assignments");
 
             NotificationService.Notify(new NotificationMessage
             {
@@ -265,8 +332,20 @@
                 Duration = 4000
             });
         }
+        catch (JsonException jsonEx)
+        {
+            await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: JSON deserialization error in CalculateProposal - {jsonEx.Message}");
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "JSON Error",
+                Detail = $"Failed to parse JSON data: {jsonEx.Message}. Please ensure the proposal has been processed correctly.",
+                Duration = 8000
+            });
+        }
         catch (Exception ex)
         {
+            await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Exception in CalculateProposal - {ex.Message}");
             NotificationService.Notify(new NotificationMessage
             {
                 Severity = NotificationSeverity.Error,
@@ -279,50 +358,71 @@
 
     private async Task ProcessOCRText()
     {
-        // Process the OCR text
-        var objOrchestratorMethods = new OrchestratorMethods(_SettingsService, LogService);
-        var settingsService = new SettingsService();
-
-        InProgress = true;
-        CurrentStatus = "Converting...";
-        StateHasChanged();
-
-        // Read the contents of \Prompts\Proposal.prompt into prompt
-        var Proposalprompt = await Http.GetStringAsync("Prompts/Proposal.prompt");
-
-        // Replace the placeholder in the prompt with the OCR result
-        Proposalprompt = Proposalprompt.Replace("{{OCRResult}}", RFPText);
-
-        // Call the OpenAIChatAsync method with the settings, prompt, and OCR result
-        result = await objOrchestratorMethods.CallOpenAIAsync(settingsService, Proposalprompt);
-
-        RFPText = result.Response;
-
-        CurrentStatus = "Processing RFP...";
-        StateHasChanged();
-
-        InProgress = false;
-        StateHasChanged();
-
-        // Handle result (show notification, update UI, etc.)
-        if (result.Error == "")
+        try
         {
-            NotificationService.Notify(new NotificationMessage
+            await LogService.WriteToLogAsync($"[{DateTime.Now}] ProcessOCRText method started");
+
+            // Process the OCR text
+            var objOrchestratorMethods = new OrchestratorMethods(_SettingsService, LogService);
+            var settingsService = new SettingsService();
+
+            InProgress = true;
+            CurrentStatus = "Converting...";
+            StateHasChanged();
+
+            // Read the contents of \Prompts\Proposal.prompt into prompt
+            var Proposalprompt = await Http.GetStringAsync("Prompts/Proposal.prompt");
+
+            // Replace the placeholder in the prompt with the OCR result
+            Proposalprompt = Proposalprompt.Replace("{{OCRResult}}", RFPText);
+
+            // Call the OpenAIChatAsync method with the settings, prompt, and OCR result
+            result = await objOrchestratorMethods.CallOpenAIAsync(settingsService, Proposalprompt);
+
+            RFPText = $"[{result.Response}]";
+
+            CurrentStatus = "Processing RFP...";
+            StateHasChanged();
+
+            InProgress = false;
+            StateHasChanged();
+
+            // Handle result (show notification, update UI, etc.)
+            if (result.Error == "")
             {
-                Severity = NotificationSeverity.Success,
-                Summary = "Success",
-                Detail = "Uploaded and processed.",
-                Duration = 4000
-            });
+                await LogService.WriteToLogAsync($"[{DateTime.Now}] ProcessOCRText completed successfully");
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = "Success",
+                    Detail = "Uploaded and processed.",
+                    Duration = 4000
+                });
+            }
+            else
+            {
+                await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: ProcessOCRText failed - {result.Error}");
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "Error",
+                    Detail = $"Failed to process... {result.Error}",
+                    Duration = 4000
+                });
+            }
         }
-        else
+        catch (Exception ex)
         {
+            InProgress = false;
+            StateHasChanged();
+
+            await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Exception in ProcessOCRText - {ex.Message}");
             NotificationService.Notify(new NotificationMessage
             {
                 Severity = NotificationSeverity.Error,
                 Summary = "Error",
-                Detail = $"Failed to process... {result.Error}",
-                Duration = 4000
+                Detail = ex.Message,
+                Duration = 8000
             });
         }
     }
