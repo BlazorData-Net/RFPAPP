@@ -43,7 +43,11 @@ namespace RFPResponsePOC.Client.Models
                     {
                         if (room.Name != maxSqFtRoom.Name)
                         {
-                            room.RoomGroup = targetGroup;
+                            // If the room name contains "Foyer", do not change its RoomGroup
+                            if (!room.Name.ToLower().Contains("foyer"))
+                            {
+                                room.RoomGroup = targetGroup;
+                            }
                         }
                     }
                 }
