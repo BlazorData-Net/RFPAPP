@@ -58,6 +58,7 @@ namespace RFPResponsePOC.Client.Services
         /// <summary>
         /// Main calculation method that processes RFP text and assigns rooms to requests.
         /// Implements a first-fit algorithm where rooms are assigned to requests in order.
+        /// Rooms are sorted by capacity (lowest to highest) to optimize space usage.
         /// </summary>
         /// <param name="rfpText">JSON string containing an array of room requests</param>
         /// <returns>List of room assignments with original requests and assigned room names</returns>
@@ -149,20 +150,26 @@ namespace RFPResponsePOC.Client.Services
 
                         await _logService.WriteToLogAsync($"[{DateTime.Now}] Processing request: {req.Name} for {req.Attendance} people in {req.RoomType} setup from {start} to {end}");
 
-                        // Search through all available rooms to find the first suitable match
-                        foreach (var room in capacity.Rooms)
+                        // Sort rooms by capacity for the specific room type (lowest to highest)
+                        // This ensures we assign the smallest suitable room rather than the first available
+                        var sortedRooms = capacity.Rooms
+                            .Where(room => MeetsCapacity(room, req)) // Pre-filter rooms that meet capacity
+                            .OrderBy(room => GetRoomCapacityForType(room, req.RoomType)) // Sort by capacity for the specific room type
+                            .ThenBy(room => room.SquareFeet ?? 0) // Secondary sort by square footage for consistent ordering
+                            .ToList();
+
+                        await _logService.WriteToLogAsync($"[{DateTime.Now}] Found {sortedRooms.Count} suitable rooms for request {req.Name}");
+
+                        // Search through sorted rooms to find the first available match
+                        foreach (var room in sortedRooms)
                         {
                             try
                             {
-                                // Check if room meets capacity requirements for the requested setup
-                                if (!MeetsCapacity(room, req))
-                                    continue;
-
                                 // Check if room is available during the requested time period
                                 if (IsAvailable(room, start, end, schedule, capacity.Rooms))
                                 {
                                     selected = room;
-                                    await _logService.WriteToLogAsync($"[{DateTime.Now}] Room assigned: {selected.Name} for request {req.Name}");
+                                    await _logService.WriteToLogAsync($"[{DateTime.Now}] Room assigned: {selected.Name} (capacity: {GetRoomCapacityForType(selected, req.RoomType)}) for request {req.Name}");
                                     break; // Stop searching once we find a suitable room
                                 }
                             }
@@ -216,6 +223,41 @@ namespace RFPResponsePOC.Client.Services
                 // Catch-all error handler to ensure method never throws unhandled exceptions
                 await _logService.WriteToLogAsync($"[{DateTime.Now}] CRITICAL ERROR: Unexpected error in CalculateAsync - {ex.Message}");
                 return assignments;
+            }
+        }
+
+        /// <summary>
+        /// Gets the capacity of a room for a specific room type/setup.
+        /// Used for sorting rooms to prefer smaller suitable rooms over larger ones.
+        /// </summary>
+        /// <param name="room">The room to get capacity for</param>
+        /// <param name="roomType">The setup type (e.g., "Conference", "Banquet", etc.)</param>
+        /// <returns>The capacity for the specified room type, or 0 if not found/invalid</returns>
+        private int GetRoomCapacityForType(Room room, string roomType)
+        {
+            try
+            {
+                // Validate input parameters
+                if (room?.Capacities == null || string.IsNullOrEmpty(roomType))
+                    return 0;
+
+                // Use reflection to find the property that matches the requested room type
+                var prop = typeof(Capacities).GetProperty(roomType, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+                if (prop == null)
+                    return 0;
+
+                // Get the capacity value for the specific setup type
+                var value = prop.GetValue(room.Capacities);
+                if (value == null)
+                    return 0;
+
+                // Convert to integer and return
+                return Convert.ToInt32(value);
+            }
+            catch (Exception)
+            {
+                // Return 0 for any errors to ensure consistent sorting
+                return 0;
             }
         }
 
