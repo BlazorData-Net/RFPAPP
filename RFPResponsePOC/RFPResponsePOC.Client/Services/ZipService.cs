@@ -89,7 +89,7 @@ namespace RFPResponsePOC.Client.Services
             // Extract the zip file
             ZipFile.ExtractToDirectory($"{extractPath}/ZipFiles.zip", BasePath, true);
 
-            await LogService.WriteToLogAsync("Saved data extracted at " + DateTime.Now + " [" + DateTime.Now.Ticks.ToString() + "]");
+            await LogService.WriteToLogAsync("[" + DateTime.Now + "] Saved data extracted.");
         }
 
         public async Task DownloadZipFile()
