@@ -47,6 +47,7 @@ Into the following JSON format, which matches the expected structure for a venue
 #6 If the RFP mentions breaks or meals, create separate entries for those as well, specifying the type of room and expected attendance.
 #7 If the RFP does not specify a date, leave the `start_date` and `end_date` fields empty.
 #8 If the RFP specifies a theatre style setup, include that in the `notes` field.
+#9 Make the room_type the closest value to one of the following: "Banquet", "Conference", "Theatre", "Classroom", "U-Shape", "Boardroom", "Hollow Square", "Crescent Rounds", or "Reception". 
 
 For example, if ### RFP CONTENTS contains:
 

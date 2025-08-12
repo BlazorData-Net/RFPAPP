@@ -1,4 +1,5 @@
-﻿Please parse the contents of this Capacity Chart into the json format. Put the room names in alphabetical order.
+﻿#1 Please parse the contents of this Capacity Chart into the json format. Put the room names in alphabetical order.
+#2 Make the capacities name the closest value to one of the following: "banquet", "conference", "theatre", "classroom", "uShape", "boardroom", "hollowSquare", "crescentRounds", or "reception". 
 
 ### CAPACITY CHART START
 {{OCRResult}}
