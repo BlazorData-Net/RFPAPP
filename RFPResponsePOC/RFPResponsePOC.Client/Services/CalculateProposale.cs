@@ -138,6 +138,9 @@ namespace RFPResponsePOC.Client.Services
                 // Value: List of time intervals when the room is booked
                 var schedule = new Dictionary<string, List<(DateTime start, DateTime end)>>();
 
+                // Put requests in order based on start date and time
+                requests = requests.OrderBy(req => req.StartDate.Date.Add(req.StartTime)).ToList();
+
                 // Process each room request in order (first-fit algorithm)
                 foreach (var req in requests)
                 {
