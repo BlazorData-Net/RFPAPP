@@ -114,6 +114,8 @@ namespace RFPResponsePOC.AI
                 };
 
                 var client = new HttpClient();
+                // Increase timeout to 10 minutes for AI processing (OCR and large image processing can take time)
+                client.Timeout = TimeSpan.FromMinutes(10);
                 client.DefaultRequestHeaders.Authorization = 
                     new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", objSettings.Settings.ApplicationSettings.ApiKey);
 

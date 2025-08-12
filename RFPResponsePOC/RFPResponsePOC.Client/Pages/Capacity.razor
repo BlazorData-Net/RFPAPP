@@ -47,6 +47,8 @@
 
 @if (capacityData?.Rooms != null)
 {
+    <RadzenButton Text="Save Capacity" Icon="save" Style="margin-left: 10px; margin-bottom: 10px; background-color: #007bff;" ButtonStyle="ButtonStyle.Primary" Click="SaveCapacityData" />
+    
     @if (ParentRooms.Count() >= 1)
     {
         <RadzenButton Text="Print Chart" Icon="picture_as_pdf" Style="margin-left: 10px; margin-bottom: 10px;" ButtonStyle="ButtonStyle.Secondary" Click="PrintCapacityChart" />
@@ -142,6 +144,55 @@
     private async Task DownloadCapacityCsv()
     {
         await JsRuntime.InvokeVoidAsync("pdfInterop.downloadRoomsCsv", capacityData?.Rooms);
+    }
+
+    private async Task SaveCapacityData()
+    {
+        try
+        {
+            if (capacityData?.Rooms == null || !capacityData.Rooms.Any())
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = "Warning",
+                    Detail = "No capacity data to save.",
+                    Duration = 4000
+                });
+                return;
+            }
+
+            // Sort by room name before saving
+            capacityData.Rooms.Sort((x, y) => string.Compare(x.Name, y.Name, StringComparison.OrdinalIgnoreCase));
+
+            // Serialize the capacityData to JSON
+            var json = JsonConvert.SerializeObject(capacityData, Formatting.Indented);
+
+            // Save the JSON result to the virtual file system
+            await File.WriteAllTextAsync($"{BasePath}//Capacity.json", json);
+
+            await LogService.WriteToLogAsync($"[{DateTime.Now}] Capacity data saved successfully with {capacityData.Rooms.Count} rooms");
+
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Success",
+                Detail = $"Capacity data saved successfully ({capacityData.Rooms.Count} rooms).",
+                Duration = 4000
+            });
+        }
+        catch (Exception ex)
+        {
+            await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Failed to save capacity data - {ex.Message}");
+
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Error",
+                Detail = $"Failed to save capacity data: {ex.Message}",
+                Duration = 8000
+            });
+        }
     }
 
     private bool InProgress = false;
@@ -246,6 +297,9 @@
                 pdfBytes = ms.ToArray();
             }
 
+            CurrentStatus = "Processing image with AI (this may take several minutes)...";
+            StateHasChanged();
+
             // Read the contents of \Prompts\Capacity.prompt into prompt
             var OCRprompt = await Http.GetStringAsync("Prompts/OCR.prompt");
 
@@ -257,8 +311,7 @@
             result = await objOrchestratorMethods.CallOpenAIFileAsync(settingsService, OCRprompt, pdfBytes);
 
             // Process the OCR result
-
-            CurrentStatus = "Converting capacity chart...";
+            CurrentStatus = "Converting capacity chart (this may take a few minutes)...";
             StateHasChanged();
 
             // Read the contents of \Prompts\Capacity.prompt into prompt
@@ -276,7 +329,7 @@
             // Remove from TempCapacityData any room that has the word "and" or an "&" or a "+" in the room name
             // and build capacityData
 
-            CurrentStatus = "Processing capacity chart...";
+            CurrentStatus = "Finalizing capacity chart...";
             StateHasChanged();
 
             capacityData = new CapacityRoot
@@ -328,18 +381,69 @@
             // Clear the selected files so the list is removed
             await uploader.ClearFiles();
         }
+        catch (TaskCanceledException tcEx) when (tcEx.InnerException is TimeoutException)
+        {
+            InProgress = false;
+            StateHasChanged();
+
+            await LogService.WriteToLogAsync($"[{DateTime.Now}] TIMEOUT: AI processing timed out - {tcEx.Message}");
+            
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Processing Timeout",
+                Detail = "The AI processing took too long and timed out. Please try with a smaller or simpler image, or try again later.",
+                Duration = 10000
+            });
+        }
+        catch (HttpRequestException httpEx) when (httpEx.Message.Contains("timeout"))
+        {
+            InProgress = false;
+            StateHasChanged();
+
+            await LogService.WriteToLogAsync($"[{DateTime.Now}] TIMEOUT: HTTP request timed out - {httpEx.Message}");
+            
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Network Timeout",
+                Detail = "The request to the AI service timed out. This can happen with large or complex images. Please try again with a smaller image or try again later.",
+                Duration = 10000
+            });
+        }
         catch (Exception ex)
         {
             InProgress = false;
             StateHasChanged();
 
-            NotificationService.Notify(new NotificationMessage
+            await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Exception in OnCapacityChartUpload - {ex.Message}");
+
+            // Check if the error message contains timeout-related keywords
+            var isTimeoutError = ex.Message.Contains("timeout", StringComparison.OrdinalIgnoreCase) ||
+                               ex.Message.Contains("100 seconds", StringComparison.OrdinalIgnoreCase) ||
+                               ex.Message.Contains("HttpClient.Timeout", StringComparison.OrdinalIgnoreCase) ||
+                               ex.Message.Contains("canceled due to the configured", StringComparison.OrdinalIgnoreCase);
+
+            if (isTimeoutError)
             {
-                Severity = NotificationSeverity.Error,
-                Summary = "Error",
-                Detail = ex.Message,
-                Duration = 8000
-            });
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "AI Processing Timeout",
+                    Detail = "The AI processing is taking longer than expected. Large or complex images may require more time. Please try with a smaller image or try again later.",
+                    Duration = 10000
+                });
+            }
+            else
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "Error",
+                    Detail = ex.Message,
+                    Duration = 8000
+                });
+            }
         }
     }
 
@@ -437,10 +541,15 @@
         // Remove the room from the data source
         var index = capacityData.Rooms.FindIndex(r => r.Name == room.Name);
 
+        var roomToDelete = capacityData.Rooms.FirstOrDefault(r => r.Name == room.Name);
+
         if (index >= 0)
         {
             capacityData.Rooms.RemoveAt(index);
         }
+
+        // Remove any child rooms associated with this room
+        capacityData.Rooms.RemoveAll(r => r.RoomGroup == room.Name);
 
         // Save changes to the JSON file
         Task.Run(async () =>
