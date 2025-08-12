@@ -1,10 +1,12 @@
 ﻿@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 @using System.Text
 @using System.Collections.Generic
+@using System.Linq
 @using BlazorWebAssemblyPDF.Services
 @using Newtonsoft.Json
 @using RFPResponsePOC.Client.Services
 @using RFPResponsePOC.Model
+@using RFPResponsePOC.Models
 @using Microsoft.AspNetCore.Components.Forms
 @using RFPResponsePOC.AI
 @using System.IO
@@ -53,6 +55,69 @@
     <RadzenTextArea @bind-Value="RFPText" Rows="10" Style="width: 100%; height: 300px;" />
 </RadzenCard>
 
+@if (proposalRows?.Any() == true)
+{
+    <RadzenDataGrid Data="@proposalRows" TItem="ProposalRow" EditMode="DataGridEditMode.Single" Editable="true" Style="margin-top:20px">
+        <Columns>
+            <RadzenDataGridColumn TItem="ProposalRow" Property="Name" Title="Name" />
+            <RadzenDataGridColumn TItem="ProposalRow" Property="SelectedRoom" Title="Room">
+                <EditTemplate Context="row">
+                    <RadzenDropDown Data="@roomOptions" @bind-Value="row.SelectedRoom" Style="width:100%" />
+                </EditTemplate>
+                <Template Context="row">@row.SelectedRoom</Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="ProposalRow" Property="ManualRoom" Title="Manual Room">
+                <EditTemplate Context="row">
+                    <RadzenTextBox @bind-Value="row.ManualRoom" Style="width:100%" />
+                </EditTemplate>
+                <Template Context="row">@row.ManualRoom</Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="ProposalRow" Property="StartDate" Title="Start Date">
+                <EditTemplate Context="row">
+                    <RadzenDatePicker @bind-Value="row.StartDate" Style="width:100%" />
+                </EditTemplate>
+                <Template Context="row">@row.StartDate.ToShortDateString()</Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="ProposalRow" Property="StartTime" Title="Start Time">
+                <EditTemplate Context="row">
+                    <RadzenTextBox @bind-Value="row.StartTime" Style="width:100%" />
+                </EditTemplate>
+                <Template Context="row">@row.StartTime</Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="ProposalRow" Property="EndDate" Title="End Date">
+                <EditTemplate Context="row">
+                    <RadzenDatePicker @bind-Value="row.EndDate" Style="width:100%" />
+                </EditTemplate>
+                <Template Context="row">@row.EndDate.ToShortDateString()</Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="ProposalRow" Property="EndTime" Title="End Time">
+                <EditTemplate Context="row">
+                    <RadzenTextBox @bind-Value="row.EndTime" Style="width:100%" />
+                </EditTemplate>
+                <Template Context="row">@row.EndTime</Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="ProposalRow" Property="RoomType" Title="Room Type">
+                <EditTemplate Context="row">
+                    <RadzenTextBox @bind-Value="row.RoomType" Style="width:100%" />
+                </EditTemplate>
+                <Template Context="row">@row.RoomType</Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="ProposalRow" Property="Attendance" Title="Attendance">
+                <EditTemplate Context="row">
+                    <RadzenNumeric @bind-Value="row.Attendance" Style="width:100%" />
+                </EditTemplate>
+                <Template Context="row">@row.Attendance</Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="ProposalRow" Property="Notes" Title="Notes">
+                <EditTemplate Context="row">
+                    <RadzenTextBox @bind-Value="row.Notes" Style="width:100%" />
+                </EditTemplate>
+                <Template Context="row">@row.Notes</Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+}
+
 <!-- hidden canvas used for PDF conversions to PNG -->
 <canvas id="pdfCanvas" style="display:none; border:1px solid #ccc;"></canvas>
 @code {
@@ -69,6 +134,23 @@
     AIResponse result = new AIResponse();
 
     ZipService objZipService = new ZipService();
+
+    private List<ProposalRow> proposalRows = new();
+    private List<string> roomOptions = new();
+
+    public class ProposalRow
+    {
+        public string Name { get; set; }
+        public string SelectedRoom { get; set; }
+        public string ManualRoom { get; set; }
+        public DateTime StartDate { get; set; }
+        public string StartTime { get; set; }
+        public DateTime EndDate { get; set; }
+        public string EndTime { get; set; }
+        public string RoomType { get; set; }
+        public int Attendance { get; set; }
+        public string Notes { get; set; }
+    }
 
     // Run on page load
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -322,7 +404,33 @@
             // Create calculator with LogService
             var calculator = new CalculateProposale("/RFPResponsePOC", LogService);
             var assigned = await calculator.CalculateAsync(RFPText);
-            
+
+            try
+            {
+                var capacityJson = await File.ReadAllTextAsync("/RFPResponsePOC/Capacity.json");
+                var capacity = JsonConvert.DeserializeObject<CapacityRoot>(capacityJson);
+                roomOptions = capacity?.Rooms?.Select(r => r.Name).OrderBy(n => n).ToList() ?? new List<string>();
+            }
+            catch (Exception ex)
+            {
+                await LogService.WriteToLogAsync($"[{DateTime.Now}] WARNING: Unable to load Capacity.json - {ex.Message}");
+                roomOptions = new List<string>();
+            }
+
+            proposalRows = assigned.Select(a => new ProposalRow
+            {
+                Name = a.Request.Name,
+                SelectedRoom = a.AssignedRoom,
+                ManualRoom = string.Empty,
+                StartDate = a.Request.StartDate,
+                StartTime = a.Request.StartTime.ToString(@"hh\\:mm"),
+                EndDate = a.Request.EndDate,
+                EndTime = a.Request.EndTime.ToString(@"hh\\:mm"),
+                RoomType = a.Request.RoomType,
+                Attendance = a.Request.Attendance,
+                Notes = a.Request.Notes
+            }).ToList();
+
             // Convert results back to JSON for display
             RFPText = JsonConvert.SerializeObject(assigned, Formatting.Indented);
 
