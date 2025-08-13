@@ -60,16 +60,16 @@
     <RadzenButton Text="Add Row" Icon="add" Style="margin-top:10px" ButtonStyle="ButtonStyle.Primary" Click="InsertRow" />
     <RadzenDataGrid @ref="grid" Data="@proposalRows" TItem="ProposalRow" EditMode="DataGridEditMode.Single" Editable="true" Style="margin-top:20px">
         <Columns>
-            <RadzenDataGridColumn TItem="ProposalRow" Filterable="false" Sortable="false" Width="80px" TextAlign="TextAlign.Center" Title="EDIT">
+            <RadzenDataGridColumn TItem="ProposalRow" Filterable="false" Sortable="false" Width="110px" TextAlign="TextAlign.Center" Title="EDIT/DEL">
                 <Template Context="row">
                     @if (grid.IsRowInEditMode(row))
                     {
                         <RadzenButton Icon="save" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.ExtraSmall"
                                       Click="@((args) => SaveRow(row))" @onclick:stopPropagation="true"
                                       title="Save row" />
-                        <span>&nbsp;&nbsp;</span>
+                        <span>&nbsp;</span>
                         <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.ExtraSmall"
-                                      Click="@((args) => DeleteRow(row))" @onclick:stopPropagation="true"
+                                      Click="@((args) => ConfirmDeleteRow(row))" @onclick:stopPropagation="true"
                                       title="Delete row" />
                     }
                     else
@@ -77,6 +77,10 @@
                         <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.ExtraSmall"
                                       Click="@((args) => EditRow(row))" @onclick:stopPropagation="true"
                                       title="Edit row" />
+                        <span>&nbsp;</span>
+                        <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.ExtraSmall"
+                                      Click="@((args) => ConfirmDeleteRow(row))" @onclick:stopPropagation="true"
+                                      title="Delete row" />
                     }
                 </Template>
             </RadzenDataGridColumn>
@@ -179,14 +183,12 @@
 <br />
 <br />
 <br />
-<!-- hidden canvas used for PDF conversions to PNG -->
 <canvas id="pdfCanvas" style="display:none; border:1px solid #ccc;"></canvas>
 @code {
 #nullable disable
     private IDisposable registration;
     Radzen.Blazor.RadzenUpload uploader;
-    RadzenDataGrid<ProposalRow> grid; // Add this reference
-    // Allow access to the JSRuntime
+    RadzenDataGrid<ProposalRow> grid;
     private DotNetObjectReference<Proposal> objRef;
 
     private string RFPText = string.Empty;
@@ -194,7 +196,6 @@
     private string CurrentStatus = "";
 
     AIResponse result = new AIResponse();
-
     ZipService objZipService = new ZipService();
 
     private List<ProposalRow> proposalRows = new();
@@ -206,38 +207,22 @@
         public string SelectedRoom { get; set; }
         public string ManualRoom { get; set; }
         public DateTime StartDate { get; set; }
-        public TimeSpan StartTime { get; set; } // store pure time
+        public TimeSpan StartTime { get; set; }
         public DateTime EndDate { get; set; }
-        public TimeSpan EndTime { get; set; }   // store pure time
+        public TimeSpan EndTime { get; set; }
         public string RoomType { get; set; }
         public int Attendance { get; set; }
         public string Notes { get; set; }
-
-        // Binding helpers for RadzenDatePicker TimeOnly (needs DateTime)
-        public DateTime StartTimeBinding
-        {
-            get => DateTime.Today.Add(StartTime);
-            set => StartTime = value.TimeOfDay;
-        }
-        public DateTime EndTimeBinding
-        {
-            get => DateTime.Today.Add(EndTime);
-            set => EndTime = value.TimeOfDay;
-        }
+        public DateTime StartTimeBinding { get => DateTime.Today.Add(StartTime); set => StartTime = value.TimeOfDay; }
+        public DateTime EndTimeBinding { get => DateTime.Today.Add(EndTime); set => EndTime = value.TimeOfDay; }
     }
 
-    // Add this method to handle row editing
-    async Task EditRow(ProposalRow row)
-    {
-        await grid.EditRow(row);
-    }
+    async Task EditRow(ProposalRow row) => await grid.EditRow(row);
 
-    ProposalRow newRow; 
+    ProposalRow newRow;
 
-    // NEW: central sort helper
     private void SortProposalRows()
     {
-        // Primary: StartDate then StartTime; secondary: EndDate, EndTime, Name for stability
         proposalRows = proposalRows
             .OrderBy(r => r.StartDate.Date)
             .ThenBy(r => r.StartTime)
@@ -257,8 +242,33 @@
         proposalRows.Add(newRow);
         SortProposalRows();
         await grid.Reload();
-        // Put the (now sorted) new row into edit mode
         await grid.EditRow(newRow);
+    }
+
+    private async Task ConfirmDeleteRow(ProposalRow row)
+    {
+        var name = string.IsNullOrWhiteSpace(row?.Name) ? "this row" : $"'{row.Name}'";
+        var confirmed = await DialogService.Confirm(
+            $"Are you sure you want to delete {name}?",
+            "Confirm Delete",
+            new ConfirmOptions
+            {
+                OkButtonText = "Delete",
+                CancelButtonText = "Cancel", 
+                ContentCssClass = "rz-button rz-state-default rz-danger"
+            });
+
+        if (confirmed == true)
+        {
+            await DeleteRow(row);
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Info,
+                Summary = "Deleted",
+                Detail = $"{(row?.Name ?? "Row")} removed.",
+                Duration = 3000
+            });
+        }
     }
 
     async Task DeleteRow(ProposalRow row)
@@ -291,8 +301,6 @@
         }
 
         await grid.UpdateRow(row);
-
-        // Re-sort after updates
         SortProposalRows();
         await grid.Reload();
     }
@@ -302,17 +310,9 @@
     {
         if (firstRender)
         {
-            // Set a reference to the current instance of Home
             objRef = DotNetObjectReference.Create(this);
-
-            // Register the beforeunload event with JavaScript
             await JsRuntime.InvokeVoidAsync("setupBeforeUnload", objRef);
-
-            // Register the location changing handler
-            registration =
-            Navigation.RegisterLocationChangingHandler(OnLocationChanging);
-
-            // Initialize the ZipService
+            registration = Navigation.RegisterLocationChangingHandler(OnLocationChanging);
             objZipService = new ZipService(JsRuntime, localStorage, _SettingsService, LogService);
         }
     }
@@ -328,27 +328,16 @@
     #region JavaScript
     private ValueTask OnLocationChanging(LocationChangingContext context)
     {
-        // Get the base URL
         string baseUrl = Navigation.BaseUri;
-
-        // Detect that user is going to counter page
         if (context.TargetLocation != baseUrl)
         {
-            // User is navigating away from the page - Zip any files
-            // Zip up any files and store in LocalStorage
             Task.Run(async () => await objZipService.ZipTheFiles());
         }
-
         return ValueTask.CompletedTask;
     }
 
     [JSInvokable]
-    public async Task HandleBeforeUnload()
-    {
-        // User is navigating away from the page - Zip any files
-        // Zip up any files and store in LocalStorage
-        await objZipService.ZipTheFiles();
-    }
+    public async Task HandleBeforeUnload() => await objZipService.ZipTheFiles();
     #endregion
 
     private async Task OnProposalUpload(UploadChangeEventArgs e)
@@ -360,7 +349,6 @@
             StateHasChanged();
 
             var file = e.Files.FirstOrDefault();
-
             if (file is null)
             {
                 InProgress = false;
@@ -375,7 +363,6 @@
                 await stream.CopyToAsync(ms);
                 ms.Position = 0;
 
-                // Use ZipArchive and LINQ to XML to read body elements
                 using var archive = new ZipArchive(ms, ZipArchiveMode.Read, leaveOpen: true);
                 var entry = archive.GetEntry("word/document.xml");
 
@@ -394,9 +381,7 @@
                             if (element.Name == w + "p")
                             {
                                 foreach (var text in element.Descendants(w + "t"))
-                                {
                                     sb.Append(text.Value);
-                                }
                                 sb.AppendLine();
                             }
                             else if (element.Name == w + "tbl")
@@ -406,9 +391,7 @@
                                     foreach (var cell in row.Elements(w + "tc"))
                                     {
                                         foreach (var text in cell.Descendants(w + "t"))
-                                        {
                                             sb.Append(text.Value);
-                                        }
                                         sb.Append("\t");
                                     }
                                     sb.AppendLine();
@@ -441,15 +424,13 @@
                 }
                 else
                 {
-                    // Read the file as a byte array
-                    using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024); // 10MB limit
+                    using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
                     using var ms = new MemoryStream();
                     await stream.CopyToAsync(ms);
                     pdfBytes = ms.ToArray();
                 }
 
                 var OCRprompt = await Http.GetStringAsync("Prompts/OCR.prompt");
-
                 var objOrchestratorMethods = new OrchestratorMethods(_SettingsService, LogService);
                 var settingsService = new SettingsService();
 
@@ -457,7 +438,6 @@
                 RFPText = result.Response;
             }
 
-            // Clear the selected files so the list is removed
             await uploader.ClearFiles();
             InProgress = false;
             StateHasChanged();
@@ -466,9 +446,7 @@
         {
             InProgress = false;
             StateHasChanged();
-
             await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Exception in OnProposalUpload - {ex.Message}");
-
             NotificationService.Notify(new NotificationMessage
             {
                 Severity = NotificationSeverity.Error,
@@ -488,12 +466,9 @@
             StateHasChanged();
 
             await LogService.WriteToLogAsync($"[{DateTime.Now}] CalculateProposal method started");
-            
-            // Add more detailed logging for debugging
             await LogService.WriteToLogAsync($"[{DateTime.Now}] RFPText content length: {RFPText?.Length ?? 0}");
             await LogService.WriteToLogAsync($"[{DateTime.Now}] RFPText content (first 1000 chars): {RFPText?.Substring(0, Math.Min(1000, RFPText?.Length ?? 0))}");
 
-            // Check if RFPText is empty or null
             if (string.IsNullOrWhiteSpace(RFPText))
             {
                 await LogService.WriteToLogAsync($"[{DateTime.Now}] WARNING: RFPText is empty or null in CalculateProposal");
@@ -507,32 +482,19 @@
                 return;
             }
 
-            // Add validation and error handling for JSON parsing
             string processedJsonText = RFPText;
             try
             {
-                // First, let's check if it's already a valid JSON array
                 var testParse = JsonConvert.DeserializeObject(RFPText);
                 await LogService.WriteToLogAsync($"[{DateTime.Now}] JSON parsing test successful. Object type: {testParse?.GetType().Name}");
-                
-                // Check if it's an object that contains an array property
                 if (testParse is Newtonsoft.Json.Linq.JObject jObject)
                 {
                     await LogService.WriteToLogAsync($"[{DateTime.Now}] Detected JSON object. Properties: {string.Join(", ", jObject.Properties().Select(p => p.Name))}");
-                    
-                    // Look for potential array properties
                     var arrayProperty = jObject.Properties().FirstOrDefault(p => p.Value is Newtonsoft.Json.Linq.JArray);
                     if (arrayProperty != null)
-                    {
-                        await LogService.WriteToLogAsync($"[{DateTime.Now}] Found array property: {arrayProperty.Name}");
                         processedJsonText = arrayProperty.Value.ToString();
-                    }
                     else
-                    {
-                        // Check if the object itself can be converted to an array (wrap in array)
-                        await LogService.WriteToLogAsync($"[{DateTime.Now}] No array property found, wrapping object in array");
                         processedJsonText = $"[{RFPText}]";
-                    }
                 }
             }
             catch (JsonReaderException jsonReadEx)
@@ -548,13 +510,10 @@
                 return;
             }
 
-            // Log the processed JSON before passing to calculator
             await LogService.WriteToLogAsync($"[{DateTime.Now}] Processed JSON text (first 1000 chars): {processedJsonText?.Substring(0, Math.Min(1000, processedJsonText?.Length ?? 0))}");
 
-            // Create calculator with LogService
             var calculator = new CalculateProposale("/RFPResponsePOC", LogService);
-            
-            // FIXED: Change variable type from List<dynamic> to List<RoomAssignment>
+
             List<RoomAssignment> assigned;
             try
             {
@@ -578,7 +537,7 @@
             {
                 await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Exception in CalculateAsync - {calcEx.Message}");
                 await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Stack trace - {calcEx.StackTrace}");
-                throw; // Re-throw to be caught by outer catch
+                throw;
             }
 
             try
@@ -593,7 +552,6 @@
                 roomOptions = new List<string>();
             }
 
-            // FIXED: Update the ProposalRow creation to work with RoomAssignment type
             try
             {
                 proposalRows = assigned.Select(a => new ProposalRow
@@ -609,6 +567,7 @@
                     Attendance = a.Request?.Attendance ?? 0,
                     Notes = a.Request?.Notes ?? ""
                 }).ToList();
+                SortProposalRows();
             }
             catch (Exception rowEx)
             {
@@ -617,7 +576,6 @@
                 throw;
             }
 
-            // Convert results back to JSON for display
             RFPText = JsonConvert.SerializeObject(assigned, Formatting.Indented);
 
             await LogService.WriteToLogAsync($"[{DateTime.Now}] CalculateProposal completed successfully with {assigned.Count} assignments");
@@ -668,7 +626,6 @@
         {
             await LogService.WriteToLogAsync($"[{DateTime.Now}] ProcessOCRText method started");
 
-            // Process the OCR text
             var objOrchestratorMethods = new OrchestratorMethods(_SettingsService, LogService);
             var settingsService = new SettingsService();
 
@@ -676,13 +633,9 @@
             CurrentStatus = "Converting...";
             StateHasChanged();
 
-            // Read the contents of \Prompts\Proposal.prompt into prompt
             var Proposalprompt = await Http.GetStringAsync("Prompts/Proposal.prompt");
-
-            // Replace the placeholder in the prompt with the OCR result
             Proposalprompt = Proposalprompt.Replace("{{OCRResult}}", RFPText);
 
-            // Call the OpenAIChatAsync method with the settings, prompt, and OCR result
             result = await objOrchestratorMethods.CallOpenAIAsync(settingsService, Proposalprompt);
 
             RFPText = $"[{result.Response}]";
@@ -693,7 +646,6 @@
             InProgress = false;
             StateHasChanged();
 
-            // Handle result (show notification, update UI, etc.)
             if (result.Error == "")
             {
                 await LogService.WriteToLogAsync($"[{DateTime.Now}] ProcessOCRText completed successfully");
@@ -721,7 +673,6 @@
         {
             InProgress = false;
             StateHasChanged();
-
             await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Exception in ProcessOCRText - {ex.Message}");
             NotificationService.Notify(new NotificationMessage
             {
@@ -733,8 +684,5 @@
         }
     }
 
-    public void Dispose()
-    {
-        objRef?.Dispose();
-    }
+    public void Dispose() => objRef?.Dispose();
 }
