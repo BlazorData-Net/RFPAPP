@@ -177,6 +177,12 @@
         </Columns>
     </RadzenDataGrid>
 }
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
 <!-- hidden canvas used for PDF conversions to PNG -->
 <canvas id="pdfCanvas" style="display:none; border:1px solid #ccc;"></canvas>
 @code {
@@ -231,7 +237,8 @@
     }
 
     ProposalRow newRow;
-    void InsertRow()
+
+    async Task InsertRow()
     {
         newRow = new ProposalRow
         {
@@ -239,7 +246,8 @@
             EndDate = DateTime.Today
         };
         proposalRows.Add(newRow);
-        grid.EditRow(newRow);
+        await grid.EditRow(newRow);
+        await grid.Reload();
     }
 
     async Task DeleteRow(ProposalRow row)
