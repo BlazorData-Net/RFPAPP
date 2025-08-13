@@ -98,7 +98,7 @@
                 </Template>
                 <EditTemplate Context="row">
                     <div style="display:flex; flex-direction:column">
-                        <RadzenDropDown Data="@roomOptions" @bind-Value="row.SelectedRoom" Style="width:100%" />
+                        <RadzenDropDown Data="@roomOptions" @bind-Value="row.SelectedRoom" AllowClear="true" Style="width:100%" />
                         <RadzenTextBox @bind-Value="row.ManualRoom" Style="width:100%; margin-top:5px" Placeholder="Override room" />
                     </div>
                 </EditTemplate>
