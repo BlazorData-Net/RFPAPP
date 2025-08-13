@@ -61,9 +61,18 @@
         <Columns>
             <RadzenDataGridColumn TItem="ProposalRow" Filterable="false" Sortable="false" Width="80px" TextAlign="TextAlign.Center" Title="Actions">
                 <Template Context="row">
-                    <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.ExtraSmall" 
-                                  Click="@((args) => EditRow(row))" @onclick:stopPropagation="true" 
-                                  title="Edit row" />
+                    @if (grid.IsRowInEditMode(row))
+                    {
+                        <RadzenButton Icon="save" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.ExtraSmall"
+                                      Click="@((args) => SaveRow(row))" @onclick:stopPropagation="true"
+                                      title="Save row" />
+                    }
+                    else
+                    {
+                        <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.ExtraSmall"
+                                      Click="@((args) => EditRow(row))" @onclick:stopPropagation="true"
+                                      title="Edit row" />
+                    }
                 </Template>
             </RadzenDataGridColumn>
             <RadzenDataGridColumn TItem="ProposalRow" Property="Name" Title="Name" Width="200px">
@@ -78,19 +87,26 @@
             </RadzenDataGridColumn>
             <RadzenDataGridColumn TItem="ProposalRow" Property="SelectedRoom" Title="Room" Width="180px">
                 <Template Context="row">
-                    <div style="white-space: normal; word-wrap: break-word; overflow-wrap: break-word; line-height: 1.4;">
-                        @row.SelectedRoom
-                    </div>
+                    @if (!string.IsNullOrEmpty(row.ManualRoom))
+                    {
+                        row.SelectedRoom = null;
+                        <div style="white-space: normal; word-wrap: break-word; overflow-wrap: break-word; line-height: 1.4;">
+                            @row.ManualRoom
+                        </div>
+                    }
+                    else
+                    {
+                        <div style="white-space: normal; word-wrap: break-word; overflow-wrap: break-word; line-height: 1.4;">
+                            @row.SelectedRoom
+                        </div>
+                    }
                 </Template>
                 <EditTemplate Context="row">
-                    <RadzenDropDown Data="@roomOptions" @bind-Value="row.SelectedRoom" Style="width:100%" />
+                    <div style="display:flex; flex-direction:column">
+                        <RadzenDropDown Data="@roomOptions" @bind-Value="row.SelectedRoom" Style="width:100%" />
+                        <RadzenTextBox @bind-Value="row.ManualRoom" Style="width:100%; margin-top:5px" />
+                    </div>
                 </EditTemplate>
-            </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="ProposalRow" Property="ManualRoom" Title="Manual Room" Width="150px">
-                <EditTemplate Context="row">
-                    <RadzenTextBox @bind-Value="row.ManualRoom" Style="width:100%" />
-                </EditTemplate>
-                <Template Context="row">@row.ManualRoom</Template>
             </RadzenDataGridColumn>
             <RadzenDataGridColumn TItem="ProposalRow" Property="StartDate" Title="Start Date" Width="120px">
                 <EditTemplate Context="row">
@@ -181,6 +197,15 @@
     async Task EditRow(ProposalRow row)
     {
         await grid.EditRow(row);
+    }
+
+    async Task SaveRow(ProposalRow row)
+    {
+        if (!string.IsNullOrEmpty(row.ManualRoom))
+        {
+            row.SelectedRoom = null;
+        }
+        await grid.UpdateRow(row);
     }
 
     // Run on page load
