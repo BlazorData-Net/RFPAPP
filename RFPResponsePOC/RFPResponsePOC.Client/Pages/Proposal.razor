@@ -77,10 +77,6 @@
                         <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.ExtraSmall"
                                       Click="@((args) => EditRow(row))" @onclick:stopPropagation="true"
                                       title="Edit row" />
-                        <span>&nbsp;</span>
-                        <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.ExtraSmall"
-                                      Click="@((args) => ConfirmDeleteRow(row))" @onclick:stopPropagation="true"
-                                      title="Delete row" />
                     }
                 </Template>
             </RadzenDataGridColumn>
@@ -254,8 +250,7 @@
             new ConfirmOptions
             {
                 OkButtonText = "Delete",
-                CancelButtonText = "Cancel", 
-                ContentCssClass = "rz-button rz-state-default rz-danger"
+                CancelButtonText = "Cancel"
             });
 
         if (confirmed == true)
