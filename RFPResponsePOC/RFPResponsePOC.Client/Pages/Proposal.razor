@@ -67,6 +67,10 @@
                         <RadzenButton Icon="save" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.ExtraSmall"
                                       Click="@((args) => SaveRow(row))" @onclick:stopPropagation="true"
                                       title="Save row" />
+                        <span>&nbsp;&nbsp;</span>
+                        <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.ExtraSmall"
+                                      Click="@((args) => DeleteRow(row))" @onclick:stopPropagation="true"
+                                      title="Delete row" />
                     }
                     else
                     {
@@ -74,14 +78,6 @@
                                       Click="@((args) => EditRow(row))" @onclick:stopPropagation="true"
                                       title="Edit row" />
                     }
-                </Template>
-            </RadzenDataGridColumn>
-
-            <RadzenDataGridColumn TItem="ProposalRow" Filterable="false" Sortable="false" Width="80px" TextAlign="TextAlign.Center" Title="DELETE">
-                <Template Context="row">
-                    <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.ExtraSmall"
-                                  Click="@((args) => DeleteRow(row))" @onclick:stopPropagation="true"
-                                  title="Delete row" />
                 </Template>
             </RadzenDataGridColumn>
 
@@ -236,7 +232,20 @@
         await grid.EditRow(row);
     }
 
-    ProposalRow newRow;
+    ProposalRow newRow; 
+
+    // NEW: central sort helper
+    private void SortProposalRows()
+    {
+        // Primary: StartDate then StartTime; secondary: EndDate, EndTime, Name for stability
+        proposalRows = proposalRows
+            .OrderBy(r => r.StartDate.Date)
+            .ThenBy(r => r.StartTime)
+            .ThenBy(r => r.EndDate.Date)
+            .ThenBy(r => r.EndTime)
+            .ThenBy(r => r.Name)
+            .ToList();
+    }
 
     async Task InsertRow()
     {
@@ -246,8 +255,10 @@
             EndDate = DateTime.Today
         };
         proposalRows.Add(newRow);
-        await grid.EditRow(newRow);
+        SortProposalRows();
         await grid.Reload();
+        // Put the (now sorted) new row into edit mode
+        await grid.EditRow(newRow);
     }
 
     async Task DeleteRow(ProposalRow row)
@@ -255,6 +266,7 @@
         if (proposalRows.Contains(row))
         {
             proposalRows.Remove(row);
+            SortProposalRows();
             await grid.Reload();
         }
     }
@@ -264,7 +276,6 @@
         if (!string.IsNullOrEmpty(row.ManualRoom))
             row.SelectedRoom = null;
 
-        // (Optional) validate end >= start in same day context
         var startDateTime = row.StartDate.Date.Add(row.StartTime);
         var endDateTime = row.EndDate.Date.Add(row.EndTime);
         if (endDateTime < startDateTime)
@@ -280,6 +291,10 @@
         }
 
         await grid.UpdateRow(row);
+
+        // Re-sort after updates
+        SortProposalRows();
+        await grid.Reload();
     }
 
     // Run on page load
