@@ -59,7 +59,7 @@
 {
     <RadzenDataGrid @ref="grid" Data="@proposalRows" TItem="ProposalRow" EditMode="DataGridEditMode.Single" Editable="true" Style="margin-top:20px">
         <Columns>
-            <RadzenDataGridColumn TItem="ProposalRow" Filterable="false" Sortable="false" Width="80px" TextAlign="TextAlign.Center" Title="Actions">
+            <RadzenDataGridColumn TItem="ProposalRow" Filterable="false" Sortable="false" Width="80px" TextAlign="TextAlign.Center" Title="EDIT">
                 <Template Context="row">
                     @if (grid.IsRowInEditMode(row))
                     {
@@ -102,28 +102,42 @@
             <RadzenDataGridColumn TItem="ProposalRow" Property="StartDate" Title="Start Date" Width="130px">
                 <Template Context="row">@row.StartDate.ToShortDateString()</Template>
                 <EditTemplate Context="row">
-                    <RadzenDatePicker @bind-Value="row.StartDate" Style="width:100%" />
+                    <RadzenDatePicker @bind-Value="row.StartDate" TValue="DateTime"
+                                      ShowTime="false"
+                                      DateFormat="MM/dd/yyyy" Style="width:100%" />
                 </EditTemplate>
             </RadzenDataGridColumn>
 
             <RadzenDataGridColumn TItem="ProposalRow" Title="Start Time" Width="110px">
                 <Template Context="row">@row.StartTime.ToString(@"hh\:mm")</Template>
                 <EditTemplate Context="row">
-                    <RadzenDatePicker @bind-Value="row.StartTimeBinding" TimeOnly="true" TimeFormat="HH:mm" Style="width:100%" />
+                    <RadzenDatePicker @bind-Value="@row.StartTimeBinding"
+                                      TValue="DateTime"
+                                      ShowTime="true"
+                                      TimeOnly="true"
+                                      DateFormat="hh:mm tt"
+                                      HourFormat="12" />
                 </EditTemplate>
             </RadzenDataGridColumn>
 
             <RadzenDataGridColumn TItem="ProposalRow" Property="EndDate" Title="End Date" Width="130px">
                 <Template Context="row">@row.EndDate.ToShortDateString()</Template>
                 <EditTemplate Context="row">
-                    <RadzenDatePicker @bind-Value="row.EndDate" Style="width:100%" />
+                    <RadzenDatePicker @bind-Value="row.EndDate" TValue="DateTime"
+                                      ShowTime="false"
+                                      DateFormat="MM/dd/yyyy" Style="width:100%" />
                 </EditTemplate>
             </RadzenDataGridColumn>
 
             <RadzenDataGridColumn TItem="ProposalRow" Title="End Time" Width="110px">
                 <Template Context="row">@row.EndTime.ToString(@"hh\:mm")</Template>
                 <EditTemplate Context="row">
-                    <RadzenDatePicker @bind-Value="row.EndTimeBinding" TimeOnly="true" TimeFormat="HH:mm" Style="width:100%" />
+                    <RadzenDatePicker @bind-Value="@row.EndTimeBinding"
+                                      TValue="DateTime"
+                                      ShowTime="true"
+                                      TimeOnly="true"
+                                      DateFormat="hh:mm tt"
+                                      HourFormat="12" />
                 </EditTemplate>
             </RadzenDataGridColumn>
 
