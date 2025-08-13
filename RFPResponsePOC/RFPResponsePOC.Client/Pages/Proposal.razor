@@ -339,10 +339,6 @@
     {
         try
         {
-            InProgress = true;
-            CurrentStatus = "Reading file...";
-            StateHasChanged();
-
             var file = e.Files.FirstOrDefault();
 
             if (file is null)
@@ -351,6 +347,10 @@
                 StateHasChanged();
                 return;
             }
+
+            InProgress = true;
+            CurrentStatus = "Reading file...";
+            StateHasChanged();
 
             if (Path.GetExtension(file.Name).Equals(".docx", StringComparison.OrdinalIgnoreCase))
             {
@@ -622,13 +622,14 @@
     {
         try
         {
+            InProgress = true;
+            CurrentStatus = "Detect Rooms Requests (2-3 minutes)...";
+            StateHasChanged();
+
             await LogService.WriteToLogAsync($"[{DateTime.Now}] ProcessOCRText method started");
 
             var objOrchestratorMethods = new OrchestratorMethods(_SettingsService, LogService);
             var settingsService = new SettingsService();
-
-            CurrentStatus = "Detect Rooms Requests (2-3 minutes)...";
-            StateHasChanged();
 
             var Proposalprompt = await Http.GetStringAsync("Prompts/Proposal.prompt");
             Proposalprompt = Proposalprompt.Replace("{{OCRResult}}", RFPText);
