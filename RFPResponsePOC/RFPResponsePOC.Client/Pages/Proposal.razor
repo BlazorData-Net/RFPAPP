@@ -344,8 +344,9 @@
 
             await LogService.WriteToLogAsync($"[{DateTime.Now}] CalculateProposal method started");
             
-            // Log the current RFPText content to help debug the JSON structure
-            await LogService.WriteToLogAsync($"[{DateTime.Now}] RFPText content (first 500 chars): {RFPText?.Substring(0, Math.Min(500, RFPText?.Length ?? 0))}");
+            // Add more detailed logging for debugging
+            await LogService.WriteToLogAsync($"[{DateTime.Now}] RFPText content length: {RFPText?.Length ?? 0}");
+            await LogService.WriteToLogAsync($"[{DateTime.Now}] RFPText content (first 1000 chars): {RFPText?.Substring(0, Math.Min(1000, RFPText?.Length ?? 0))}");
 
             // Check if RFPText is empty or null
             if (string.IsNullOrWhiteSpace(RFPText))
@@ -361,7 +362,8 @@
                 return;
             }
 
-            // Try to parse the JSON to determine its structure
+            // Add validation and error handling for JSON parsing
+            string processedJsonText = RFPText;
             try
             {
                 // First, let's check if it's already a valid JSON array
@@ -378,13 +380,13 @@
                     if (arrayProperty != null)
                     {
                         await LogService.WriteToLogAsync($"[{DateTime.Now}] Found array property: {arrayProperty.Name}");
-                        RFPText = arrayProperty.Value.ToString();
+                        processedJsonText = arrayProperty.Value.ToString();
                     }
                     else
                     {
                         // Check if the object itself can be converted to an array (wrap in array)
                         await LogService.WriteToLogAsync($"[{DateTime.Now}] No array property found, wrapping object in array");
-                        RFPText = $"[{RFPText}]";
+                        processedJsonText = $"[{RFPText}]";
                     }
                 }
             }
@@ -401,9 +403,38 @@
                 return;
             }
 
+            // Log the processed JSON before passing to calculator
+            await LogService.WriteToLogAsync($"[{DateTime.Now}] Processed JSON text (first 1000 chars): {processedJsonText?.Substring(0, Math.Min(1000, processedJsonText?.Length ?? 0))}");
+
             // Create calculator with LogService
             var calculator = new CalculateProposale("/RFPResponsePOC", LogService);
-            var assigned = await calculator.CalculateAsync(RFPText);
+            
+            // FIXED: Change variable type from List<dynamic> to List<RoomAssignment>
+            List<RoomAssignment> assigned;
+            try
+            {
+                assigned = await calculator.CalculateAsync(processedJsonText);
+                await LogService.WriteToLogAsync($"[{DateTime.Now}] Calculator.CalculateAsync completed successfully with {assigned?.Count ?? 0} results");
+            }
+            catch (FormatException formatEx)
+            {
+                await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Format exception in CalculateAsync - {formatEx.Message}");
+                await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Stack trace - {formatEx.StackTrace}");
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "Data Format Error",
+                    Detail = $"Invalid data format detected: {formatEx.Message}. Please check the date/time or numeric values in your proposal.",
+                    Duration = 8000
+                });
+                return;
+            }
+            catch (Exception calcEx)
+            {
+                await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Exception in CalculateAsync - {calcEx.Message}");
+                await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Stack trace - {calcEx.StackTrace}");
+                throw; // Re-throw to be caught by outer catch
+            }
 
             try
             {
@@ -417,19 +448,29 @@
                 roomOptions = new List<string>();
             }
 
-            proposalRows = assigned.Select(a => new ProposalRow
+            // FIXED: Update the ProposalRow creation to work with RoomAssignment type
+            try
             {
-                Name = a.Request.Name,
-                SelectedRoom = a.AssignedRoom,
-                ManualRoom = string.Empty,
-                StartDate = a.Request.StartDate,
-                StartTime = a.Request.StartTime.ToString(@"hh\\:mm"),
-                EndDate = a.Request.EndDate,
-                EndTime = a.Request.EndTime.ToString(@"hh\\:mm"),
-                RoomType = a.Request.RoomType,
-                Attendance = a.Request.Attendance,
-                Notes = a.Request.Notes
-            }).ToList();
+                proposalRows = assigned.Select(a => new ProposalRow
+                {
+                    Name = a.Request?.Name ?? "Unknown",
+                    SelectedRoom = a.AssignedRoom ?? "",
+                    ManualRoom = string.Empty,
+                    StartDate = a.Request?.StartDate ?? DateTime.Today,
+                    StartTime = a.Request?.StartTime.ToString(@"hh\:mm") ?? "00:00",
+                    EndDate = a.Request?.EndDate ?? DateTime.Today,
+                    EndTime = a.Request?.EndTime.ToString(@"hh\:mm") ?? "00:00",
+                    RoomType = a.Request?.RoomType ?? "",
+                    Attendance = a.Request?.Attendance ?? 0,
+                    Notes = a.Request?.Notes ?? ""
+                }).ToList();
+            }
+            catch (Exception rowEx)
+            {
+                await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Exception creating ProposalRow objects - {rowEx.Message}");
+                await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Stack trace - {rowEx.StackTrace}");
+                throw;
+            }
 
             // Convert results back to JSON for display
             RFPText = JsonConvert.SerializeObject(assigned, Formatting.Indented);
@@ -447,6 +488,7 @@
         catch (JsonException jsonEx)
         {
             await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: JSON deserialization error in CalculateProposal - {jsonEx.Message}");
+            await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: JSON error stack trace - {jsonEx.StackTrace}");
             NotificationService.Notify(new NotificationMessage
             {
                 Severity = NotificationSeverity.Error,
@@ -458,6 +500,8 @@
         catch (Exception ex)
         {
             await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Exception in CalculateProposal - {ex.Message}");
+            await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Exception type: {ex.GetType().Name}");
+            await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Stack trace - {ex.StackTrace}");
             NotificationService.Notify(new NotificationMessage
             {
                 Severity = NotificationSeverity.Error,
@@ -466,9 +510,11 @@
                 Duration = 8000
             });
         }
-
-        InProgress = false;
-        StateHasChanged();
+        finally
+        {
+            InProgress = false;
+            StateHasChanged();
+        }
     }
 
     private async Task ProcessOCRText()
