@@ -45,11 +45,11 @@
               InputAttributes="@(new Dictionary<string,object>{ { "aria-label", "select file" }})">
 </RadzenUpload>
 <br />
-<RadzenButton Text="Edit Template" Icon="edit" Style="background-color: green; margin-top:10px;" ButtonStyle="ButtonStyle.Primary" Click="EditTemplate" />
+<RadzenButton Text="Edit Template" Icon="edit" Style="background-color: gray; margin-top:10px;" ButtonStyle="ButtonStyle.Primary" Click="EditTemplate" />
 <span>&nbsp;</span>
 <RadzenButton Text="Detect Room Requests" Icon="add" Style="margin-bottom: 10px; background-color: orange;" ButtonStyle="ButtonStyle.Primary" Click="ProcessOCRText" />
 <span>&nbsp;</span>
-<RadzenButton Text="Calculate" Icon="calculate" Style="margin-bottom: 10px; background-color: blue;" ButtonStyle="ButtonStyle.Primary" Click="CalculateProposal" />
+<RadzenButton Text="Calculate/Re-Calculate" Icon="calculate" Style="margin-bottom: 10px; background-color: green;" ButtonStyle="ButtonStyle.Primary" Click="CalculateProposal" />
 <br />
 <RadzenCard>
     <RadzenTextArea @bind-Value="RFPText" Rows="10" Style="width: 100%; height: 300px;" />
