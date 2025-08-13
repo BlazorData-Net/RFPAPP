@@ -181,7 +181,7 @@
 <br />
 <canvas id="pdfCanvas" style="display:none; border:1px solid #ccc;"></canvas>
 @code {
-#nullable disable
+    #nullable disable
     private IDisposable registration;
     Radzen.Blazor.RadzenUpload uploader;
     RadzenDataGrid<ProposalRow> grid;
@@ -340,10 +340,11 @@
         try
         {
             InProgress = true;
-            CurrentStatus = "Reading RFP...";
+            CurrentStatus = "Reading file...";
             StateHasChanged();
 
             var file = e.Files.FirstOrDefault();
+
             if (file is null)
             {
                 InProgress = false;
@@ -402,6 +403,7 @@
             else
             {
                 byte[] pdfBytes;
+
                 if (file.ContentType == "application/pdf")
                 {
                     var pdfUrl = await PdfService.GetPdfDataUrlAsync(file);
@@ -434,13 +436,14 @@
             }
 
             await uploader.ClearFiles();
-            InProgress = false;
-            StateHasChanged();
+
+            await ProcessOCRText();
         }
         catch (Exception ex)
         {
             InProgress = false;
             StateHasChanged();
+
             await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Exception in OnProposalUpload - {ex.Message}");
             NotificationService.Notify(new NotificationMessage
             {
@@ -624,8 +627,7 @@
             var objOrchestratorMethods = new OrchestratorMethods(_SettingsService, LogService);
             var settingsService = new SettingsService();
 
-            InProgress = true;
-            CurrentStatus = "Converting...";
+            CurrentStatus = "Detect Rooms Requests (2-3 minutes)...";
             StateHasChanged();
 
             var Proposalprompt = await Http.GetStringAsync("Prompts/Proposal.prompt");
@@ -635,25 +637,15 @@
 
             RFPText = $"[{result.Response}]";
 
-            CurrentStatus = "Processing RFP...";
-            StateHasChanged();
-
-            InProgress = false;
-            StateHasChanged();
-
             if (result.Error == "")
             {
-                await LogService.WriteToLogAsync($"[{DateTime.Now}] ProcessOCRText completed successfully");
-                NotificationService.Notify(new NotificationMessage
-                {
-                    Severity = NotificationSeverity.Success,
-                    Summary = "Success",
-                    Detail = "Uploaded and processed.",
-                    Duration = 4000
-                });
+                await CalculateProposal();
             }
             else
             {
+                InProgress = false;
+                StateHasChanged();
+
                 await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: ProcessOCRText failed - {result.Error}");
                 NotificationService.Notify(new NotificationMessage
                 {
@@ -668,6 +660,7 @@
         {
             InProgress = false;
             StateHasChanged();
+
             await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Exception in ProcessOCRText - {ex.Message}");
             NotificationService.Notify(new NotificationMessage
             {
