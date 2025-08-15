@@ -114,7 +114,7 @@
             </RadzenDataGridColumn>
 
             <RadzenDataGridColumn TItem="ProposalRow" Title="Start Time" Width="110px">
-                <Template Context="row">@row.StartTime.ToString(@"hh\:mm")</Template>
+                <Template Context="row">@DateTime.Today.Add(row.StartTime).ToString("h:mm tt")</Template>
                 <EditTemplate Context="row">
                     <RadzenDatePicker @bind-Value="@row.StartTimeBinding"
                                       TValue="DateTime"
@@ -135,7 +135,7 @@
             </RadzenDataGridColumn>
 
             <RadzenDataGridColumn TItem="ProposalRow" Title="End Time" Width="110px">
-                <Template Context="row">@row.EndTime.ToString(@"hh\:mm")</Template>
+                <Template Context="row">@DateTime.Today.Add(row.EndTime).ToString("h:mm tt")</Template>
                 <EditTemplate Context="row">
                     <RadzenDatePicker @bind-Value="@row.EndTimeBinding"
                                       TValue="DateTime"
