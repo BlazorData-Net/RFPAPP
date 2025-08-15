@@ -247,12 +247,14 @@
         try
         {
             var filePath = $"{BasePath}//ProposalRows.json";
+
             if (File.Exists(filePath))
             {
                 var json = await File.ReadAllTextAsync(filePath);
                 var rows = JsonConvert.DeserializeObject<List<ProposalRow>>(json);
                 proposalRows = rows ?? new List<ProposalRow>();
                 SortProposalRows();
+                StateHasChanged();
             }
         }
         catch (Exception ex)
