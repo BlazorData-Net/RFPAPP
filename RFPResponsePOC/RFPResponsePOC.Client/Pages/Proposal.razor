@@ -341,12 +341,41 @@
     {
         if (firstRender)
         {
-            objRef = DotNetObjectReference.Create(this);
-            await JsRuntime.InvokeVoidAsync("setupBeforeUnload", objRef);
-            registration = Navigation.RegisterLocationChangingHandler(OnLocationChanging);
-            objZipService = new ZipService(JsRuntime, localStorage, _SettingsService, LogService);
-            await LoadProposalRowsAsync();
-            await grid.Reload();
+            try
+            {
+                objRef = DotNetObjectReference.Create(this);
+                
+                if (JsRuntime != null)
+                {
+                    await JsRuntime.InvokeVoidAsync("setupBeforeUnload", objRef);
+                }
+                
+                if (Navigation != null)
+                {
+                    registration = Navigation.RegisterLocationChangingHandler(OnLocationChanging);
+                }
+                
+                if (JsRuntime != null && localStorage != null && _SettingsService != null && LogService != null)
+                {
+                    objZipService = new ZipService(JsRuntime, localStorage, _SettingsService, LogService);
+                }
+                
+                await LoadProposalRowsAsync();
+                
+                // Only reload grid if it's not null
+                if (grid != null)
+                {
+                    await grid.Reload();
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log the error or handle it appropriately
+                if (LogService != null)
+                {
+                    await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Exception in OnAfterRenderAsync - {ex.Message}");
+                }
+            }
         }
     }
 
