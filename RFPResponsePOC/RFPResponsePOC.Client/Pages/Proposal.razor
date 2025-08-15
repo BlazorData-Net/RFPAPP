@@ -196,6 +196,7 @@
 
     private List<ProposalRow> proposalRows = new();
     private List<string> roomOptions = new();
+    string BasePath = @"/RFPResponsePOC";
 
     public class ProposalRow
     {
@@ -228,6 +229,38 @@
             .ToList();
     }
 
+    private async Task SaveProposalRowsAsync()
+    {
+        try
+        {
+            var json = JsonConvert.SerializeObject(proposalRows, Formatting.Indented);
+            await File.WriteAllTextAsync($"{BasePath}//ProposalRows.json", json);
+        }
+        catch (Exception ex)
+        {
+            await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Failed to save ProposalRows - {ex.Message}");
+        }
+    }
+
+    private async Task LoadProposalRowsAsync()
+    {
+        try
+        {
+            var filePath = $"{BasePath}//ProposalRows.json";
+            if (File.Exists(filePath))
+            {
+                var json = await File.ReadAllTextAsync(filePath);
+                var rows = JsonConvert.DeserializeObject<List<ProposalRow>>(json);
+                proposalRows = rows ?? new List<ProposalRow>();
+                SortProposalRows();
+            }
+        }
+        catch (Exception ex)
+        {
+            await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Failed to load ProposalRows - {ex.Message}");
+        }
+    }
+
     async Task InsertRow()
     {
         newRow = new ProposalRow
@@ -237,6 +270,7 @@
         };
         proposalRows.Add(newRow);
         SortProposalRows();
+        await SaveProposalRowsAsync();
         await grid.Reload();
         await grid.EditRow(newRow);
     }
@@ -272,6 +306,7 @@
         {
             proposalRows.Remove(row);
             SortProposalRows();
+            await SaveProposalRowsAsync();
             await grid.Reload();
         }
     }
@@ -297,6 +332,7 @@
 
         await grid.UpdateRow(row);
         SortProposalRows();
+        await SaveProposalRowsAsync();
         await grid.Reload();
     }
 
@@ -309,6 +345,8 @@
             await JsRuntime.InvokeVoidAsync("setupBeforeUnload", objRef);
             registration = Navigation.RegisterLocationChangingHandler(OnLocationChanging);
             objZipService = new ZipService(JsRuntime, localStorage, _SettingsService, LogService);
+            await LoadProposalRowsAsync();
+            await grid.Reload();
         }
     }
 
@@ -566,6 +604,7 @@
                     Notes = a.Request?.Notes ?? ""
                 }).ToList();
                 SortProposalRows();
+                await SaveProposalRowsAsync();
             }
             catch (Exception rowEx)
             {
