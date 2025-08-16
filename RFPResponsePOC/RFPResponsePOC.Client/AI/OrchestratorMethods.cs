@@ -1,7 +1,12 @@
+using Azure;
 using Azure.AI.OpenAI;
+using Microsoft.AspNetCore.Components.Forms;
 using OpenAI;
+using RFPResponsePOC.Client.Models;
 using RFPResponsePOC.Model;
 using System.ClientModel;
+using System.Net.Http.Headers;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace RFPResponsePOC.AI
@@ -20,6 +25,103 @@ namespace RFPResponsePOC.AI
             SettingsService = _SettingsService;
             LogService = _LogService;
         }
+
+        // OpenAI Service
+
+        #region public OpenAIClient CreateOpenAIClient()
+        public OpenAIClient CreateOpenAIClient()
+        {
+            SettingsService.LoadSettings();
+
+            string ApiKey = SettingsService.Settings.ApplicationSettings.ApiKey;
+            string AIEmbeddingModel = SettingsService.Settings.ApplicationSettings.AIEmbeddingModel;
+            string AIModel = SettingsService.Settings.ApplicationSettings.AIModel;
+
+            var options = new OpenAIClientOptions();
+            options.NetworkTimeout = TimeSpan.FromSeconds(520);
+
+            var auth = new ApiKeyCredential(ApiKey);
+
+            OpenAIClient api;
+
+            api = new OpenAIClient(auth, options);
+
+            return api;
+        }
+        #endregion       
+
+        // Memory and Vectors
+
+        #region public string GetVectorEmbedding(string EmbeddingContent, bool Combine)
+        public string GetVectorEmbedding(string EmbeddingContent, bool Combine)
+        {
+            // **** Call OpenAI and get embeddings for the memory text
+            // Create an instance of the OpenAI client
+            OpenAIClient api = CreateOpenAIClient();
+
+            SettingsService.LoadSettings();
+
+            string ApiKey = SettingsService.Settings.ApplicationSettings.ApiKey;
+            string AIEmbeddingModel = SettingsService.Settings.ApplicationSettings.AIEmbeddingModel;
+            string AIModel = SettingsService.Settings.ApplicationSettings.AIModel;
+
+            // Get embeddings for the text
+            var EmbeddingClient = api.GetEmbeddingClient(AIModel);
+
+            var embeddings = EmbeddingClient.GenerateEmbedding(EmbeddingContent);
+
+            // Get embeddings as an array of floats
+            var EmbeddingVectors = embeddings.Value.ToFloats().ToArray();
+
+            // Loop through the embeddings
+            List<VectorData> AllVectors = new List<VectorData>();
+            for (int i = 0; i < EmbeddingVectors.Length; i++)
+            {
+                var embeddingVector = new VectorData
+                {
+                    VectorValue = EmbeddingVectors[i]
+                };
+                AllVectors.Add(embeddingVector);
+            }
+
+            // Convert the floats to a single string
+            var VectorsToSave = "[" + string.Join(",", AllVectors.Select(x => x.VectorValue)) + "]";
+
+            if (Combine)
+            {
+                return EmbeddingContent + "|" + VectorsToSave;
+            }
+            else
+            {
+                return VectorsToSave;
+            }
+        }
+        #endregion
+
+        #region public float[] GetVectorEmbeddingAsFloats(string EmbeddingContent)
+        public float[] GetVectorEmbeddingAsFloats(string EmbeddingContent)
+        {
+            // **** Call OpenAI and get embeddings for the memory text
+            // Create an instance of the OpenAI client
+            OpenAIClient api = CreateOpenAIClient();
+
+            SettingsService.LoadSettings();
+
+            string ApiKey = SettingsService.Settings.ApplicationSettings.ApiKey;
+            string AIEmbeddingModel = SettingsService.Settings.ApplicationSettings.AIEmbeddingModel;
+            string AIModel = SettingsService.Settings.ApplicationSettings.AIModel;
+
+            // Get embeddings for the text
+            var EmbeddingClient = api.GetEmbeddingClient(AIModel);
+
+            var embeddings = EmbeddingClient.GenerateEmbedding(EmbeddingContent);
+
+            // Get embeddings as an array of floats
+            var EmbeddingVectors = embeddings.Value.ToFloats().ToArray();
+
+            return EmbeddingVectors;
+        }
+        #endregion
 
         // Utility Methods
 
