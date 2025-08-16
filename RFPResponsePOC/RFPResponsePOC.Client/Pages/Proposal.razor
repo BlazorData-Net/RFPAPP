@@ -149,7 +149,7 @@
             <RadzenDataGridColumn TItem="ProposalRow" Property="RoomType" Title="Room Type" Width="120px">
                 <Template Context="row">@row.RoomType</Template>
                 <EditTemplate Context="row">
-                    <RadzenTextBox @bind-Value="row.RoomType" Style="width:100%" />
+                    <RadzenDropDown Data="@roomTypeOptions" @bind-Value="row.RoomType" Style="width:100%" />
                 </EditTemplate>
             </RadzenDataGridColumn>
 
@@ -196,6 +196,18 @@
 
     private List<ProposalRow> proposalRows = new();
     private List<string> roomOptions = new();
+    private readonly List<string> roomTypeOptions = new()
+    {
+        "Banquet",
+        "Conference",
+        "Theatre",
+        "Classroom",
+        "U-Shape",
+        "Boardroom",
+        "Hollow Square",
+        "Crescent Rounds",
+        "Reception"
+    };
     string BasePath = @"/RFPResponsePOC";
 
     public class ProposalRow
