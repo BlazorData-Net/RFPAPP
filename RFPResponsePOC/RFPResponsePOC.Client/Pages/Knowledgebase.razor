@@ -14,9 +14,11 @@
 @inject LogService LogService
 @inject SettingsService _SettingsService
 @inject NavigationManager Navigation
+@inject PdfToPngService PdfService
+@inject HttpClient Http
 <h3>Knowledgebase</h3>
 <RadzenUpload @ref="uploader"
-              ChooseText="Upload document (.txt)" Accept=".txt"
+              ChooseText="Upload document (.txt/.pdf/.png/.jpg/.jpeg)" Accept=".txt,.pdf,.png,.jpg,.jpeg"
               Change=@OnFileUpload
               Multiple="false"
               Auto="true"
@@ -55,6 +57,7 @@
         </Columns>
     </RadzenDataGrid>
 }
+<canvas id="pdfCanvas" style="display:none; border:1px solid #ccc;"></canvas>
 @code {
     #nullable disable
     string BasePath = @"/RFPResponsePOC";
@@ -79,9 +82,48 @@
     {
         var file = e.Files.FirstOrDefault();
         if (file == null) return;
-        using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
-        using var reader = new StreamReader(stream);
-        var content = await reader.ReadToEndAsync();
+
+        string content = string.Empty;
+
+        // Handle PDFs and images via OCR
+        if (file.ContentType == "application/pdf" || file.ContentType.StartsWith("image/"))
+        {
+            byte[] imageBytes;
+
+            if (file.ContentType == "application/pdf")
+            {
+                var pdfUrl = await PdfService.GetPdfDataUrlAsync(file);
+                if (pdfUrl == null) return;
+                await PdfService.RenderPdfToCanvasAsync(pdfUrl, "pdfCanvas");
+                imageBytes = await PdfService.GetCanvasPngBytesAsync("pdfCanvas");
+            }
+            else
+            {
+                using var imgStream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
+                using var ms = new MemoryStream();
+                await imgStream.CopyToAsync(ms);
+                imageBytes = ms.ToArray();
+            }
+
+            var OCRprompt = await Http.GetStringAsync("Prompts/OCR.prompt");
+            var settingsService = new SettingsService();
+            var result = await objOrchestratorMethods.CallOpenAIFileAsync(settingsService, OCRprompt, imageBytes);
+
+            if (!string.IsNullOrWhiteSpace(result.Error))
+            {
+                NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Error", Detail = result.Error, Duration = 4000 });
+                return;
+            }
+
+            content = result.Response;
+        }
+        else
+        {
+            using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
+            using var reader = new StreamReader(stream);
+            content = await reader.ReadToEndAsync();
+        }
+
         var words = content.Split(new[] { ' ', '\n', '\r', '\t' }, StringSplitOptions.RemoveEmptyEntries);
         for (int i = 0; i < words.Length; i += 200)
         {
@@ -90,6 +132,7 @@
             var embedding = objOrchestratorMethods.GetVectorEmbedding(chunkText, false);
             entries.Add(new KnowledgeChunk { Id = Guid.NewGuid().ToString(), Content = chunkText, Embedding = embedding });
         }
+
         await SaveKnowledgebaseData();
         await uploader.ClearFiles();
         NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Uploaded", Detail = "Document processed", Duration = 4000 });
