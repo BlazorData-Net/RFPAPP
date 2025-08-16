@@ -76,6 +76,10 @@ else
     {
         <Proposal></Proposal>
     }
+    @if (KnowledgebaseVisible)
+    {
+        <Knowledgebase></Knowledgebase>
+    }
     @if (SettingsVisible)
     {
         <Settings SettingsChanged="HandleSettingsChanged"></Settings>
@@ -105,6 +109,7 @@ else
     bool LogsVisible = false;
     bool CapacityVisible = false;
     bool ProposalVisible = false;
+    bool KnowledgebaseVisible = false;
     bool CapacityFileExists = false;
 
     ZipService objZipService = new ZipService();
@@ -150,6 +155,7 @@ else
                     LogsVisible = false;
                     CapacityVisible = false;
                     ProposalVisible = false;
+                    KnowledgebaseVisible = false;
                 }
             }
             catch (Exception ex)
@@ -180,6 +186,7 @@ else
                 LogsVisible = false;
                 CapacityVisible = false;
                 ProposalVisible = false;
+                KnowledgebaseVisible = false;
             }
 
             // Check if there is a Capacity Chart file
@@ -220,6 +227,7 @@ else
         CapacityVisible = false;
         ProposalVisible = false;
         LogsVisible = false;
+        KnowledgebaseVisible = false;
     }
 
     void OnSettingsClicked(MenuItemEventArgs args)
@@ -229,6 +237,7 @@ else
         CapacityVisible = false;
         ProposalVisible = false;
         LogsVisible = false;
+        KnowledgebaseVisible = false;
     }
 
     void OnLogsClicked(MenuItemEventArgs args)
@@ -238,6 +247,7 @@ else
         CapacityVisible = false;
         ProposalVisible = false;
         LogsVisible = true;
+        KnowledgebaseVisible = false;
     }
 
     void OnCapacityClicked(MenuItemEventArgs args)
@@ -247,6 +257,7 @@ else
         CapacityVisible = true;
         ProposalVisible = false;
         LogsVisible = false;
+        KnowledgebaseVisible = false;
     }
 
     void CapacityClicked(MouseEventArgs args)
@@ -256,6 +267,7 @@ else
         CapacityVisible = true;
         ProposalVisible = false;
         LogsVisible = false;
+        KnowledgebaseVisible = false;
     }
 
     void OnProposalClicked(MenuItemEventArgs args)
@@ -265,11 +277,17 @@ else
         CapacityVisible = false;
         ProposalVisible = true;
         LogsVisible = false;
+        KnowledgebaseVisible = false;
     }
 
     void OnKnowledgebaseClicked(MenuItemEventArgs args)
     {
-        Navigation.NavigateTo("/knowledgebase");
+        HomeVisible = false;
+        SettingsVisible = false;
+        CapacityVisible = false;
+        ProposalVisible = false;
+        LogsVisible = false;
+        KnowledgebaseVisible = true;
     }
 
     void PrposalClicked(MouseEventArgs args)
@@ -279,6 +297,7 @@ else
         CapacityVisible = false;
         ProposalVisible = true;
         LogsVisible = false;
+        KnowledgebaseVisible = false;
     }
 
     private void HandleSettingsChanged()
@@ -293,6 +312,7 @@ else
         CapacityVisible = false;
         ProposalVisible = false;
         LogsVisible = false;
+        KnowledgebaseVisible = false;
 
         ShowMainMenu = true;
         ZipFileExists = true;
