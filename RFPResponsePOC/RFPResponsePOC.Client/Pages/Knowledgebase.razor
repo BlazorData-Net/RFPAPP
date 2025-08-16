@@ -27,6 +27,18 @@
               InputAttributes="@(new Dictionary<string,object>{{"aria-label","select file"}})">
 </RadzenUpload>
 <br />
+@if (@InProgress)
+{
+    <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.5); z-index: 1000;
+            display: flex; align-items: center; justify-content: center;">
+        <div class="rz-card" style="padding: 20px;">
+            <RadzenText Text="@CurrentStatus" class="rz-m-10" Style="text-align: center" />
+            <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+        </div>
+    </div>
+}
+<br />
 <RadzenButton Text="Add Row" Icon="add" Style="margin-bottom:10px" ButtonStyle="ButtonStyle.Primary" Click="InsertRow" />
 @if (entries?.Any() == true)
 {
@@ -66,6 +78,8 @@
     Radzen.Blazor.RadzenDataGrid<KnowledgeChunk> grid;
     List<KnowledgeChunk> entries = new();
     OrchestratorMethods objOrchestratorMethods;
+    private bool InProgress = false;
+    private string CurrentStatus = "";
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -84,68 +98,90 @@
         var file = e.Files.FirstOrDefault();
         if (file == null) return;
 
+        InProgress = true;
+        CurrentStatus = "Processing...";
+        StateHasChanged();
+
         string content = string.Empty;
 
-        // Handle PDFs and images via OCR
-        if (file.ContentType == "application/pdf" || file.ContentType.StartsWith("image/"))
+        try
         {
-            byte[] imageBytes;
-
-            if (file.ContentType == "application/pdf")
+            // Handle PDFs and images via OCR
+            if (file.ContentType == "application/pdf" || file.ContentType.StartsWith("image/"))
             {
-                var pdfUrl = await PdfService.GetPdfDataUrlAsync(file);
-                if (pdfUrl == null) return;
-                await PdfService.RenderPdfToCanvasAsync(pdfUrl, "pdfCanvas");
-                imageBytes = await PdfService.GetCanvasPngBytesAsync("pdfCanvas");
+                byte[] imageBytes;
+
+                if (file.ContentType == "application/pdf")
+                {
+                    var pdfUrl = await PdfService.GetPdfDataUrlAsync(file);
+                    if (pdfUrl == null) return;
+                    await PdfService.RenderPdfToCanvasAsync(pdfUrl, "pdfCanvas");
+                    imageBytes = await PdfService.GetCanvasPngBytesAsync("pdfCanvas");
+                }
+                else
+                {
+                    using var imgStream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
+                    using var ms = new MemoryStream();
+                    await imgStream.CopyToAsync(ms);
+                    imageBytes = ms.ToArray();
+                }
+
+                var OCRprompt = await Http.GetStringAsync("Prompts/OCR.prompt");
+                var settingsService = new SettingsService();
+                var result = await objOrchestratorMethods.CallOpenAIFileAsync(settingsService, OCRprompt, imageBytes);
+
+                if (!string.IsNullOrWhiteSpace(result.Error))
+                {
+                    NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Error", Detail = result.Error, Duration = 4000 });
+                    return;
+                }
+
+                content = result.Response;
             }
             else
             {
-                using var imgStream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
-                using var ms = new MemoryStream();
-                await imgStream.CopyToAsync(ms);
-                imageBytes = ms.ToArray();
+                using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
+                using var reader = new StreamReader(stream);
+                content = await reader.ReadToEndAsync();
             }
 
-            var OCRprompt = await Http.GetStringAsync("Prompts/OCR.prompt");
-            var settingsService = new SettingsService();
-            var result = await objOrchestratorMethods.CallOpenAIFileAsync(settingsService, OCRprompt, imageBytes);
-
-            if (!string.IsNullOrWhiteSpace(result.Error))
+            var words = content.Split(new[] { ' ', '\n', '\r', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+            for (int i = 0; i < words.Length; i += 200)
             {
-                NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Error", Detail = result.Error, Duration = 4000 });
-                return;
+                CurrentStatus = $"Processing chunk {i / 200 + 1} of {Math.Ceiling((double)words.Length / 200)}";
+                StateHasChanged();
+
+                var chunkWords = words.Skip(i).Take(200);
+                var chunkText = string.Join(" ", chunkWords);
+                var embedding = objOrchestratorMethods.GetVectorEmbedding(chunkText, false);
+                entries.Add(new KnowledgeChunk { Id = Guid.NewGuid().ToString(), Content = chunkText, Embedding = embedding });
             }
 
-            content = result.Response;
-        }
-        else
-        {
-            using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
-            using var reader = new StreamReader(stream);
-            content = await reader.ReadToEndAsync();
-        }
+            await SaveKnowledgebaseData();
+            await uploader.ClearFiles();
 
-        var words = content.Split(new[] { ' ', '\n', '\r', '\t' }, StringSplitOptions.RemoveEmptyEntries);
-        for (int i = 0; i < words.Length; i += 200)
-        {
-            var chunkWords = words.Skip(i).Take(200);
-            var chunkText = string.Join(" ", chunkWords);
-            var embedding = objOrchestratorMethods.GetVectorEmbedding(chunkText, false);
-            entries.Add(new KnowledgeChunk { Id = Guid.NewGuid().ToString(), Content = chunkText, Embedding = embedding });
-        }
+            InProgress = false;
+            CurrentStatus = "";
 
-        await SaveKnowledgebaseData();
-        await uploader.ClearFiles();
-        NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Uploaded", Detail = "Document processed", Duration = 4000 });
-        StateHasChanged();
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Uploaded", Detail = "Document processed", Duration = 4000 });
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Error", Detail = $"{ex.Message}", Duration = 4000 });
+            InProgress = false;
+            return;
+        }
     }
     Task EditRow(KnowledgeChunk chunk) => grid.EditRow(chunk);
+    
     async Task SaveRow(KnowledgeChunk chunk)
     {
         chunk.Embedding = objOrchestratorMethods.GetVectorEmbedding(chunk.Content, false);
         await grid.UpdateRow(chunk);
         await SaveKnowledgebaseData();
     }
+
     async Task DeleteRow(KnowledgeChunk chunk)
     {
         if (entries.Contains(chunk))
@@ -155,6 +191,7 @@
             await SaveKnowledgebaseData();
         }
     }
+
     async Task InsertRow()
     {
         var newChunk = new KnowledgeChunk { Id = Guid.NewGuid().ToString(), Content = string.Empty, Embedding = string.Empty };
@@ -162,11 +199,13 @@
         await grid.Reload();
         await grid.EditRow(newChunk);
     }
+
     async Task SaveKnowledgebaseData()
     {
         var json = JsonConvert.SerializeObject(entries, Formatting.Indented);
         await File.WriteAllTextAsync($"{BasePath}//knowledgebase.json", json);
     }
+
     private async Task<string> GetKnowledgebaseJsonAsync()
     {
         try

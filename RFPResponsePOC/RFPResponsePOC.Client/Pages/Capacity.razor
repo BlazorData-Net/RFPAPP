@@ -106,6 +106,8 @@
     private IDisposable registration;
 
     string BasePath = @"/RFPResponsePOC";
+    private bool InProgress = false;
+    private string CurrentStatus = "";
 
     // Allow access to the JSRuntime
     private DotNetObjectReference<Capacity> objRef;
@@ -194,9 +196,6 @@
             });
         }
     }
-
-    private bool InProgress = false;
-    private string CurrentStatus = "";
 
     // Run on page load
     protected override async Task OnAfterRenderAsync(bool firstRender)
