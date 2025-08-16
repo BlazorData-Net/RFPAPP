@@ -1,0 +1,140 @@
+@page "/knowledgebase"
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@using System.Text
+@using System.IO
+@using System.Collections.Generic
+@using System.Linq
+@using Newtonsoft.Json
+@using RFPResponsePOC.Client.Models
+@using RFPResponsePOC.Client.Services
+@using RFPResponsePOC.AI
+@using Microsoft.AspNetCore.Components.Forms
+@inject NotificationService NotificationService
+@inject LogService LogService
+@inject SettingsService _SettingsService
+@inject NavigationManager Navigation
+<h3>Knowledgebase</h3>
+<RadzenUpload @ref="uploader"
+              ChooseText="Upload document (.txt)" Accept=".txt"
+              Change=@OnFileUpload
+              Multiple="false"
+              Auto="true"
+              Style="width: 100%"
+              InputAttributes="@(new Dictionary<string,object>{{"aria-label","select file"}})">
+</RadzenUpload>
+<br />
+<RadzenButton Text="Add Row" Icon="add" Style="margin-bottom:10px" ButtonStyle="ButtonStyle.Primary" Click="InsertRow" />
+@if (entries?.Any() == true)
+{
+    <RadzenButton Text="Save Knowledgebase" Icon="save" Style="margin-left:10px;margin-bottom:10px;background-color:#007bff;" ButtonStyle="ButtonStyle.Primary" Click="SaveKnowledgebaseData" />
+    <RadzenDataGrid @ref="grid" Data="@entries" TItem="KnowledgeChunk" EditMode="DataGridEditMode.Single" AllowPaging="false">
+        <Columns>
+            <RadzenDataGridColumn TItem="KnowledgeChunk" Filterable="false" Sortable="false" Width="110px" TextAlign="TextAlign.Center" Title="EDIT/DEL">
+                <Template Context="chunk">
+                    @if (grid.IsRowInEditMode(chunk))
+                    {
+                        <RadzenButton Icon="save" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.ExtraSmall" Click="@(async args => await SaveRow(chunk))" @onclick:stopPropagation="true" />
+                        <span>&nbsp;</span>
+                        <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.ExtraSmall" Click="@(async args => await DeleteRow(chunk))" @onclick:stopPropagation="true" />
+                    }
+                    else
+                    {
+                        <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.ExtraSmall" Click="@((args) => EditRow(chunk))" @onclick:stopPropagation="true" />
+                    }
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="KnowledgeChunk" Property="Content" Title="Content">
+                <Template Context="chunk">
+                    <div style="white-space:pre-wrap">@chunk.Content</div>
+                </Template>
+                <EditTemplate Context="chunk">
+                    <RadzenTextArea @bind-Value="chunk.Content" Rows="3" Style="width:100%" />
+                </EditTemplate>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+}
+@code {
+    #nullable disable
+    string BasePath = @"/RFPResponsePOC";
+    Radzen.Blazor.RadzenUpload uploader;
+    Radzen.Blazor.RadzenDataGrid<KnowledgeChunk> grid;
+    List<KnowledgeChunk> entries = new();
+    OrchestratorMethods objOrchestratorMethods;
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            objOrchestratorMethods = new OrchestratorMethods(_SettingsService, LogService);
+            var json = await GetKnowledgebaseJsonAsync();
+            if (!string.IsNullOrWhiteSpace(json))
+            {
+                entries = JsonConvert.DeserializeObject<List<KnowledgeChunk>>(json) ?? new();
+                StateHasChanged();
+            }
+        }
+    }
+    async Task OnFileUpload(UploadChangeEventArgs e)
+    {
+        var file = e.Files.FirstOrDefault();
+        if (file == null) return;
+        using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
+        using var reader = new StreamReader(stream);
+        var content = await reader.ReadToEndAsync();
+        var words = content.Split(new[] { ' ', '\n', '\r', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+        for (int i = 0; i < words.Length; i += 200)
+        {
+            var chunkWords = words.Skip(i).Take(200);
+            var chunkText = string.Join(" ", chunkWords);
+            var embedding = objOrchestratorMethods.GetVectorEmbedding(chunkText, false);
+            entries.Add(new KnowledgeChunk { Id = Guid.NewGuid().ToString(), Content = chunkText, Embedding = embedding });
+        }
+        await SaveKnowledgebaseData();
+        await uploader.ClearFiles();
+        NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Uploaded", Detail = "Document processed", Duration = 4000 });
+        StateHasChanged();
+    }
+    Task EditRow(KnowledgeChunk chunk) => grid.EditRow(chunk);
+    async Task SaveRow(KnowledgeChunk chunk)
+    {
+        chunk.Embedding = objOrchestratorMethods.GetVectorEmbedding(chunk.Content, false);
+        await grid.UpdateRow(chunk);
+        await SaveKnowledgebaseData();
+    }
+    async Task DeleteRow(KnowledgeChunk chunk)
+    {
+        if (entries.Contains(chunk))
+        {
+            entries.Remove(chunk);
+            await grid.Reload();
+            await SaveKnowledgebaseData();
+        }
+    }
+    async Task InsertRow()
+    {
+        var newChunk = new KnowledgeChunk { Id = Guid.NewGuid().ToString(), Content = string.Empty, Embedding = string.Empty };
+        entries.Add(newChunk);
+        await grid.Reload();
+        await grid.EditRow(newChunk);
+    }
+    async Task SaveKnowledgebaseData()
+    {
+        var json = JsonConvert.SerializeObject(entries, Formatting.Indented);
+        await File.WriteAllTextAsync($"{BasePath}//knowledgebase.json", json);
+    }
+    private async Task<string> GetKnowledgebaseJsonAsync()
+    {
+        try
+        {
+            if (File.Exists($"{BasePath}//knowledgebase.json"))
+            {
+                return await File.ReadAllTextAsync($"{BasePath}//knowledgebase.json");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error reading knowledgebase.json: {ex.Message}");
+        }
+        return null;
+    }
+}

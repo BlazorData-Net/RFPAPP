@@ -1,0 +1,11 @@
+using System;
+
+namespace RFPResponsePOC.Client.Models
+{
+    public class KnowledgeChunk
+    {
+        public string Id { get; set; }
+        public string Content { get; set; }
+        public string Embedding { get; set; }
+    }
+}
