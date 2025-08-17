@@ -69,7 +69,7 @@ namespace RFPResponsePOC.AI
 
                 var usage = response.Value.Usage;
                 await LogService.WriteToLogAsync(
-                    $"Tokens - Input: {usage?.InputTokens ?? 0}, Output: {usage?.OutputTokens ?? 0}");
+                    $"Tokens - Input: {usage.InputTokenCount}, Output: {usage.OutputTokenCount}");
 
                 return new AIResponse
                 {
