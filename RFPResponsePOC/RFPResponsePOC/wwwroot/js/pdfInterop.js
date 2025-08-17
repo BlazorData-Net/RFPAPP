@@ -43,6 +43,31 @@ window.pdfInterop = {
         if (!canvas) return null;
         return canvas.toDataURL('image/png');
     },
+    getPdfPagesAsPng: async function (pdfUrl) {
+        if (!window.pdfjsLib) {
+            window.pdfjsLib = await import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/5.4.54/pdf.min.mjs');
+        }
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/5.4.54/pdf.worker.min.mjs';
+
+        const loadingTask = window.pdfjsLib.getDocument({ url: pdfUrl });
+        const pdf = await loadingTask.promise;
+        const images = [];
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        const scale = 2.0;
+
+        for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+            const page = await pdf.getPage(pageNumber);
+            const viewport = page.getViewport({ scale });
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            await page.render({ canvasContext: context, viewport: viewport }).promise;
+            images.push(canvas.toDataURL('image/png'));
+        }
+
+        return images;
+    },
     exportElementToPdf: async function(elementId) {
         const element = document.getElementById(elementId);
         if (!element) {
