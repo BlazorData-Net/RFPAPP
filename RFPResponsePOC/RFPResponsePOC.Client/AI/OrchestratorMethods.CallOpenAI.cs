@@ -67,6 +67,10 @@ namespace RFPResponsePOC.AI
                 await LogService.WriteToLogAsync(
                     $"CallOpenAIAsync: AI model: {objSettings.Settings.ApplicationSettings.AIModel} JSON: {json}");
 
+                var usage = response.Value.Usage;
+                await LogService.WriteToLogAsync(
+                    $"Tokens - Input: {usage?.InputTokens ?? 0}, Output: {usage?.OutputTokens ?? 0}");
+
                 return new AIResponse
                 {
                     Response = json,
@@ -142,9 +146,15 @@ namespace RFPResponsePOC.AI
                       .GetProperty("message")
                       .GetProperty("content")
                       .GetString() ?? "No text found.";
+            var usageElement = doc.RootElement.GetProperty("usage");
+            var promptTokens = usageElement.GetProperty("prompt_tokens").GetInt32();
+            var completionTokens = usageElement.GetProperty("completion_tokens").GetInt32();
 
             await LogService.WriteToLogAsync(
                 $"CallOpenAIFileAsync: AI model: {objSettings.Settings.ApplicationSettings.AIModel} Response: {Response}");
+
+            await LogService.WriteToLogAsync(
+                $"Tokens - Input: {promptTokens}, Output: {completionTokens}");
 
             return new AIResponse
             {

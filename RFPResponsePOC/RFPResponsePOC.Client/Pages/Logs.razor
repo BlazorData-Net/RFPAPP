@@ -1,5 +1,6 @@
 ﻿@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 @using System.Text
+@using System.Text.RegularExpressions
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 @inject IJSRuntime JsRuntime
@@ -12,6 +13,12 @@
         <RadzenButton Text="Clear Log" ButtonStyle="ButtonStyle.Danger"
                       Click="ClearLog"
                       Style="margin-bottom: 10px; width: 150px" />&nbsp;&nbsp;
+</div>
+</div>
+<div class="row">
+    <div class="col">
+        <p><b>Total Input Tokens:</b> @TotalInputTokens</p>
+        <p><b>Total Output Tokens:</b> @TotalOutputTokens</p>
     </div>
 </div>
 <RadzenDataGrid AllowFiltering="false" AllowColumnResize="true" AllowAlternatingRows="true"
@@ -32,6 +39,8 @@
 @code {
     string RFPResponsePOCLogPath = "";
     string[] RFPResponsePOCLog;
+    int TotalInputTokens = 0;
+    int TotalOutputTokens = 0;
 
     // Run on page load
     protected override void OnAfterRender(bool firstRender)
@@ -50,6 +59,8 @@
                     RFPResponsePOCLog = RFPResponsePOCLog.Distinct().Take(RFPResponsePOCLog.Length - 1).ToArray();
                 }
             }
+
+            CalculateTokenTotals();
 
             StateHasChanged();
         }
@@ -73,6 +84,8 @@
                     RFPResponsePOCLog = RFPResponsePOCLog.Take(RFPResponsePOCLog.Length - 1).ToArray();
                 }
             }
+
+            CalculateTokenTotals();
 
             NotificationService.Notify(new NotificationMessage
             {
@@ -100,15 +113,15 @@
         {
             if (RFPResponsePOCLog == null || RFPResponsePOCLog.Length == 0)
             {
-                NotificationService.Notify(new NotificationMessage
-                {
-                    Severity = NotificationSeverity.Warning,
-                    Summary = "Warning",
-                    Detail = "No logs available to download",
-                    Duration = 4000
-                });
-                return;
-            }
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = "Warning",
+                Detail = "No logs available to download",
+                Duration = 4000
+            });
+            return;
+        }
 
             // Create text content with double line breaks
             var textContent = string.Join("\n\n", RFPResponsePOCLog) + "\n\n";
@@ -154,6 +167,24 @@
                 Detail = $"Failed to download logs: {ex.Message}",
                 Duration = 4000
             });
+        }
+    }
+
+    private void CalculateTokenTotals()
+    {
+        TotalInputTokens = 0;
+        TotalOutputTokens = 0;
+        if (RFPResponsePOCLog != null)
+        {
+            foreach (var line in RFPResponsePOCLog)
+            {
+                var match = Regex.Match(line, @"Tokens - Input: (\d+), Output: (\d+)");
+                if (match.Success)
+                {
+                    TotalInputTokens += int.Parse(match.Groups[1].Value);
+                    TotalOutputTokens += int.Parse(match.Groups[2].Value);
+                }
+            }
         }
     }
 }
