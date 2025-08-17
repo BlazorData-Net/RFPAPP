@@ -4,6 +4,7 @@
 @using System.IO.Compression
 @using Newtonsoft.Json
 @using RFPResponsePOC.Client.Services
+@using RFPResponsePOC.Client.Models
 @using RFPResponsePOC.Model
 @using RFPResponsePOC.Models
 @using Radzen.Blazor
@@ -49,6 +50,12 @@ else
             <div class="step-message">
                 @if (CapacityFileExists)
                 {
+                    if (!KnowledgebaseFileExists)
+                    {
+                        <RadzenButton class="step-button" Text="Build Knowledgebase" Click="@KnowledgebaseClicked" Style="background-color: green;" ButtonStyle="ButtonStyle.Primary" />
+                        <br />
+                        <br />
+                    }
                     <RadzenButton class="step-button" Text="Upload the RFPs" Click="@PrposalClicked" Style="background-color: green;" ButtonStyle="ButtonStyle.Primary" />
                 }
                 else
@@ -60,11 +67,27 @@ else
                     <RadzenButton class="step-button" Text="Upload your Capacity Chart" Click="@CapacityClicked" Style="background-color: green;" ButtonStyle="ButtonStyle.Primary" />
                     <br />
                     <br />
-                    <strong>Step Two:</strong>
-                    <br />        
-                    <br />
-                    <RadzenButton class="step-button" Text="Upload the RFPs" Click="@PrposalClicked" Style="background-color: green;" ButtonStyle="ButtonStyle.Primary" />
-                }        
+                    @if (!KnowledgebaseFileExists)
+                    {
+                        <strong>Step Two:</strong>
+                        <br />
+                        <br />
+                        <RadzenButton class="step-button" Text="Build Knowledgebase" Click="@KnowledgebaseClicked" Style="background-color: green;" ButtonStyle="ButtonStyle.Primary" />
+                        <br />
+                        <br />
+                        <strong>Step Three:</strong>
+                        <br />
+                        <br />
+                        <RadzenButton class="step-button" Text="Upload the RFPs" Click="@PrposalClicked" Style="background-color: green;" ButtonStyle="ButtonStyle.Primary" />
+                    }
+                    else
+                    {
+                        <strong>Step Two:</strong>
+                        <br />
+                        <br />
+                        <RadzenButton class="step-button" Text="Upload the RFPs" Click="@PrposalClicked" Style="background-color: green;" ButtonStyle="ButtonStyle.Primary" />
+                    }
+                }
             </div>
         </div>
     }
@@ -111,6 +134,7 @@ else
     bool ProposalVisible = false;
     bool KnowledgebaseVisible = false;
     bool CapacityFileExists = false;
+    bool KnowledgebaseFileExists = false;
 
     ZipService objZipService = new ZipService();
     bool ZipFileExists = false;
@@ -200,7 +224,7 @@ else
                     {
                         // Deserialize the content to check if it is valid JSON
                         var capacityData = JsonConvert.DeserializeObject<CapacityRoot>(capacityFileContent);
-                        
+
                         if (capacityData != null && capacityData.Rooms.Count > 0)
                         {
                             CapacityFileExists = true;
@@ -210,6 +234,27 @@ else
                     {
                         // If deserialization fails, treat it as no valid data
                         CapacityFileExists = false;
+                    }
+                }
+            }
+
+            // Check if there is a Knowledgebase file with data
+            if (File.Exists($"{BasePath}//knowledgebase.json"))
+            {
+                var knowledgebaseContent = await File.ReadAllTextAsync($"{BasePath}//knowledgebase.json");
+                if (!string.IsNullOrWhiteSpace(knowledgebaseContent))
+                {
+                    try
+                    {
+                        var knowledgebaseData = JsonConvert.DeserializeObject<List<KnowledgeChunk>>(knowledgebaseContent);
+                        if (knowledgebaseData != null && knowledgebaseData.Count > 0)
+                        {
+                            KnowledgebaseFileExists = true;
+                        }
+                    }
+                    catch (System.Text.Json.JsonException)
+                    {
+                        KnowledgebaseFileExists = false;
                     }
                 }
             }
@@ -281,6 +326,16 @@ else
     }
 
     void OnKnowledgebaseClicked(MenuItemEventArgs args)
+    {
+        HomeVisible = false;
+        SettingsVisible = false;
+        CapacityVisible = false;
+        ProposalVisible = false;
+        LogsVisible = false;
+        KnowledgebaseVisible = true;
+    }
+
+    void KnowledgebaseClicked(MouseEventArgs args)
     {
         HomeVisible = false;
         SettingsVisible = false;
