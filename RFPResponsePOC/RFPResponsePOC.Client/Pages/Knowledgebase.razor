@@ -118,34 +118,45 @@
                 CurrentStatus = $"Reading File...";
                 StateHasChanged();
 
-                byte[] imageBytes;
+                var OCRprompt = await Http.GetStringAsync("Prompts/OCR.prompt");
+                var settingsService = new SettingsService();
 
                 if (file.ContentType == "application/pdf")
                 {
-                    var pdfUrl = await PdfService.GetPdfDataUrlAsync(file);
-                    if (pdfUrl == null) return;
-                    await PdfService.RenderPdfToCanvasAsync(pdfUrl, "pdfCanvas");
-                    imageBytes = await PdfService.GetCanvasPngBytesAsync("pdfCanvas");
+                    var pages = await PdfService.GetPdfPagesAsPngBytesAsync(file);
+                    for (int pageIndex = 0; pageIndex < pages.Count; pageIndex++)
+                    {
+                        CurrentStatus = $"Processing page {pageIndex + 1} of {pages.Count}";
+                        StateHasChanged();
+
+                        var result = await objOrchestratorMethods.CallOpenAIFileAsync(settingsService, OCRprompt, pages[pageIndex]);
+
+                        if (!string.IsNullOrWhiteSpace(result.Error))
+                        {
+                            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Error", Detail = result.Error, Duration = 4000 });
+                            return;
+                        }
+
+                        content += result.Response + " ";
+                    }
                 }
                 else
                 {
                     using var imgStream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
                     using var ms = new MemoryStream();
                     await imgStream.CopyToAsync(ms);
-                    imageBytes = ms.ToArray();
+                    var imageBytes = ms.ToArray();
+
+                    var result = await objOrchestratorMethods.CallOpenAIFileAsync(settingsService, OCRprompt, imageBytes);
+
+                    if (!string.IsNullOrWhiteSpace(result.Error))
+                    {
+                        NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Error", Detail = result.Error, Duration = 4000 });
+                        return;
+                    }
+
+                    content = result.Response;
                 }
-
-                var OCRprompt = await Http.GetStringAsync("Prompts/OCR.prompt");
-                var settingsService = new SettingsService();
-                var result = await objOrchestratorMethods.CallOpenAIFileAsync(settingsService, OCRprompt, imageBytes);
-
-                if (!string.IsNullOrWhiteSpace(result.Error))
-                {
-                    NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Error", Detail = result.Error, Duration = 4000 });
-                    return;
-                }
-
-                content = result.Response;
             }
             else
             {

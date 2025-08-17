@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Components.Forms;
 using System;
 using System.Threading.Tasks;
 using System.Text;
+using System.Collections.Generic;
 
 namespace BlazorWebAssemblyPDF.Services
 {
@@ -44,6 +45,20 @@ namespace BlazorWebAssemblyPDF.Services
             // dataUrl is like "data:image/png;base64,..."
             var base64 = dataUrl.Substring(dataUrl.IndexOf(",") + 1);
             return Convert.FromBase64String(base64);
+        }
+
+        public async Task<List<byte[]>> GetPdfPagesAsPngBytesAsync(IBrowserFile pdfFile)
+        {
+            var pdfDataUrl = await GetPdfDataUrlAsync(pdfFile);
+            if (pdfDataUrl == null) return new List<byte[]>();
+            var dataUrls = await _jsRuntime.InvokeAsync<string[]>("pdfInterop.getPdfPagesAsPng", pdfDataUrl);
+            var images = new List<byte[]>();
+            foreach (var dataUrl in dataUrls)
+            {
+                var base64 = dataUrl.Substring(dataUrl.IndexOf(",") + 1);
+                images.Add(Convert.FromBase64String(base64));
+            }
+            return images;
         }
 
         // SaveCanvasAsPngAsync can remain for download, but use GetCanvasPngBytesAsync for bytes
