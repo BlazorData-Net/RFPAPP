@@ -115,6 +115,9 @@
             // Handle PDFs and images via OCR
             if (file.ContentType == "application/pdf" || file.ContentType.StartsWith("image/"))
             {
+                CurrentStatus = $"Reading File...";
+                StateHasChanged();
+
                 byte[] imageBytes;
 
                 if (file.ContentType == "application/pdf")
@@ -146,6 +149,9 @@
             }
             else
             {
+                CurrentStatus = $"Processing File...";
+                StateHasChanged();
+
                 using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
                 using var reader = new StreamReader(stream);
                 content = await reader.ReadToEndAsync();
