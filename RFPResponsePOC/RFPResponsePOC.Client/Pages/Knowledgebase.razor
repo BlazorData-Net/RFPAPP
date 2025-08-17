@@ -70,6 +70,12 @@
         </Columns>
     </RadzenDataGrid>
 }
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
 <canvas id="pdfCanvas" style="display:none; border:1px solid #ccc;"></canvas>
 @code {
     #nullable disable
@@ -153,7 +159,7 @@
 
                 var chunkWords = words.Skip(i).Take(200);
                 var chunkText = string.Join(" ", chunkWords);
-                var embedding = objOrchestratorMethods.GetVectorEmbedding(chunkText, false);
+                var embedding = await objOrchestratorMethods.GetVectorEmbeddingAsync(chunkText, true);
                 entries.Add(new KnowledgeChunk { Id = Guid.NewGuid().ToString(), Content = chunkText, Embedding = embedding });
             }
 
@@ -168,6 +174,8 @@
         }
         catch (Exception ex)
         {
+            await LogService.WriteToLogAsync($"[{DateTime.Now}] OnFileUpload - {ex.Message}");
+
             NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Error", Detail = $"{ex.Message}", Duration = 4000 });
             InProgress = false;
             return;
@@ -177,7 +185,7 @@
     
     async Task SaveRow(KnowledgeChunk chunk)
     {
-        chunk.Embedding = objOrchestratorMethods.GetVectorEmbedding(chunk.Content, false);
+        chunk.Embedding = await objOrchestratorMethods.GetVectorEmbeddingAsync(chunk.Content, false);
         await grid.UpdateRow(chunk);
         await SaveKnowledgebaseData();
     }

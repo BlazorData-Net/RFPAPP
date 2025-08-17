@@ -52,8 +52,8 @@ namespace RFPResponsePOC.AI
 
         // Memory and Vectors
 
-        #region public string GetVectorEmbedding(string EmbeddingContent, bool Combine)
-        public string GetVectorEmbedding(string EmbeddingContent, bool Combine)
+        #region public async Task<string> GetVectorEmbeddingAsync(string EmbeddingContent, bool Combine)
+        public async Task<string> GetVectorEmbeddingAsync(string EmbeddingContent, bool Combine)
         {
             // **** Call OpenAI and get embeddings for the memory text
             // Create an instance of the OpenAI client
@@ -62,13 +62,11 @@ namespace RFPResponsePOC.AI
             SettingsService.LoadSettings();
 
             string ApiKey = SettingsService.Settings.ApplicationSettings.ApiKey;
-            string AIEmbeddingModel = SettingsService.Settings.ApplicationSettings.AIEmbeddingModel;
-            string AIModel = SettingsService.Settings.ApplicationSettings.AIModel;
 
             // Get embeddings for the text
-            var EmbeddingClient = api.GetEmbeddingClient(AIModel);
+            var EmbeddingClient = api.GetEmbeddingClient("text-embedding-3-small");
 
-            var embeddings = EmbeddingClient.GenerateEmbedding(EmbeddingContent);
+            var embeddings = await EmbeddingClient.GenerateEmbeddingAsync(EmbeddingContent);
 
             // Get embeddings as an array of floats
             var EmbeddingVectors = embeddings.Value.ToFloats().ToArray();
@@ -98,8 +96,8 @@ namespace RFPResponsePOC.AI
         }
         #endregion
 
-        #region public float[] GetVectorEmbeddingAsFloats(string EmbeddingContent)
-        public float[] GetVectorEmbeddingAsFloats(string EmbeddingContent)
+        #region public async Task<float[]> GetVectorEmbeddingAsFloats(string EmbeddingContent)
+        public async Task<float[]> GetVectorEmbeddingAsFloats(string EmbeddingContent)
         {
             // **** Call OpenAI and get embeddings for the memory text
             // Create an instance of the OpenAI client
@@ -108,13 +106,11 @@ namespace RFPResponsePOC.AI
             SettingsService.LoadSettings();
 
             string ApiKey = SettingsService.Settings.ApplicationSettings.ApiKey;
-            string AIEmbeddingModel = SettingsService.Settings.ApplicationSettings.AIEmbeddingModel;
-            string AIModel = SettingsService.Settings.ApplicationSettings.AIModel;
 
             // Get embeddings for the text
-            var EmbeddingClient = api.GetEmbeddingClient(AIModel);
+            var EmbeddingClient = api.GetEmbeddingClient("text-embedding-3-small");
 
-            var embeddings = EmbeddingClient.GenerateEmbedding(EmbeddingContent);
+            var embeddings = await EmbeddingClient.GenerateEmbeddingAsync(EmbeddingContent);
 
             // Get embeddings as an array of floats
             var EmbeddingVectors = embeddings.Value.ToFloats().ToArray();
