@@ -180,6 +180,7 @@
                 entries.Add(new KnowledgeChunk { Id = Guid.NewGuid().ToString(), Content = chunkText, Embedding = embedding });
             }
 
+            await grid.Reload();
             await SaveKnowledgebaseData();
             await uploader.ClearFiles();
 
