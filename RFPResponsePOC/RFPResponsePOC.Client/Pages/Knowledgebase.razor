@@ -12,6 +12,7 @@
 @using Microsoft.AspNetCore.Components.Forms
 @using RFPResponsePOC.Model
 @inject NotificationService NotificationService
+@inject DialogService DialogService
 @inject LogService LogService
 @inject SettingsService _SettingsService
 @inject NavigationManager Navigation
@@ -42,7 +43,7 @@
 <RadzenButton Text="Add Row" Icon="add" Style="margin-bottom:10px" ButtonStyle="ButtonStyle.Primary" Click="InsertRow" />
 @if (entries?.Any() == true)
 {
-    <RadzenButton Text="Save Knowledgebase" Icon="save" Style="margin-left:10px;margin-bottom:10px;background-color:#007bff;" ButtonStyle="ButtonStyle.Primary" Click="SaveKnowledgebaseData" />
+    <RadzenButton Text="Save Knowledgebase" Icon="save" Style="margin-left:10px;margin-bottom:10px;background-color:green;" ButtonStyle="ButtonStyle.Primary" Click="SaveKnowledgebaseData" />
     <RadzenDataGrid @ref="grid" Data="@entries" TItem="KnowledgeChunk" EditMode="DataGridEditMode.Single" AllowPaging="false">
         <Columns>
             <RadzenDataGridColumn TItem="KnowledgeChunk" Filterable="false" Sortable="false" Width="110px" TextAlign="TextAlign.Center" Title="EDIT/DEL">
@@ -51,7 +52,7 @@
                     {
                         <RadzenButton Icon="save" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.ExtraSmall" Click="@(async args => await SaveRow(chunk))" @onclick:stopPropagation="true" />
                         <span>&nbsp;</span>
-                        <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.ExtraSmall" Click="@(async args => await DeleteRow(chunk))" @onclick:stopPropagation="true" />
+                        <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.ExtraSmall" Click="@((args) => ConfirmDeleteRow(chunk))" @onclick:stopPropagation="true" />
                     }
                     else
                     {
@@ -208,6 +209,30 @@
         await SaveKnowledgebaseData();
     }
 
+    private async Task ConfirmDeleteRow(KnowledgeChunk chunk)
+    {
+        var confirmed = await DialogService.Confirm(
+            "Are you sure you want to delete this row?",
+            "Confirm Delete",
+            new ConfirmOptions
+            {
+                OkButtonText = "Delete",
+                CancelButtonText = "Cancel"
+            });
+
+        if (confirmed == true)
+        {
+            await DeleteRow(chunk);
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Info,
+                Summary = "Deleted",
+                Detail = "Row removed.",
+                Duration = 3000
+            });
+        }
+    }
+
     async Task DeleteRow(KnowledgeChunk chunk)
     {
         if (entries.Contains(chunk))
@@ -221,7 +246,7 @@
     async Task InsertRow()
     {
         var newChunk = new KnowledgeChunk { Id = Guid.NewGuid().ToString(), Content = string.Empty, Embedding = string.Empty };
-        entries.Add(newChunk);
+        entries.Insert(0, newChunk);
         await grid.Reload();
         await grid.EditRow(newChunk);
     }
