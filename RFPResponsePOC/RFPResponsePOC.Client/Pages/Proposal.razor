@@ -592,7 +592,7 @@
 
             await LogService.WriteToLogAsync($"[{DateTime.Now}] Processed JSON text (first 1000 chars): {processedJsonText?.Substring(0, Math.Min(1000, processedJsonText?.Length ?? 0))}");
 
-            var calculator = new CalculateProposale("/RFPResponsePOC", LogService);
+            var calculator = new CalculateProposal("/RFPResponsePOC", LogService);
 
             List<RoomAssignment> assigned;
             try

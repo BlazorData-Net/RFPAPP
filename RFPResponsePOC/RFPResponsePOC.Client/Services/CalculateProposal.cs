@@ -32,7 +32,7 @@ namespace RFPResponsePOC.Client.Services
     /// Service responsible for calculating room assignments based on RFP (Request for Proposal) requirements.
     /// Processes room requests and assigns available rooms that meet capacity and scheduling constraints.
     /// </summary>
-    public class CalculateProposale
+    public class CalculateProposal
     {
         /// <summary>
         /// Base path for accessing configuration files (e.g., Capacity.json)
@@ -49,7 +49,7 @@ namespace RFPResponsePOC.Client.Services
         /// </summary>
         /// <param name="basePath">Base path for configuration files (defaults to "/RFPResponsePOC")</param>
         /// <param name="logService">Logging service instance (creates new if null)</param>
-        public CalculateProposale(string basePath = "/RFPResponsePOC", LogService logService = null)
+        public CalculateProposal(string basePath = "/RFPResponsePOC", LogService logService = null)
         {
             _basePath = basePath;
             _logService = logService ?? new LogService();
