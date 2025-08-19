@@ -45,35 +45,31 @@
 {
     <RadzenButton Text="Save Knowledgebase" Icon="save" Style="margin-left:10px;margin-bottom:10px;background-color:green;" ButtonStyle="ButtonStyle.Primary" Click="SaveKnowledgebaseData" />
     <RadzenDataGrid @ref="grid"
-                    Data="@entries"
-                    TItem="KnowledgeChunk"
+                    Data="@groupedEntries"
+                    TItem="KnowledgeEntry"
                     AllowPaging="false"
-                    AllowGrouping="true"
-                    Render="@OnGridRender">
+                    ExpandMode="DataGridExpandMode.Single">
         <Columns>
-            <RadzenDataGridColumn TItem="KnowledgeChunk"
-                                  Property="EntryTitle"
-                                  Title="Entry Title"
-                                  Groupable="true"
-                                  Visible="false" />
-            <RadzenDataGridColumn TItem="KnowledgeChunk" Filterable="false" Sortable="false" Width="110px" TextAlign="TextAlign.Center" Title="EDIT/DEL">
-                <Template Context="chunk">
-                    <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.ExtraSmall" Click="@(() => EditRow(chunk))" @onclick:stopPropagation="true" />
-                    <span>&nbsp;</span>
-                    <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.ExtraSmall" Click="@(() => ConfirmDeleteRow(chunk))" @onclick:stopPropagation="true" />
-                </Template>
-            </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="KnowledgeChunk" Property="EntryTitle" Title="Title" Width="100px">
-                 <Template Context="chunk">
-                    <div style="white-space:pre-wrap">@chunk.EntryTitle</div>
-                </Template>
-            </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="KnowledgeChunk" Property="Content" Title="Content">
-                <Template Context="chunk">
-                    <div style="white-space:pre-wrap">@chunk.Content</div>
-                </Template>
-            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="KnowledgeEntry" Property="EntryTitle" Title="Entry Title" />
         </Columns>
+        <Template Context="entry">
+            <RadzenDataGrid Data="entry.Chunks" TItem="KnowledgeChunk" AllowPaging="false">
+                <Columns>
+                    <RadzenDataGridColumn TItem="KnowledgeChunk" Filterable="false" Sortable="false" Width="110px" TextAlign="TextAlign.Center" Title="EDIT/DEL">
+                        <Template Context="chunk">
+                            <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.ExtraSmall" Click="@(() => EditRow(chunk))" @onclick:stopPropagation="true" />
+                            <span>&nbsp;</span>
+                            <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.ExtraSmall" Click="@(() => ConfirmDeleteRow(chunk))" @onclick:stopPropagation="true" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="KnowledgeChunk" Property="Content" Title="Content">
+                        <Template Context="chunk">
+                            <div style="white-space:pre-wrap">@chunk.Content</div>
+                        </Template>
+                    </RadzenDataGridColumn>
+                </Columns>
+            </RadzenDataGrid>
+        </Template>
     </RadzenDataGrid>
 }
 <br />
@@ -87,8 +83,11 @@
     #nullable disable
     string BasePath = @"/RFPResponsePOC";
     Radzen.Blazor.RadzenUpload uploader;
-    Radzen.Blazor.RadzenDataGrid<KnowledgeChunk> grid;
+    Radzen.Blazor.RadzenDataGrid<KnowledgeEntry> grid;
     List<KnowledgeChunk> entries = new();
+    IEnumerable<KnowledgeEntry> groupedEntries => entries
+        .GroupBy(e => e.EntryTitle)
+        .Select(g => new KnowledgeEntry { EntryTitle = g.Key, Chunks = g.ToList() });
     OrchestratorMethods objOrchestratorMethods;
     private bool InProgress = false;
     private string CurrentStatus = "";
@@ -288,18 +287,6 @@
         }
     }
 
-    void OnGridRender(DataGridRenderEventArgs<KnowledgeChunk> args)
-    {
-        if (args.FirstRender)
-        {
-            args.Grid.Groups.Add(new GroupDescriptor
-            {
-                Property = nameof(KnowledgeChunk.EntryTitle),
-                SortOrder = SortOrder.Ascending
-            });
-        }
-    }
-
     async Task SaveKnowledgebaseData()
     {
         var json = JsonConvert.SerializeObject(entries, Formatting.Indented);
@@ -320,5 +307,11 @@
             Console.WriteLine($"Error reading knowledgebase.json: {ex.Message}");
         }
         return null;
+    }
+
+    class KnowledgeEntry
+    {
+        public string EntryTitle { get; set; }
+        public List<KnowledgeChunk> Chunks { get; set; }
     }
 }
