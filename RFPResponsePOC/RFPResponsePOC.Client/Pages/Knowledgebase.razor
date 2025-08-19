@@ -11,6 +11,7 @@
 @using RFPResponsePOC.AI
 @using Microsoft.AspNetCore.Components.Forms
 @using RFPResponsePOC.Model
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 @inject LogService LogService
@@ -18,6 +19,7 @@
 @inject NavigationManager Navigation
 @inject PdfToPngService PdfService
 @inject HttpClient Http
+@inject IJSRuntime JsRuntime
 <h3>Knowledgebase</h3>
 <RadzenUpload @ref="uploader"
               ChooseText="Upload document (.txt/.pdf/.png/.jpg/.jpeg)" Accept=".txt,.pdf,.png,.jpg,.jpeg"
@@ -81,6 +83,10 @@
 <canvas id="pdfCanvas" style="display:none; border:1px solid #ccc;"></canvas>
 @code {
     #nullable disable
+    private IDisposable registration;
+    // Allow access to the JSRuntime
+    private DotNetObjectReference<Knowledgebase> objRef;
+    ZipService objZipService = new ZipService();
     string BasePath = @"/RFPResponsePOC";
     Radzen.Blazor.RadzenUpload uploader;
     Radzen.Blazor.RadzenDataGrid<KnowledgeEntry> grid;
@@ -95,6 +101,18 @@
     {
         if (firstRender)
         {
+            // Set a reference to the current instance
+            objRef = DotNetObjectReference.Create(this);
+
+            // Register the beforeunload event with JavaScript
+            await JsRuntime.InvokeVoidAsync("setupBeforeUnload", objRef);
+
+            // Register the location changing handler
+            registration = Navigation.RegisterLocationChangingHandler(OnLocationChanging);
+
+            // Initialize the ZipService
+            objZipService = new ZipService(JsRuntime, localStorage, _SettingsService, LogService);
+
             objOrchestratorMethods = new OrchestratorMethods(_SettingsService, LogService);
             var json = await GetKnowledgebaseJsonAsync();
             if (!string.IsNullOrWhiteSpace(json))
@@ -104,6 +122,32 @@
             }
         }
     }
+
+    #region JavaScript
+    private ValueTask OnLocationChanging(LocationChangingContext context)
+    {
+        // Get the base URL
+        string baseUrl = Navigation.BaseUri;
+
+        // Detect that user is going to counter page
+        if (context.TargetLocation != baseUrl)
+        {
+            // User is navigating away from the page - Zip any files
+            // Zip up any files and store in LocalStorage
+            Task.Run(async () => await objZipService.ZipTheFiles());
+        }
+
+        return ValueTask.CompletedTask;
+    }
+
+    [JSInvokable]
+    public async Task HandleBeforeUnload()
+    {
+        // User is navigating away from the page - Zip any files
+        // Zip up any files and store in LocalStorage
+        await objZipService.ZipTheFiles();
+    }
+    #endregion
     async Task OnFileUpload(UploadChangeEventArgs e)
     {
         var file = e.Files.FirstOrDefault();
@@ -307,6 +351,11 @@
             Console.WriteLine($"Error reading knowledgebase.json: {ex.Message}");
         }
         return null;
+    }
+
+    public void Dispose()
+    {
+        objRef?.Dispose();
     }
 
     class KnowledgeEntry
