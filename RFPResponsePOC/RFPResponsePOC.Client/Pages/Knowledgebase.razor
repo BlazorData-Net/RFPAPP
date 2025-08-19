@@ -290,8 +290,7 @@
 
     void OnGridRender(DataGridRenderEventArgs<KnowledgeChunk> args)
     {
-        if (args.FirstRender &&
-            !args.Grid.Groups.Any(g => g.Property == nameof(KnowledgeChunk.EntryTitle)))
+        if (args.FirstRender)
         {
             args.Grid.Groups.Add(new GroupDescriptor
             {
