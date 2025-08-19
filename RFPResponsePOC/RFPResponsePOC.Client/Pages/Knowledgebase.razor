@@ -44,8 +44,18 @@
 @if (entries?.Any() == true)
 {
     <RadzenButton Text="Save Knowledgebase" Icon="save" Style="margin-left:10px;margin-bottom:10px;background-color:green;" ButtonStyle="ButtonStyle.Primary" Click="SaveKnowledgebaseData" />
-    <RadzenDataGrid @ref="grid" Data="@entries" TItem="KnowledgeChunk" AllowPaging="false" AllowGrouping="true" Render="@OnGridRender">
+    <RadzenDataGrid @ref="grid"
+                    Data="@entries"
+                    TItem="KnowledgeChunk"
+                    AllowPaging="false"
+                    AllowGrouping="true"
+                    Render="@OnGridRender">
         <Columns>
+            <RadzenDataGridColumn TItem="KnowledgeChunk"
+                                  Property="EntryTitle"
+                                  Title="Entry Title"
+                                  Groupable="true"
+                                  Visible="false" />
             <RadzenDataGridColumn TItem="KnowledgeChunk" Filterable="false" Sortable="false" Width="110px" TextAlign="TextAlign.Center" Title="EDIT/DEL">
                 <Template Context="chunk">
                     <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.ExtraSmall" Click="@(() => EditRow(chunk))" @onclick:stopPropagation="true" />
@@ -53,7 +63,11 @@
                     <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.ExtraSmall" Click="@(() => ConfirmDeleteRow(chunk))" @onclick:stopPropagation="true" />
                 </Template>
             </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="KnowledgeChunk" Property="EntryTitle" Title="Entry Title" />
+            <RadzenDataGridColumn TItem="KnowledgeChunk" Property="EntryTitle" Title="Title" Width="100px">
+                 <Template Context="chunk">
+                    <div style="white-space:pre-wrap">@chunk.EntryTitle</div>
+                </Template>
+            </RadzenDataGridColumn>
             <RadzenDataGridColumn TItem="KnowledgeChunk" Property="Content" Title="Content">
                 <Template Context="chunk">
                     <div style="white-space:pre-wrap">@chunk.Content</div>
@@ -276,9 +290,14 @@
 
     void OnGridRender(DataGridRenderEventArgs<KnowledgeChunk> args)
     {
-        if (args.FirstRender)
+        if (args.FirstRender &&
+            !args.Grid.Groups.Any(g => g.Property == nameof(KnowledgeChunk.EntryTitle)))
         {
-            args.Grid.Groups.Add(new GroupDescriptor() { Property = nameof(KnowledgeChunk.EntryTitle) });
+            args.Grid.Groups.Add(new GroupDescriptor
+            {
+                Property = nameof(KnowledgeChunk.EntryTitle),
+                SortOrder = SortOrder.Ascending
+            });
         }
     }
 
