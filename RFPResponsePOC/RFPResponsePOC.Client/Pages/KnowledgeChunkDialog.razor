@@ -1,0 +1,32 @@
+@using Radzen
+@using RFPResponsePOC.Client.Models
+@inject DialogService DialogService
+
+<RadzenTemplateForm Data="@Chunk" TItem="KnowledgeChunk" Submit="@OnSubmit">
+    <ChildContent>
+        <RadzenLabel Text="Entry Title" />
+        <RadzenTextBox @bind-Value="Chunk.EntryTitle" Style="width:100%" Name="EntryTitle" />
+        @if (ShowContent)
+        {
+            <RadzenLabel Text="Content" Style="display:block;margin-top:10px;" />
+            <RadzenTextArea @bind-Value="Chunk.Content" Rows="5" Style="width:100%" Name="Content" />
+        }
+        <div style="margin-top:10px">
+            <RadzenButton Text="Save" ButtonType="ButtonType.Submit" Style="margin-right:5px" />
+            <RadzenButton Text="Cancel" ButtonStyle="ButtonStyle.Secondary" Click="@(() => DialogService.Close(null))" />
+        </div>
+    </ChildContent>
+</RadzenTemplateForm>
+
+@code {
+    [Parameter]
+    public KnowledgeChunk Chunk { get; set; }
+
+    [Parameter]
+    public bool ShowContent { get; set; } = true;
+
+    void OnSubmit()
+    {
+        DialogService.Close(Chunk);
+    }
+}

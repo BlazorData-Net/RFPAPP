@@ -44,29 +44,20 @@
 @if (entries?.Any() == true)
 {
     <RadzenButton Text="Save Knowledgebase" Icon="save" Style="margin-left:10px;margin-bottom:10px;background-color:green;" ButtonStyle="ButtonStyle.Primary" Click="SaveKnowledgebaseData" />
-    <RadzenDataGrid @ref="grid" Data="@entries" TItem="KnowledgeChunk" EditMode="DataGridEditMode.Single" AllowPaging="false">
+    <RadzenDataGrid @ref="grid" Data="@entries" TItem="KnowledgeChunk" AllowPaging="false" AllowGrouping="true" Render="@OnGridRender">
         <Columns>
             <RadzenDataGridColumn TItem="KnowledgeChunk" Filterable="false" Sortable="false" Width="110px" TextAlign="TextAlign.Center" Title="EDIT/DEL">
                 <Template Context="chunk">
-                    @if (grid.IsRowInEditMode(chunk))
-                    {
-                        <RadzenButton Icon="save" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.ExtraSmall" Click="@(async args => await SaveRow(chunk))" @onclick:stopPropagation="true" />
-                        <span>&nbsp;</span>
-                        <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.ExtraSmall" Click="@((args) => ConfirmDeleteRow(chunk))" @onclick:stopPropagation="true" />
-                    }
-                    else
-                    {
-                        <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.ExtraSmall" Click="@((args) => EditRow(chunk))" @onclick:stopPropagation="true" />
-                    }
+                    <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.ExtraSmall" Click="@(() => EditRow(chunk))" @onclick:stopPropagation="true" />
+                    <span>&nbsp;</span>
+                    <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.ExtraSmall" Click="@(() => ConfirmDeleteRow(chunk))" @onclick:stopPropagation="true" />
                 </Template>
             </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="KnowledgeChunk" Property="EntryTitle" Title="Entry Title" />
             <RadzenDataGridColumn TItem="KnowledgeChunk" Property="Content" Title="Content">
                 <Template Context="chunk">
                     <div style="white-space:pre-wrap">@chunk.Content</div>
                 </Template>
-                <EditTemplate Context="chunk">
-                    <RadzenTextArea @bind-Value="chunk.Content" Rows="3" Style="width:100%" />
-                </EditTemplate>
             </RadzenDataGridColumn>
         </Columns>
     </RadzenDataGrid>
@@ -104,6 +95,18 @@
     {
         var file = e.Files.FirstOrDefault();
         if (file == null) return;
+
+        var dialogResult = await DialogService.OpenAsync<KnowledgeChunkDialog>("Entry Title", new Dictionary<string, object>()
+        {
+            {"Chunk", new KnowledgeChunk()},
+            {"ShowContent", false}
+        });
+        var titleChunk = dialogResult as KnowledgeChunk;
+        if (titleChunk == null || string.IsNullOrWhiteSpace(titleChunk.EntryTitle))
+        {
+            await uploader.ClearFiles();
+            return;
+        }
 
         InProgress = true;
         CurrentStatus = "Processing...";
@@ -178,7 +181,7 @@
                 var chunkWords = words.Skip(i).Take(200);
                 var chunkText = string.Join(" ", chunkWords);
                 var embedding = await objOrchestratorMethods.GetVectorEmbeddingAsync(chunkText, true);
-                entries.Add(new KnowledgeChunk { Id = Guid.NewGuid().ToString(), Content = chunkText, Embedding = embedding });
+                entries.Add(new KnowledgeChunk { Id = Guid.NewGuid().ToString(), EntryTitle = titleChunk.EntryTitle, Content = chunkText, Embedding = embedding });
             }
 
             await grid.Reload();
@@ -200,13 +203,23 @@
             return;
         }
     }
-    Task EditRow(KnowledgeChunk chunk) => grid.EditRow(chunk);
-    
-    async Task SaveRow(KnowledgeChunk chunk)
+    async Task EditRow(KnowledgeChunk chunk)
     {
-        chunk.Embedding = await objOrchestratorMethods.GetVectorEmbeddingAsync(chunk.Content, false);
-        await grid.UpdateRow(chunk);
-        await SaveKnowledgebaseData();
+        var editModel = new KnowledgeChunk { Id = chunk.Id, EntryTitle = chunk.EntryTitle, Content = chunk.Content };
+        var dialogResult = await DialogService.OpenAsync<KnowledgeChunkDialog>("Edit Entry", new Dictionary<string, object>()
+        {
+            {"Chunk", editModel},
+            {"ShowContent", true}
+        });
+        var result = dialogResult as KnowledgeChunk;
+        if (result != null)
+        {
+            chunk.EntryTitle = result.EntryTitle;
+            chunk.Content = result.Content;
+            chunk.Embedding = await objOrchestratorMethods.GetVectorEmbeddingAsync(chunk.Content, false);
+            await SaveKnowledgebaseData();
+            await grid.Reload();
+        }
     }
 
     private async Task ConfirmDeleteRow(KnowledgeChunk chunk)
@@ -245,10 +258,28 @@
 
     async Task InsertRow()
     {
-        var newChunk = new KnowledgeChunk { Id = Guid.NewGuid().ToString(), Content = string.Empty, Embedding = string.Empty };
-        entries.Insert(0, newChunk);
-        await grid.Reload();
-        await grid.EditRow(newChunk);
+        var newChunk = new KnowledgeChunk { Id = Guid.NewGuid().ToString() };
+        var dialogResult = await DialogService.OpenAsync<KnowledgeChunkDialog>("Add Entry", new Dictionary<string, object>()
+        {
+            {"Chunk", newChunk},
+            {"ShowContent", true}
+        });
+        var result = dialogResult as KnowledgeChunk;
+        if (result != null && !string.IsNullOrWhiteSpace(result.EntryTitle))
+        {
+            result.Embedding = await objOrchestratorMethods.GetVectorEmbeddingAsync(result.Content, true);
+            entries.Insert(0, result);
+            await SaveKnowledgebaseData();
+            await grid.Reload();
+        }
+    }
+
+    void OnGridRender(DataGridRenderEventArgs<KnowledgeChunk> args)
+    {
+        if (args.FirstRender)
+        {
+            args.Grid.Groups.Add(new GroupDescriptor() { Property = nameof(KnowledgeChunk.EntryTitle) });
+        }
     }
 
     async Task SaveKnowledgebaseData()
