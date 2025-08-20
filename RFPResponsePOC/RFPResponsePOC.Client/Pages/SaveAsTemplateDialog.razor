@@ -1,0 +1,36 @@
+@using Radzen
+@inject DialogService DialogService
+
+<RadzenTemplateForm Data="@TemplateData" TItem="TemplateModel" Submit="@OnSubmit">
+    <ChildContent>
+        <RadzenLabel Text="Template Name" />
+        <RadzenTextBox @bind-Value="TemplateData.Name" Style="width:100%" Name="TemplateName" MaxLength="100" />
+        <RadzenRequiredValidator Component="TemplateName" Text="Template name is required" />
+        <div style="margin-top:10px">
+            <RadzenButton Text="Save" ButtonType="ButtonType.Submit" Style="margin-right:5px" />
+            <RadzenButton Text="Cancel" ButtonStyle="ButtonStyle.Secondary" Click="@(() => DialogService.Close(null))" />
+        </div>
+    </ChildContent>
+</RadzenTemplateForm>
+
+@code {
+    [Parameter]
+    public string InitialName { get; set; } = "";
+
+    private TemplateModel TemplateData = new TemplateModel();
+
+    protected override void OnInitialized()
+    {
+        TemplateData.Name = InitialName;
+    }
+
+    void OnSubmit()
+    {
+        DialogService.Close(TemplateData.Name);
+    }
+
+    public class TemplateModel
+    {
+        public string Name { get; set; } = "";
+    }
+}

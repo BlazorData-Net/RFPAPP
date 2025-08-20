@@ -1,6 +1,7 @@
 @using System.Net.Http
 @using Newtonsoft.Json
 @using RFPResponsePOC.Client.Services
+@using System.IO
 @inject HttpClient Http
 @inject DialogService DialogService
 @inject NotificationService NotificationService
@@ -13,15 +14,22 @@
 <RadzenTextArea @bind-Value="templateContent" Rows="20" Style="width:100%; min-height:400px;" />
 <div style="margin-top:10px;">
     <RadzenButton Text="Save" Style="background-color: green;" ButtonStyle="ButtonStyle.Primary" Click="SaveTemplate" />
+    <RadzenButton Text="Save As" Style="background-color: blue; margin-left:10px;" ButtonStyle="ButtonStyle.Primary" Click="SaveAsTemplate" />
+    <RadzenButton Text="Delete" Style="background-color: red; margin-left:10px;" ButtonStyle="ButtonStyle.Danger" Click="DeleteTemplate" Disabled="@IsDefaultTemplate" />
     <RadzenButton Text="Cancel" Style="margin-left:10px;" ButtonStyle="ButtonStyle.Light" Click="Cancel" />
 </div>
 
 @code {
+    [Parameter] public string SelectedTemplate { get; set; } = "Default";
+    
     private IDisposable registration;
     string BasePath = "/RFPResponsePOC";
     string templateContent;
     string TemplateFile => $"{BasePath}/Template.txt";
-    string DefaultTemplateUrl => "Templates/DefaultTemplate.txt";
+    string DefaultTemplateUrl => "Templates/Default.txt";
+    string TemplatesPath => "Templates";
+    
+    private bool IsDefaultTemplate => SelectedTemplate == "Default" || SelectedTemplate == "DefaultVenue";
 
     // Allow access to the JSRuntime
     private DotNetObjectReference<EditTemplate> objRef;
@@ -98,15 +106,79 @@
 
     private async Task SaveTemplate()
     {
-        await File.WriteAllTextAsync(TemplateFile, templateContent);
+        await SaveTemplateToLocalStorage(SelectedTemplate, templateContent);
         NotificationService.Notify(new NotificationMessage
         {
             Severity = NotificationSeverity.Success,
             Summary = "Saved",
-            Detail = "Template updated",
+            Detail = $"Template '{SelectedTemplate}' updated",
             Duration = 4000
         });
         DialogService.Close(true);
+    }
+
+    private async Task SaveAsTemplate()
+    {
+        var templateName = await DialogService.OpenAsync<SaveAsTemplateDialog>(
+            "Save Template As",
+            new Dictionary<string, object> { { "InitialName", "" } },
+            new DialogOptions { Width = "400px", Height = "300px" });
+
+        if (!string.IsNullOrWhiteSpace(templateName))
+        {
+            await SaveTemplateToLocalStorage(templateName, templateContent);
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Saved",
+                Detail = $"Template saved as '{templateName}'",
+                Duration = 4000
+            });
+            DialogService.Close(true);
+        }
+    }
+
+    private async Task DeleteTemplate()
+    {
+        if (IsDefaultTemplate)
+            return;
+
+        var confirmed = await DialogService.Confirm(
+            $"Are you sure you want to delete the template '{SelectedTemplate}'?",
+            "Confirm Delete",
+            new ConfirmOptions
+            {
+                OkButtonText = "Delete",
+                CancelButtonText = "Cancel"
+            });
+
+        if (confirmed == true)
+        {
+            await localStorage.RemoveItemAsync($"template_{SelectedTemplate}");
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Info,
+                Summary = "Deleted",
+                Detail = $"Template '{SelectedTemplate}' deleted",
+                Duration = 3000
+            });
+            DialogService.Close(true);
+        }
+    }
+
+    private async Task SaveTemplateToLocalStorage(string templateName, string content)
+    {
+        await localStorage.SetItemAsStringAsync($"template_{templateName}", content);
+    }
+
+    private async Task<string> LoadTemplateFromLocalStorage(string templateName)
+    {
+        return await localStorage.GetItemAsStringAsync($"template_{templateName}");
+    }
+
+    private string GetTemplateUrl(string templateName)
+    {
+        return $"{TemplatesPath}/{templateName}.txt";
     }
 
     private void Cancel()
@@ -118,6 +190,25 @@
     {
         try
         {
+            // First try to load from local storage (user-saved templates)
+            var localTemplate = await LoadTemplateFromLocalStorage(SelectedTemplate);
+            if (!string.IsNullOrEmpty(localTemplate))
+            {
+                return localTemplate;
+            }
+            
+            // Then try to load from wwwroot templates (built-in templates)
+            try
+            {
+                var templateUrl = GetTemplateUrl(SelectedTemplate);
+                return await Http.GetStringAsync(templateUrl);
+            }
+            catch
+            {
+                // If selected template doesn't exist, try to load from fallback locations
+            }
+            
+            // Fallback to default template file
             if (File.Exists($"{BasePath}//Template.txt"))
             {
                 return await File.ReadAllTextAsync($"{BasePath}//Template.txt");
@@ -126,7 +217,7 @@
         catch (Exception ex)
         {
             // Log the exception if necessary
-            Console.WriteLine($"Error reading Template.txt: {ex.Message}");
+            Console.WriteLine($"Error reading template: {ex.Message}");
         }
         return null;
     }

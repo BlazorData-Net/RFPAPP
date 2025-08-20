@@ -46,7 +46,10 @@
               InputAttributes="@(new Dictionary<string,object>{ { "aria-label", "select file" }})">
 </RadzenUpload>
 <br />
-<RadzenButton Text="Edit Template" Icon="edit" Style="background-color: gray; margin-top:10px;" ButtonStyle="ButtonStyle.Primary" Click="EditTemplate" />
+<div style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
+    <RadzenDropDown @bind-Value="SelectedTemplate" Data="@templateOptions" TextProperty="" ValueProperty="" Placeholder="Select Template" Style="width: 200px;" />
+    <RadzenButton Text="Edit Template" Icon="edit" Style="background-color: gray;" ButtonStyle="ButtonStyle.Primary" Click="EditTemplate" />
+</div>
 <span>&nbsp;</span>
 <RadzenButton Text="Detect Room Requests" Icon="add" Style="margin-bottom: 10px; background-color: orange;" ButtonStyle="ButtonStyle.Primary" Click="ProcessOCRText" />
 <span>&nbsp;</span>
@@ -210,6 +213,8 @@
         "Reception"
     };
     string BasePath = @"/RFPResponsePOC";
+    string SelectedTemplate = "Default";
+    private List<string> templateOptions = new();
 
     public class ProposalRow
     {
@@ -273,6 +278,46 @@
         catch (Exception ex)
         {
             await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Failed to load ProposalRows - {ex.Message}");
+        }
+    }
+
+    private async Task LoadTemplateOptionsAsync()
+    {
+        try
+        {
+            // Start with built-in templates
+            var builtInTemplates = new List<string> { "Default", "DefaultVenue", "Corporate" };
+            templateOptions = new List<string>(builtInTemplates);
+            
+            // Add user-saved templates from local storage
+            try
+            {
+                var keys = await localStorage.KeysAsync();
+                var userTemplates = keys
+                    .Where(k => k.StartsWith("template_"))
+                    .Select(k => k.Substring("template_".Length))
+                    .Where(name => !builtInTemplates.Contains(name)) // Don't duplicate built-in templates
+                    .OrderBy(name => name)
+                    .ToList();
+                
+                templateOptions.AddRange(userTemplates);
+            }
+            catch (Exception ex)
+            {
+                await LogService.WriteToLogAsync($"[{DateTime.Now}] WARNING: Failed to load user templates from local storage - {ex.Message}");
+            }
+            
+            // Set default selection if current selection is not available
+            if (!templateOptions.Contains(SelectedTemplate))
+            {
+                SelectedTemplate = "Default";
+            }
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Failed to load template options - {ex.Message}");
         }
     }
 
@@ -376,6 +421,7 @@
                 }
                 
                 await LoadProposalRowsAsync();
+                await LoadTemplateOptionsAsync();
                 
                 // Only reload grid if it's not null
                 if (grid != null)
@@ -398,7 +444,7 @@
     {
         await DialogService.OpenAsync<EditTemplate>(
             "Edit Template",
-            new Dictionary<string, object>(),
+            new Dictionary<string, object> { { "SelectedTemplate", SelectedTemplate } },
             new DialogOptions { Width = "700px", Height = "600px" });
     }
 
