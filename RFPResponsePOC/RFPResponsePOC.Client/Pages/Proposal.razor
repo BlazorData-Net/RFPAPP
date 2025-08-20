@@ -5,6 +5,7 @@
 @using BlazorWebAssemblyPDF.Services
 @using Newtonsoft.Json
 @using RFPResponsePOC.Client.Services
+@using RFPResponsePOC.Client.Models
 @using RFPResponsePOC.Model
 @using RFPResponsePOC.Models
 @using Microsoft.AspNetCore.Components.Forms
@@ -536,6 +537,127 @@
         }
     }
 
+    private async Task CalculateRoomsForExistingRows()
+    {
+        try
+        {
+            await LogService.WriteToLogAsync($"[{DateTime.Now}] CalculateRoomsForExistingRows started with {proposalRows?.Count ?? 0} rows");
+
+            if (proposalRows == null || !proposalRows.Any())
+            {
+                await LogService.WriteToLogAsync($"[{DateTime.Now}] No existing proposal rows found");
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = "Warning",
+                    Detail = "No proposal rows found. Please add some rows or upload a proposal first.",
+                    Duration = 4000
+                });
+                return;
+            }
+
+            // Filter rows that need room assignments
+            // #2: Ignore any ProposalRow that has ManualRoom set to any value other than null or empty string
+            var rowsNeedingRooms = proposalRows.Where(row => 
+                string.IsNullOrWhiteSpace(row.ManualRoom) && 
+                string.IsNullOrWhiteSpace(row.SelectedRoom)).ToList();
+
+            await LogService.WriteToLogAsync($"[{DateTime.Now}] Found {rowsNeedingRooms.Count} rows needing room assignments");
+
+            if (!rowsNeedingRooms.Any())
+            {
+                await LogService.WriteToLogAsync($"[{DateTime.Now}] No rows require room assignments");
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Info,
+                    Summary = "Info",
+                    Detail = "All rows already have room assignments or manual room overrides.",
+                    Duration = 4000
+                });
+                return;
+            }
+
+            // Convert ProposalRows to RoomsRequests
+            var requests = rowsNeedingRooms.Select(row => new RoomsRequest
+            {
+                Name = row.Name ?? "Unknown",
+                StartDate = row.StartDate,
+                StartTime = row.StartTime,
+                EndDate = row.EndDate,
+                EndTime = row.EndTime,
+                RoomType = row.RoomType ?? "",
+                Attendance = row.Attendance,
+                Notes = row.Notes ?? ""
+            }).ToList();
+
+            // Create JSON for the calculator
+            var requestsJson = JsonConvert.SerializeObject(requests);
+            await LogService.WriteToLogAsync($"[{DateTime.Now}] Created requests JSON for calculation: {requestsJson.Substring(0, Math.Min(500, requestsJson.Length))}");
+
+            // Calculate room assignments
+            var calculator = new CalculateProposal("/RFPResponsePOC", LogService);
+            var assignments = await calculator.CalculateAsync(requestsJson);
+            await LogService.WriteToLogAsync($"[{DateTime.Now}] Calculator returned {assignments?.Count ?? 0} assignments");
+
+            // Update the proposal rows with calculated room assignments
+            var assignmentDict = assignments.ToDictionary(a => a.Request?.Name ?? "", a => a.AssignedRoom);
+
+            foreach (var row in rowsNeedingRooms)
+            {
+                if (assignmentDict.TryGetValue(row.Name ?? "", out var assignedRoom) && !string.IsNullOrWhiteSpace(assignedRoom))
+                {
+                    row.SelectedRoom = assignedRoom;
+                    await LogService.WriteToLogAsync($"[{DateTime.Now}] Assigned room '{assignedRoom}' to row '{row.Name}'");
+                }
+                else
+                {
+                    await LogService.WriteToLogAsync($"[{DateTime.Now}] No room assigned for row '{row.Name}'");
+                }
+            }
+
+            // Load room options for dropdown
+            try
+            {
+                var capacityJson = await File.ReadAllTextAsync("/RFPResponsePOC/Capacity.json");
+                var capacity = JsonConvert.DeserializeObject<CapacityRoot>(capacityJson);
+                roomOptions = capacity?.Rooms?.Select(r => r.Name).OrderBy(n => n).ToList() ?? new List<string>();
+            }
+            catch (Exception ex)
+            {
+                await LogService.WriteToLogAsync($"[{DateTime.Now}] WARNING: Unable to load Capacity.json - {ex.Message}");
+                roomOptions = new List<string>();
+            }
+
+            // Save the updated proposal rows and refresh UI
+            SortProposalRows();
+            await SaveProposalRowsAsync();
+            StateHasChanged();
+
+            var assignedCount = rowsNeedingRooms.Count(row => !string.IsNullOrWhiteSpace(row.SelectedRoom));
+            await LogService.WriteToLogAsync($"[{DateTime.Now}] CalculateRoomsForExistingRows completed - assigned {assignedCount} of {rowsNeedingRooms.Count} rooms");
+
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Success",
+                Detail = $"Room calculation completed. Assigned {assignedCount} of {rowsNeedingRooms.Count} rooms.",
+                Duration = 4000
+            });
+        }
+        catch (Exception ex)
+        {
+            await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Exception in CalculateRoomsForExistingRows - {ex.Message}");
+            await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Stack trace - {ex.StackTrace}");
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Error",
+                Detail = $"Failed to calculate rooms: {ex.Message}",
+                Duration = 8000
+            });
+        }
+    }
+
     private async Task CalculateProposal()
     {
         try
@@ -548,16 +670,11 @@
             await LogService.WriteToLogAsync($"[{DateTime.Now}] RFPText content length: {RFPText?.Length ?? 0}");
             await LogService.WriteToLogAsync($"[{DateTime.Now}] RFPText content (first 1000 chars): {RFPText?.Substring(0, Math.Min(1000, RFPText?.Length ?? 0))}");
 
+            // Handle case where RFPText is null or empty - calculate rooms for existing rows
             if (string.IsNullOrWhiteSpace(RFPText))
             {
-                await LogService.WriteToLogAsync($"[{DateTime.Now}] WARNING: RFPText is empty or null in CalculateProposal");
-                NotificationService.Notify(new NotificationMessage
-                {
-                    Severity = NotificationSeverity.Warning,
-                    Summary = "Warning",
-                    Detail = "Please upload and process a proposal first.",
-                    Duration = 4000
-                });
+                await LogService.WriteToLogAsync($"[{DateTime.Now}] RFPText is empty or null - calculating rooms for existing proposal rows");
+                await CalculateRoomsForExistingRows();
                 return;
             }
 
