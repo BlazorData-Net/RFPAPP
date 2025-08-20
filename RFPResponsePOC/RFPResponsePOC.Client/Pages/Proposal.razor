@@ -656,6 +656,11 @@
                 Duration = 8000
             });
         }
+        finally
+        {
+            InProgress = false;
+            StateHasChanged();
+        }
     }
 
     private async Task CalculateProposal()
