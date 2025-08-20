@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>RFPResponsePOC.Server</AssemblyName>
@@ -10,7 +10,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\RFPPOC.ServiceDefaults\RFPPOC.ServiceDefaults.csproj" />
     <ProjectReference Include="..\RFPResponsePOC.Client\RFPResponsePOC.Client.csproj" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="9.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="8.0.11" />
   </ItemGroup>
 
 </Project>
