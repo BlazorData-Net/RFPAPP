@@ -1,0 +1,8 @@
+@using Radzen
+@code {
+    [Parameter] public string Message { get; set; } = "Loading...";
+}
+<div style="display:flex;flex-direction:column;align-items:center;gap:16px;padding:10px;min-width:250px;">
+    <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" Style="width:100%;" />
+    <div style="font-size:1rem;text-align:center;">@Message</div>
+</div>

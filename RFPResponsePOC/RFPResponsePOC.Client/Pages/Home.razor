@@ -150,8 +150,8 @@ else
             // Register the beforeunload event with JavaScript
             await JsRuntime.InvokeVoidAsync("setupBeforeUnload", objRef);
 
-            // Initialize the ZipService
-            objZipService = new ZipService(JsRuntime, localStorage, _SettingsService, LogService);
+            // Initialize the ZipService with DialogService so dialogs can show
+            objZipService = new ZipService(JsRuntime, localStorage, _SettingsService, LogService, DialogService);
 
             try
             {

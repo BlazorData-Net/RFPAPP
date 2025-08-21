@@ -6,6 +6,7 @@
 @using RFPResponsePOC.Client.Services
 @using RFPResponsePOC.Model
 @using Radzen
+@using RFPResponsePOC.Client.Pages
 @inject Blazored.LocalStorage.ILocalStorageService localStorage
 @inject NotificationService NotificationService
 @inject DialogService DialogService
@@ -30,28 +31,40 @@
                 <RadzenDropDown @bind-Value="@AIModel" Data="@availableModels" Style="width: 450px;" TValue="string" />
             </RadzenFormField>
 
+            <div style="display: flex; justify-content: center; align-items: center; gap:10px;">
             @if (!IsOpenAISettingsEntered)
             {
-
                 <RadzenButton Text="An OpenAI API Key is required (Click here to get one)"
                               ButtonStyle="ButtonStyle.Secondary"
                               Click="OpenAIKeyLink"
                               Style="margin-bottom: 10px; width: 500px" />
-
             }
             else
             {
                 <RadzenButton Text="Save"
                               ButtonStyle="ButtonStyle.Primary"
                               Click="SettingsSave"
-                              Style="margin-bottom: 10px; width: 500px" />
+                              Style="margin-bottom: 10px; width: 200px" />
             }
+            </div>
+
             @if (ZipFileExists)
             {
                 <hr />
-                <div style="display: flex; justify-content: center; align-items: center;">
-                    <button class="btn btn-secondary" @onclick="objZipService.DownloadZipFile">Download Saved Settings</button>&nbsp;&nbsp;
-                    <button class="btn btn-danger" @onclick="objZipService.DeleteZipFile">Delete Saved Settings</button>
+                <div style="display: flex; justify-content: center; align-items: center; gap:8px;">
+                    @if (IsDownloading)
+                    {
+                        <RadzenButton Disabled="true" Style="min-width:190px;" ButtonStyle="ButtonStyle.Primary">
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            <span style="margin-left:4px;">Downloading...</span>
+                        </RadzenButton>
+                    }
+                    else
+                    {
+                        <RadzenButton Disabled="false" Style="min-width:190px;" ButtonStyle="ButtonStyle.Primary" Click="@(async () => await DownloadSettingsAsync())">Download Settings</RadzenButton>
+                    }
+                    <RadzenButton Disabled="@IsDownloading" Text="Upload Settings" ButtonStyle="ButtonStyle.Secondary" />
+                    <RadzenButton Disabled="@IsDownloading" Text="Delete Saved Settings" ButtonStyle="ButtonStyle.Danger" Click="@(() => objZipService.DeleteZipFile())" />
                 </div>
             }
         </RadzenStack>
@@ -63,44 +76,34 @@
 
     private IDisposable registration;
 
-    // Allow access to the JSRuntime
     private DotNetObjectReference<Settings> objRef;
     ZipService objZipService = new ZipService();
 
-    // Services
     private OrchestratorMethods objOrchestratorMethods;
 
-    // Fields
     private bool IsOpenAISettingsEntered = false;
     private bool ShowApiKey { get; set; } = false;
 
-    // Default Values
     private string ApiKey = "";
     private string AIModel = "gpt-5-mini";
     private string AIEmbeddingModel = "";
     private List<string> availableModels = new List<string> { "o4-mini", "gpt-4o", "gpt-5", "gpt-5-mini" };
 
-    // Global fields
     bool ZipFileExists = false;
     Variant variant = Variant.Outlined;
+    bool IsDownloading = false;
 
-    // Run on page load
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            // Set a reference to the current instance of Home
             objRef = DotNetObjectReference.Create(this);
-
-            // Register the beforeunload event with JavaScript
             await JSRuntime.InvokeVoidAsync("setupBeforeUnload", objRef);
 
-            // Register the location changing handler
             registration =
             Navigation.RegisterLocationChangingHandler(OnLocationChanging);
 
-            // Initialize the ZipService
-            objZipService = new ZipService(JSRuntime, localStorage, SettingsService, _LogService);
+            objZipService = new ZipService(JSRuntime, localStorage, SettingsService, _LogService, DialogService);
 
             ZipFileExists = await objZipService.IsZipFileExistsAsync();
 
@@ -108,18 +111,10 @@
 
             objOrchestratorMethods = (OrchestratorMethods)ScopedServices.GetService(typeof(OrchestratorMethods));
 
-            // Get APIKey from secure settings
             ApiKey = SettingsService.Settings.ApplicationSettings.ApiKey ?? "";
             AIModel = SettingsService.Settings.ApplicationSettings.AIModel;
 
-            if (ApiKey.Length > 1)
-            {
-                IsOpenAISettingsEntered = true;
-            }
-            else
-            {
-                IsOpenAISettingsEntered = false;
-            }
+            IsOpenAISettingsEntered = ApiKey.Length > 1;
 
             StateHasChanged();
         }
@@ -127,26 +122,14 @@
 
     private void HandleApiKeyChange(ChangeEventArgs e)
     {
-        // Mark settings as entered if the user starts typing an API key
         ApiKey = e.Value?.ToString() ?? string.Empty;
-
         IsOpenAISettingsEntered = !string.IsNullOrWhiteSpace(ApiKey);
     }
 
-    private void ToggleApiKeyVisibility()
-    {
-        ShowApiKey = !ShowApiKey;
-    }
+    private void ToggleApiKeyVisibility() => ShowApiKey = !ShowApiKey;
+    private void APIKeyDetection(KeyboardEventArgs args) => IsOpenAISettingsEntered = true;
 
-    private void APIKeyDetection(KeyboardEventArgs args)
-    {
-        IsOpenAISettingsEntered = true;
-    }
-
-    private async Task OpenAIKeyLink()
-    {
-        await JSRuntime.InvokeVoidAsync("open", "https://platform.openai.com/account/api-keys", "_blank");
-    }
+    private async Task OpenAIKeyLink() => await JSRuntime.InvokeVoidAsync("open", "https://platform.openai.com/account/api-keys", "_blank");
 
     private async Task SettingsSave()
     {
@@ -154,110 +137,72 @@
         {
             if (!ApiKey.StartsWith("sk-"))
             {
-                NotificationService.Notify(new NotificationMessage
-                {
-                    Severity = NotificationSeverity.Error,
-                    Summary = "Error",
-                    Detail = "Invalid API Key - must start with: sk-",
-                    Duration = 4000
-                });
-
+                NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Error", Detail = "Invalid API Key - must start with: sk-", Duration = 4000 });
                 return;
             }
-
-            // OpenAi or Azure Open AI requires API Key
             if (ApiKey.Length < 5)
             {
-                NotificationService.Notify(new NotificationMessage
-                {
-                    Severity = NotificationSeverity.Error,
-                    Summary = "Error",
-                    Detail = "API Key is required",
-                    Duration = 4000
-                });
-
+                NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Error", Detail = "API Key is required", Duration = 4000 });
                 return;
             }
-
-            // Update Settings
             SettingsService settingsService = new SettingsService();
-
             SettingsService.ApplicationSettings applicationSettings = settingsService.Settings.ApplicationSettings;
-
             applicationSettings.ApiKey = ApiKey ?? "";
             applicationSettings.AIModel = AIModel;
             applicationSettings.AIEmbeddingModel = AIEmbeddingModel;
-
-            // Test API Key
             objOrchestratorMethods = new OrchestratorMethods(SettingsService, _LogService);
-
             var result = await objOrchestratorMethods.TestAccessAsync(ApiKey, AIModel);
-
             if (!result)
             {
-                NotificationService.Notify(new NotificationMessage
-                {
-                    Severity = NotificationSeverity.Error,
-                    Summary = "Error",
-                    Detail = "Failed to connect to the AI service. Please check your API Key and Endpoint.",
-                    Duration = 8000
-                });
-
+                NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Error", Detail = "Failed to connect to the AI service. Please check your API Key and Endpoint.", Duration = 8000 });
                 await _LogService.WriteToLogAsync($"SettingsSave exception: Failed to connect to the AI service. Please check your API Key and Endpoint.");
-
                 return;
             }
-
             await settingsService.UpdateSettingsAsync(applicationSettings);
-
             await _LogService.WriteToLogAsync($"SettingsSave Model: {AIModel}");
-
-            // Notify parent that settings have changed
-            // This will trigger the parent component to refresh or take action
             await SettingsChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            NotificationService.Notify(new NotificationMessage
-            {
-                Severity = NotificationSeverity.Error,
-                Summary = "Error",
-                Detail = ex.Message,
-                Duration = 8000
-            });
-
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Error", Detail = ex.Message, Duration = 8000 });
             await _LogService.WriteToLogAsync($"SettingsSave exception: {ex.GetBaseException().ToString()}");
         }
     }
 
-    #region JavaScript
+    private async Task DownloadSettingsAsync()
+    {
+        if (IsDownloading) return;
+        IsDownloading = true;
+
+        // Ensure the UI is updated before starting the download
+        // do a task wait to ensure the UI is responsive
+        await Task.Delay(100);
+
+        StateHasChanged();
+        try
+        {
+            await objZipService.ZipTheFiles();
+            await objZipService.DownloadZipFile();
+        }
+        finally
+        {
+            IsDownloading = false;
+            StateHasChanged();
+        }
+    }
+
     private ValueTask OnLocationChanging(LocationChangingContext context)
     {
-        // Get the base URL
         string baseUrl = Navigation.BaseUri;
-
-        // Detect that user is going to counter page
         if (context.TargetLocation != baseUrl)
         {
-            // User is navigating away from the page - Zip any files
-            // Zip up any files and store in LocalStorage
             Task.Run(async () => await objZipService.ZipTheFiles());
         }
-
         return ValueTask.CompletedTask;
     }
 
     [JSInvokable]
-    public async Task HandleBeforeUnload()
-    {
-        // User is navigating away from the page - Zip any files
-        // Zip up any files and store in LocalStorage
-        await objZipService.ZipTheFiles();
-    }
-    #endregion
+    public async Task HandleBeforeUnload() => await objZipService.ZipTheFiles();
 
-    public void Dispose()
-    {
-        objRef?.Dispose();
-    }
+    public void Dispose() => objRef?.Dispose();
 }

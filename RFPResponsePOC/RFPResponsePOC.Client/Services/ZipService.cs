@@ -3,6 +3,7 @@ using Microsoft.JSInterop;
 using Radzen;
 using RFPResponsePOC.Model;
 using System.IO.Compression;
+using RFPResponsePOC.Client.Pages; // for LoadingDialog component
 
 namespace RFPResponsePOC.Client.Services
 {
@@ -13,111 +14,73 @@ namespace RFPResponsePOC.Client.Services
         private readonly ILocalStorageService localStorage;
         private readonly SettingsService _SettingsService;
         private readonly LogService LogService;
+        private readonly DialogService _DialogService;
 
-        public ZipService()
-        {
-        }
+        public ZipService() { }
 
-        public ZipService(IJSRuntime jsRuntime, ILocalStorageService localStorage, SettingsService settingsService, LogService logService)
+        // Backwards-compatible 4-arg ctor
+        public ZipService(IJSRuntime jsRuntime,
+                          ILocalStorageService localStorage,
+                          SettingsService settingsService,
+                          LogService logService) : this(jsRuntime, localStorage, settingsService, logService, null) { }
+
+        public ZipService(IJSRuntime jsRuntime,
+                          ILocalStorageService localStorage,
+                          SettingsService settingsService,
+                          LogService logService,
+                          DialogService dialogService)
         {
             JsRuntime = jsRuntime;
             this.localStorage = localStorage;
             _SettingsService = settingsService;
             LogService = logService;
+            _DialogService = dialogService;
         }
 
-        public async Task<bool> IsZipFileExistsAsync()
-        {
-            return await localStorage.ContainKeyAsync("ZipFiles.zip");
-        }
+        public async Task<bool> IsZipFileExistsAsync() => await localStorage.ContainKeyAsync("ZipFiles.zip");
 
         public async Task ZipTheFiles()
         {
             string zipPath = @"/Zip";
             string zipFilePath = @"/Zip/ZipFiles.zip";
 
-            // If zipFilePath exists, delete it
-            if (File.Exists(zipFilePath))
-            {
-                File.Delete(zipFilePath);
-            }
+            if (File.Exists(zipFilePath)) File.Delete(zipFilePath);
+            if (!Directory.Exists(zipPath)) Directory.CreateDirectory(zipPath);
+            if (!Directory.Exists(BasePath)) return;
 
-            // Create the directory if it doesn't exist
-            if (!Directory.Exists(zipPath))
-            {
-                Directory.CreateDirectory(zipPath);
-            }
-
-            // If BasePath is not a directory, return
-            if (!Directory.Exists(BasePath))
-            {
-                return;
-            }
-
-            // Create a zip file from the directory
             ZipFile.CreateFromDirectory(BasePath, zipFilePath);
-
-            // Read the Zip file into a byte array
             byte[] exportFileBytes = File.ReadAllBytes(zipFilePath);
-
-            // Convert byte array to Base64 string
             string base64String = Convert.ToBase64String(exportFileBytes);
-
-            // Store base64String in the browser's local storage
             await localStorage.SetItemAsync("ZipFiles.zip", base64String);
         }
 
         public async Task UnzipFile()
         {
             string extractPath = @"/Zip";
+            if (!Directory.Exists(extractPath)) Directory.CreateDirectory(extractPath);
 
-            // If the extract directory does not exist, create it
-            if (!Directory.Exists(extractPath))
-            {
-                Directory.CreateDirectory(extractPath);
-            }
-
-            // Get exportFileString from the browser's local storage
             string exportFileString = await localStorage.GetItemAsync<string>("ZipFiles.zip");
-
-            // Convert the Base64 string to a byte array
             byte[] exportFileBytes = Convert.FromBase64String(exportFileString);
-
-            // Write the byte array to a file
             await File.WriteAllBytesAsync($"{extractPath}/ZipFiles.zip", exportFileBytes);
-
-            // Extract the zip file
             ZipFile.ExtractToDirectory($"{extractPath}/ZipFiles.zip", BasePath, true);
-
             await LogService.WriteToLogAsync("[" + DateTime.Now + "] Saved data extracted.");
         }
 
         public async Task DownloadZipFile()
         {
-            // Get exportFileString from the browser's local storage
             string base64String = await localStorage.GetItemAsync<string>("ZipFiles.zip");
 
-            // Download the zip file
+            try { _DialogService?.Close(); } catch { }
+
             await JsRuntime.InvokeVoidAsync("saveAsFile", "ZipFiles.zip", base64String);
         }
 
         public void DeleteZipFile()
         {
-            // Remove the zip file from the browser's local storage
             localStorage.RemoveItemAsync("ZipFiles.zip");
-
-            // Delete the zip file from the server
             string zipFilePath = @"/Zip/ZipFiles.zip";
-            if (File.Exists(zipFilePath))
-            {
-                File.Delete(zipFilePath);
-            }
-
-            // Delete the extracted files
-            if (Directory.Exists(BasePath))
-            {
-                Directory.Delete(BasePath, true);
-            }
+            if (File.Exists(zipFilePath)) File.Delete(zipFilePath);
+            if (Directory.Exists(BasePath)) Directory.Delete(BasePath, true);
         }
     }
 }
