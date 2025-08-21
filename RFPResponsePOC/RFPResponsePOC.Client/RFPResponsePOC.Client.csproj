@@ -13,14 +13,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.8" />
 	  <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />	
 	  <PackageReference Include="DocX" Version="4.0.25105.5786" />	 
 	  <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />	 
 	  <PackageReference Include="Openize.OpenXML-SDK" Version="25.7.0" />
-	  <PackageReference Include="Radzen.Blazor" Version="7.1.5" />
+	  <PackageReference Include="Radzen.Blazor" Version="7.2.2" />
 	  <PackageReference Include="Azure.AI.OpenAI" Version="2.1.0" />
-	  <PackageReference Include="Azure.Identity" Version="1.13.2" />
+	  <PackageReference Include="Azure.Identity" Version="1.15.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -36,16 +36,15 @@
     <Content Update="wwwroot\Templates\Default.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Update="wwwroot\Templates\DefaultVenueEmail.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Update="wwwroot\Templates\DefaultVenue.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Update="wwwroot\Templates\Corporate.txt">
+    <Content Update="wwwroot\Templates\DefaultEmail.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="wwwroot\Templates\" />
   </ItemGroup>
 
 </Project>
