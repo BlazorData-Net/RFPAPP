@@ -49,11 +49,12 @@
 <div style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
     <RadzenDropDown @bind-Value="SelectedTemplate" Data="@templateOptions" TextProperty="" ValueProperty="" Placeholder="Select Template" Style="width: 200px;" />
     <RadzenButton Text="Edit Template" Icon="edit" Style="background-color: gray;" ButtonStyle="ButtonStyle.Primary" Click="EditTemplate" />
-</div>
+
 <span>&nbsp;</span>
 <RadzenButton Text="Detect Room Requests" Icon="add" Style="margin-bottom: 10px; background-color: orange;" ButtonStyle="ButtonStyle.Primary" Click="ProcessOCRText" />
 <span>&nbsp;</span>
 <RadzenButton Text="Calculate/Re-Calculate" Icon="calculate" Style="margin-bottom: 10px; background-color: green;" ButtonStyle="ButtonStyle.Primary" Click="CalculateProposal" />
+</div>
 <br />
 <RadzenCard>
     <RadzenTextArea @bind-Value="RFPText" Rows="5" Style="width: 100%; height: 150px;" />
@@ -286,7 +287,7 @@
         try
         {
             // Start with built-in templates
-            var builtInTemplates = new List<string> { "Default", "DefaultVenue", "Corporate" };
+            var builtInTemplates = new List<string> { "Default", "DefaultVenue", "DefaultEmail", "DefaultVenueEmail" };
             templateOptions = new List<string>(builtInTemplates);
             
             // Add user-saved templates from local storage
