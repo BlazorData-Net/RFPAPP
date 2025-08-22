@@ -16,6 +16,23 @@ namespace RFPResponsePOC.Model
                 var RFPResponsePOCLogPath =
                     $"/RFPResponsePOC/RFPResponsePOCLog.csv";
 
+                // Ensure the directory exists
+                var directory = Path.GetDirectoryName(RFPResponsePOCLogPath);
+                if (!Directory.Exists(directory))
+                {
+                    Directory.CreateDirectory(directory);
+                }
+
+                // Check if file exists, if not create it
+                if (!File.Exists(RFPResponsePOCLogPath))
+                {
+                    using (var streamWriter = new StreamWriter(RFPResponsePOCLogPath))
+                    {
+                        streamWriter.WriteLine("Log started at " + DateTime.Now + " [" + DateTime.Now.Ticks.ToString() + "]");
+                    }
+                }
+
+                // Read existing content
                 using (var file = new System.IO.StreamReader(RFPResponsePOCLogPath))
                 {
                     RFPResponsePOCLog = file.ReadToEnd().Split('\n');

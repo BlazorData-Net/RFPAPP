@@ -7,6 +7,7 @@
 @using RFPResponsePOC.Model
 @using Radzen
 @using RFPResponsePOC.Client.Pages
+@using Microsoft.AspNetCore.Components.Forms
 @inject Blazored.LocalStorage.ILocalStorageService localStorage
 @inject NotificationService NotificationService
 @inject DialogService DialogService
@@ -38,6 +39,13 @@
                               ButtonStyle="ButtonStyle.Secondary"
                               Click="OpenAIKeyLink"
                               Style="margin-bottom: 10px; width: 500px" />
+
+                              <span>&nbsp;&nbsp;</span>
+
+                              <InputFile id="file-upload-settings" 
+                              OnChange="OnSettingsUpload" 
+                              accept=".zip" 
+                              style="display: none;" />
             }
             else
             {
@@ -63,10 +71,40 @@
                     {
                         <RadzenButton Disabled="false" Style="min-width:190px;" ButtonStyle="ButtonStyle.Primary" Click="@(async () => await DownloadSettingsAsync())">Download Settings</RadzenButton>
                     }
-                    <RadzenButton Disabled="@IsDownloading" Text="Upload Settings" ButtonStyle="ButtonStyle.Secondary" />
-                    <RadzenButton Disabled="@IsDownloading" Text="Delete Saved Settings" ButtonStyle="ButtonStyle.Danger" Click="@(() => objZipService.DeleteZipFile())" />
+                    <label for="file-upload-settings" 
+                           class="rz-button rz-button-md rz-secondary rz-shade-default" 
+                           style="min-width:190px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; text-decoration:none; margin:0; padding: 0.375rem 0.75rem; border: 1px solid transparent; font-size: 0.875rem; line-height: 1.5; border-radius: 0.25rem; color: #fff; background-color: #6c757d; border-color: #6c757d;"
+                           disabled="@IsDownloading">
+                        @if (IsUploading)
+                        {
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            <span style="margin-left:4px;">Uploading...</span>
+                        }
+                        else
+                        {
+                            <span>Upload Settings</span>
+                        }
+                    </label>
+                    <RadzenButton Disabled="@(IsDownloading || IsUploading)" Text="Delete Saved Settings" ButtonStyle="ButtonStyle.Danger" Click="@(() => DeleteSettings())" />
                 </div>
             }
+
+            @if (IsUploading)
+            {
+                <div style="display: flex; justify-content: center; align-items: center; margin-top: 10px;">
+                    <div class="rz-card" style="padding: 10px;">
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        <span style="margin-left:4px;">Uploading and extracting settings...</span>
+                    </div>
+                </div>
+            }
+
+            <InputFile id="file-upload-settings" 
+                       OnChange="OnSettingsUpload" 
+                       accept=".zip" 
+                       style="display: none;" 
+                       disabled="@(IsDownloading || IsUploading)" />
+
         </RadzenStack>
     </RadzenColumn>
 </RadzenRow>
@@ -85,13 +123,14 @@
     private bool ShowApiKey { get; set; } = false;
 
     private string ApiKey = "";
-    private string AIModel = "gpt-5-mini";
+    private string AIModel = "";
     private string AIEmbeddingModel = "";
     private List<string> availableModels = new List<string> { "o4-mini", "gpt-4o", "gpt-5", "gpt-5-mini" };
 
     bool ZipFileExists = false;
     Variant variant = Variant.Outlined;
     bool IsDownloading = false;
+    bool IsUploading = false;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -100,8 +139,7 @@
             objRef = DotNetObjectReference.Create(this);
             await JSRuntime.InvokeVoidAsync("setupBeforeUnload", objRef);
 
-            registration =
-            Navigation.RegisterLocationChangingHandler(OnLocationChanging);
+            registration = Navigation.RegisterLocationChangingHandler(OnLocationChanging);
 
             objZipService = new ZipService(JSRuntime, localStorage, SettingsService, _LogService, DialogService);
 
@@ -124,6 +162,114 @@
     {
         ApiKey = e.Value?.ToString() ?? string.Empty;
         IsOpenAISettingsEntered = !string.IsNullOrWhiteSpace(ApiKey);
+    }
+
+    private async Task OnSettingsUpload(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var file = e.File;
+
+            if (file is null)
+            {
+                return;
+            }
+
+            if (!file.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+            {
+                NotificationService.Notify(new NotificationMessage 
+                { 
+                    Severity = NotificationSeverity.Error, 
+                    Summary = "Error", 
+                    Detail = "Please select a .zip file", 
+                    Duration = 4000 
+                });
+                return;
+            }
+
+            IsUploading = true;
+            StateHasChanged();
+
+            using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
+            var zipBytes = ms.ToArray();
+
+            // Upload and store the zip file
+            await objZipService.UploadZipFile(zipBytes);
+
+            // Extract the uploaded zip file
+            await objZipService.UnzipFile();
+
+            // Log the upload after extraction is complete
+            await _LogService.WriteToLogAsync($"[{DateTime.Now}] Settings zip file '{file.Name}' uploaded and extracted successfully.");
+
+            // Update the state
+            ZipFileExists = true;
+            IsUploading = false;
+            StateHasChanged();
+
+            // Reload settings
+            SettingsService.LoadSettings();
+            ApiKey = SettingsService.Settings.ApplicationSettings.ApiKey ?? "";
+            AIModel = SettingsService.Settings.ApplicationSettings.AIModel;
+            IsOpenAISettingsEntered = ApiKey.Length > 1;
+
+            // Notify the parent component that settings changed
+            await SettingsChanged.InvokeAsync();
+
+            NotificationService.Notify(new NotificationMessage 
+            { 
+                Severity = NotificationSeverity.Success, 
+                Summary = "Success", 
+                Detail = "Settings uploaded and extracted successfully", 
+                Duration = 4000 
+            });
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            IsUploading = false;
+            StateHasChanged();
+
+            NotificationService.Notify(new NotificationMessage 
+            { 
+                Severity = NotificationSeverity.Error, 
+                Summary = "Error", 
+                Detail = $"Failed to upload settings: {ex.Message}", 
+                Duration = 8000 
+            });
+
+            await _LogService.WriteToLogAsync($"OnSettingsUpload exception: {ex.GetBaseException().ToString()}");
+        }
+    }
+
+    private async Task DeleteSettings()
+    {
+        var confirmed = await DialogService.Confirm(
+            "Are you sure you want to delete the saved settings?",
+            "Confirm Delete",
+            new ConfirmOptions
+            {
+                OkButtonText = "Delete",
+                CancelButtonText = "Cancel"
+            });
+
+        if (confirmed == true)
+        {
+            objZipService.DeleteZipFile();
+            ZipFileExists = false;
+            StateHasChanged();
+            
+            NotificationService.Notify(new NotificationMessage 
+            { 
+                Severity = NotificationSeverity.Info, 
+                Summary = "Deleted", 
+                Detail = "Saved settings have been deleted", 
+                Duration = 3000 
+            });
+        }
     }
 
     private void ToggleApiKeyVisibility() => ShowApiKey = !ShowApiKey;

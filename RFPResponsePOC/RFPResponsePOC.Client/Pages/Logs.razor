@@ -53,15 +53,24 @@
         {
             RFPResponsePOCLogPath = @"/RFPResponsePOC/RFPResponsePOCLog.csv";
 
-            // Read the lines from the .csv file
-            using (var file = new System.IO.StreamReader(RFPResponsePOCLogPath))
+            // Check if log file exists before trying to read it
+            if (File.Exists(RFPResponsePOCLogPath))
             {
-                RFPResponsePOCLog = file.ReadToEnd().Split('\n');
-
-                if (RFPResponsePOCLog[RFPResponsePOCLog.Length - 1].Trim() == "")
+                // Read the lines from the .csv file
+                using (var file = new System.IO.StreamReader(RFPResponsePOCLogPath))
                 {
-                    RFPResponsePOCLog = RFPResponsePOCLog.Distinct().Take(RFPResponsePOCLog.Length - 1).ToArray();
+                    RFPResponsePOCLog = file.ReadToEnd().Split('\n');
+
+                    if (RFPResponsePOCLog[RFPResponsePOCLog.Length - 1].Trim() == "")
+                    {
+                        RFPResponsePOCLog = RFPResponsePOCLog.Distinct().Take(RFPResponsePOCLog.Length - 1).ToArray();
+                    }
                 }
+            }
+            else
+            {
+                // Initialize empty log array if file doesn't exist
+                RFPResponsePOCLog = new string[] { "Log file not found. No entries available." };
             }
 
             CalculateTokenTotals();
@@ -74,6 +83,13 @@
     {
         try
         {
+            // Ensure directory exists before trying to write
+            var directory = Path.GetDirectoryName(RFPResponsePOCLogPath);
+            if (!Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
             using (var streamWriter = new StreamWriter(RFPResponsePOCLogPath))
             {
                 streamWriter.WriteLine(string.Join("\n", "Log cleared on " + DateTime.Now));

@@ -39,6 +39,15 @@ namespace RFPResponsePOC.Client.Services
 
         public async Task<bool> IsZipFileExistsAsync() => await localStorage.ContainKeyAsync("ZipFiles.zip");
 
+        private void EnsureDirectoryStructure()
+        {
+            // Ensure the base directory exists
+            if (!Directory.Exists(BasePath))
+            {
+                Directory.CreateDirectory(BasePath);
+            }
+        }
+
         public async Task ZipTheFiles()
         {
             string zipPath = @"/Zip";
@@ -54,10 +63,38 @@ namespace RFPResponsePOC.Client.Services
             await localStorage.SetItemAsync("ZipFiles.zip", base64String);
         }
 
+        public async Task UploadZipFile(byte[] zipFileBytes)
+        {
+            string base64String = Convert.ToBase64String(zipFileBytes);
+            await localStorage.SetItemAsync("ZipFiles.zip", base64String);
+            // Don't log here - wait until after extraction to ensure log file exists
+        }
+
         public async Task UnzipFile()
         {
             string extractPath = @"/Zip";
             if (!Directory.Exists(extractPath)) Directory.CreateDirectory(extractPath);
+
+            // Delete existing files in the extract path
+            if (Directory.Exists(BasePath))
+            {
+                Directory.Delete(BasePath, true);
+            }
+
+            // Ensure the base directory structure exists
+            EnsureDirectoryStructure();
+
+            // Create a new log file if it doesn't exist
+            if (!File.Exists(@$"{BasePath}/RFPResponsePOCLog.csv"))
+            {
+                using (var streamWriter = new StreamWriter(@$"{BasePath}/RFPResponsePOCLog.csv"))
+                {
+                    streamWriter.WriteLine("Application reset at " + DateTime.Now + " [" + DateTime.Now.Ticks.ToString() + "]");
+                }
+            }
+
+            // Initialize default settings to ensure RFPResponsePOC.config file is not null
+            await _SettingsService.InitializeDefaultSettingsAsync();
 
             string exportFileString = await localStorage.GetItemAsync<string>("ZipFiles.zip");
             byte[] exportFileBytes = Convert.FromBase64String(exportFileString);

@@ -185,7 +185,7 @@ namespace RFPResponsePOC.Model
                     ApplicationSettings = new ApplicationSettings
                     {
                         ApiKey = "",
-                        AIModel = "o4-mini",
+                        AIModel = "gpt-5-mini",
                         AIEmbeddingModel = "text-embedding-ada-002"
                     },
                     ConnectionSettings = new List<ConnectionSettings>()
