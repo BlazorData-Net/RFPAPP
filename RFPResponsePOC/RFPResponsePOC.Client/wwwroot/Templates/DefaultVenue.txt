@@ -7,14 +7,14 @@ Thank you for considering [BUSINESS] as your venue partner for [EVENT_NAME] on [
 **Event Overview**
 We have reviewed your requirements and are pleased to present our comprehensive proposal:
 
-[PROPOSAL]
+[VENUE_PROPOSAL]
 
 [QUESTIONS_AND_ANSWERS]
 
 **Limitations**
 Please note the following items cannot be accommodated:
 
-[UNABLE_TO_ACCOMMODATE_AGENDA_ITEMS]
+[VENUE_UNABLE_TO_ACCOMMODATE_AGENDA_ITEMS]
 
 We look forward to hosting your event and creating a memorable experience.
 

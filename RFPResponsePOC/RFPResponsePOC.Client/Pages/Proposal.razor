@@ -51,9 +51,9 @@
     <RadzenButton Text="Edit Template" Icon="edit" Style="background-color: gray;" ButtonStyle="ButtonStyle.Primary" Click="EditTemplate" />
 
 <span>&nbsp;</span>
-<RadzenButton Text="Detect Room Requests" Icon="add" Style="margin-bottom: 10px; background-color: orange;" ButtonStyle="ButtonStyle.Primary" Click="ProcessOCRText" />
+<RadzenButton Text="Create Proposal" Icon="add" Style="margin-top: 4px; background-color: orange;" ButtonStyle="ButtonStyle.Primary" Click="CreateProposal" />
 <span>&nbsp;</span>
-<RadzenButton Text="Calculate/Re-Calculate" Icon="calculate" Style="margin-bottom: 10px; background-color: green;" ButtonStyle="ButtonStyle.Primary" Click="CalculateProposal" />
+<RadzenButton Text="Calculate/Re-Calculate" Icon="calculate" Style="margin-top: 4px; background-color: green;" ButtonStyle="ButtonStyle.Primary" Click="CalculateProposal" />
 </div>
 <br />
 <RadzenCard>
@@ -289,7 +289,7 @@
             // Start with built-in templates
             var builtInTemplates = new List<string> { "Default", "DefaultVenue" };
             templateOptions = new List<string>(builtInTemplates);
-            
+
             // Add user-saved templates from local storage
             try
             {
@@ -300,20 +300,20 @@
                     .Where(name => !builtInTemplates.Contains(name)) // Don't duplicate built-in templates
                     .OrderBy(name => name)
                     .ToList();
-                
+
                 templateOptions.AddRange(userTemplates);
             }
             catch (Exception ex)
             {
                 await LogService.WriteToLogAsync($"[{DateTime.Now}] WARNING: Failed to load user templates from local storage - {ex.Message}");
             }
-            
+
             // Set default selection if current selection is not available
             if (!templateOptions.Contains(SelectedTemplate))
             {
                 SelectedTemplate = "Default";
             }
-            
+
             StateHasChanged();
         }
         catch (Exception ex)
@@ -405,25 +405,25 @@
             try
             {
                 objRef = DotNetObjectReference.Create(this);
-                
+
                 if (JsRuntime != null)
                 {
                     await JsRuntime.InvokeVoidAsync("setupBeforeUnload", objRef);
                 }
-                
+
                 if (Navigation != null)
                 {
                     registration = Navigation.RegisterLocationChangingHandler(OnLocationChanging);
                 }
-                
+
                 if (JsRuntime != null && localStorage != null && _SettingsService != null && LogService != null)
                 {
                     objZipService = new ZipService(JsRuntime, localStorage, _SettingsService, LogService);
                 }
-                
+
                 await LoadProposalRowsAsync();
                 await LoadTemplateOptionsAsync();
-                
+
                 // Only reload grid if it's not null
                 if (grid != null)
                 {
@@ -566,7 +566,7 @@
 
             await uploader.ClearFiles();
 
-            await ProcessOCRText();
+            await CreateProposal();
         }
         catch (Exception ex)
         {
@@ -582,6 +582,40 @@
                 Duration = 8000
             });
         }
+    }
+
+    private async Task CreateProposal()
+    {
+        try
+        {
+            InProgress = true;
+            CurrentStatus = "Creating new proposal...";
+            StateHasChanged();
+            
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Success",
+                Detail = "New proposal created.",
+                Duration = 4000
+            });
+        }
+        catch (Exception ex)
+        {
+            await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Exception in CreateProposal - {ex.Message}");
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Error",
+                Detail = ex.Message,
+                Duration = 8000
+            });
+        }
+        finally
+        {
+            InProgress = false;
+            StateHasChanged();
+        }    
     }
 
     private async Task CalculateRoomsForExistingRows()
@@ -870,7 +904,7 @@
         }
     }
 
-    private async Task ProcessOCRText()
+    private async Task DetectRoomRequests()
     {
         try
         {
