@@ -47,13 +47,16 @@
 </RadzenUpload>
 <br />
 <div style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
-    <RadzenDropDown @bind-Value="SelectedTemplate" Data="@templateOptions" TextProperty="" ValueProperty="" Placeholder="Select Template" Style="width: 200px;" />
+    <RadzenDropDown @bind-Value="SelectedTemplate" Data="@templateOptions" TextProperty="" ValueProperty="" Placeholder="Select Template" Style="width: 200px;" Change="OnTemplateSelectionChanged" />
     <RadzenButton Text="Edit Template" Icon="edit" Style="background-color: gray;" ButtonStyle="ButtonStyle.Primary" Click="EditTemplate" />
 
 <span>&nbsp;</span>
 <RadzenButton Text="Create Proposal" Icon="add" Style="margin-top: 4px; background-color: orange;" ButtonStyle="ButtonStyle.Primary" Click="CreateProposal" />
 <span>&nbsp;</span>
-<RadzenButton Text="Calculate/Re-Calculate" Icon="calculate" Style="margin-top: 4px; background-color: green;" ButtonStyle="ButtonStyle.Primary" Click="CalculateProposal" />
+@if (ShowCalculateButton)
+{
+    <RadzenButton Text="Calculate/Re-Calculate" Icon="calculate" Style="margin-top: 4px; background-color: green;" ButtonStyle="ButtonStyle.Primary" Click="CalculateProposal" />
+}
 </div>
 <br />
 <RadzenCard>
@@ -216,6 +219,7 @@
     string BasePath = @"/RFPResponsePOC";
     string SelectedTemplate = "Default";
     private List<string> templateOptions = new();
+    private bool ShowCalculateButton = false;
 
     public class ProposalRow
     {
@@ -397,6 +401,86 @@
         await grid.Reload();
     }
 
+    private async Task OnTemplateSelectionChanged(object value)
+    {
+        if (value != null)
+        {
+            SelectedTemplate = value.ToString();
+            await CheckTemplateForVenueProposal();
+        }
+    }
+
+    private async Task CheckTemplateForVenueProposal()
+    {
+        try
+        {
+            var templateContent = await GetTemplateContentAsync(SelectedTemplate);
+            ShowCalculateButton = !string.IsNullOrWhiteSpace(templateContent) && 
+                                   templateContent.Contains("[VENUE_PROPOSAL]", StringComparison.OrdinalIgnoreCase);
+            
+            await LogService.WriteToLogAsync($"[{DateTime.Now}] Template '{SelectedTemplate}' contains [VENUE_PROPOSAL]: {ShowCalculateButton}");
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Failed to check template content - {ex.Message}");
+            ShowCalculateButton = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task<string> GetTemplateContentAsync(string templateName)
+    {
+        try
+        {
+            // First try to load from local storage (user-saved templates)
+            var localTemplate = await LoadTemplateFromLocalStorage(templateName);
+            if (!string.IsNullOrEmpty(localTemplate))
+            {
+                return localTemplate;
+            }
+            
+            // Then try to load from wwwroot templates (built-in templates)
+            try
+            {
+                var templateUrl = GetTemplateUrl(templateName);
+                return await Http.GetStringAsync(templateUrl);
+            }
+            catch
+            {
+                // If selected template doesn't exist, try to load from fallback locations
+            }
+            
+            // Fallback to default template file
+            if (File.Exists($"{BasePath}//Template.txt"))
+            {
+                return await File.ReadAllTextAsync($"{BasePath}//Template.txt");
+            }
+        }
+        catch (Exception ex)
+        {
+            await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Failed to load template '{templateName}' - {ex.Message}");
+        }
+        return string.Empty;
+    }
+
+    private async Task<string> LoadTemplateFromLocalStorage(string templateName)
+    {
+        try
+        {
+            return await localStorage.GetItemAsStringAsync($"template_{templateName}");
+        }
+        catch
+        {
+            return string.Empty;
+        }
+    }
+
+    private string GetTemplateUrl(string templateName)
+    {
+        return $"Templates/{templateName}.txt";
+    }
+
     // Run on page load
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -423,6 +507,9 @@
 
                 await LoadProposalRowsAsync();
                 await LoadTemplateOptionsAsync();
+                
+                // Check initial template for [VENUE_PROPOSAL]
+                await CheckTemplateForVenueProposal();
 
                 // Only reload grid if it's not null
                 if (grid != null)
@@ -443,10 +530,17 @@
 
     async Task EditTemplate(MouseEventArgs args)
     {
-        await DialogService.OpenAsync<EditTemplate>(
+        var result = await DialogService.OpenAsync<EditTemplate>(
             "Edit Template",
             new Dictionary<string, object> { { "SelectedTemplate", SelectedTemplate } },
             new DialogOptions { Width = "700px", Height = "600px" });
+        
+        // If template was saved/modified, recheck for [VENUE_PROPOSAL]
+        if (result == true)
+        {
+            await CheckTemplateForVenueProposal();
+            await LoadTemplateOptionsAsync(); // Refresh template options in case new template was saved
+        }
     }
 
     #region JavaScript
