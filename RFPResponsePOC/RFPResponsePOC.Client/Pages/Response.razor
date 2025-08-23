@@ -28,8 +28,8 @@
 @if (InProgress)
 {
     <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-                    background-color: rgba(0,0,0,0.5); z-index: 1000;
-                    display: flex; align-items: center; justify-content: center;">
+                        background-color: rgba(0,0,0,0.5); z-index: 1000;
+                        display: flex; align-items: center; justify-content: center;">
         <div class="rz-card" style="padding: 20px;">
             <RadzenText Text="@CurrentStatus" class="rz-m-10" Style="text-align: center" />
             <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
@@ -50,13 +50,13 @@
     <RadzenDropDown @bind-Value="SelectedTemplate" Data="@templateOptions" TextProperty="" ValueProperty="" Placeholder="Select Template" Style="width: 200px;" Change="OnTemplateSelectionChanged" />
     <RadzenButton Text="Edit Template" Icon="edit" Style="background-color: gray;" ButtonStyle="ButtonStyle.Primary" Click="EditTemplate" />
 
-<span>&nbsp;</span>
-<RadzenButton Text="Create Proposal" Icon="add" Style="margin-top: 4px; background-color: orange;" ButtonStyle="ButtonStyle.Primary" Click="CreateProposal" />
-<span>&nbsp;</span>
-@if (ShowCalculateButton)
-{
-    <RadzenButton Text="Calculate/Re-Calculate" Icon="calculate" Style="margin-top: 4px; background-color: green;" ButtonStyle="ButtonStyle.Primary" Click="CalculateProposal" />
-}
+    <span>&nbsp;</span>
+    <RadzenButton Text="Create Proposal" Icon="add" Style="margin-top: 4px; background-color: orange;" ButtonStyle="ButtonStyle.Primary" Click="CreateProposal" />
+    <span>&nbsp;</span>
+    @if (ShowCalculateButton)
+    {
+        <RadzenButton Text="Calculate/Re-Calculate" Icon="calculate" Style="margin-top: 4px; background-color: green;" ButtonStyle="ButtonStyle.Primary" Click="CalculateProposal" />
+    }
 </div>
 <br />
 <RadzenCard>
@@ -189,11 +189,11 @@
 <br />
 <canvas id="pdfCanvas" style="display:none; border:1px solid #ccc;"></canvas>
 @code {
-    #nullable disable
+#nullable disable
     private IDisposable registration;
     Radzen.Blazor.RadzenUpload uploader;
     RadzenDataGrid<ProposalRow> grid;
-    private DotNetObjectReference<Proposal> objRef;
+    private DotNetObjectReference<Response> objRef;
 
     private string RFPText = string.Empty;
     private bool InProgress = false;
@@ -415,9 +415,9 @@
         try
         {
             var templateContent = await GetTemplateContentAsync(SelectedTemplate);
-            ShowCalculateButton = !string.IsNullOrWhiteSpace(templateContent) && 
+            ShowCalculateButton = !string.IsNullOrWhiteSpace(templateContent) &&
                                    templateContent.Contains("[VENUE_PROPOSAL]", StringComparison.OrdinalIgnoreCase);
-            
+
             await LogService.WriteToLogAsync($"[{DateTime.Now}] Template '{SelectedTemplate}' contains [VENUE_PROPOSAL]: {ShowCalculateButton}");
             StateHasChanged();
         }
@@ -439,7 +439,7 @@
             {
                 return localTemplate;
             }
-            
+
             // Then try to load from wwwroot templates (built-in templates)
             try
             {
@@ -450,7 +450,7 @@
             {
                 // If selected template doesn't exist, try to load from fallback locations
             }
-            
+
             // Fallback to default template file
             if (File.Exists($"{BasePath}//Template.txt"))
             {
@@ -507,7 +507,7 @@
 
                 await LoadProposalRowsAsync();
                 await LoadTemplateOptionsAsync();
-                
+
                 // Check initial template for [VENUE_PROPOSAL]
                 await CheckTemplateForVenueProposal();
 
@@ -534,7 +534,7 @@
             "Edit Template",
             new Dictionary<string, object> { { "SelectedTemplate", SelectedTemplate } },
             new DialogOptions { Width = "700px", Height = "600px" });
-        
+
         // If template was saved/modified, recheck for [VENUE_PROPOSAL]
         if (result == true)
         {
@@ -685,7 +685,7 @@
             InProgress = true;
             CurrentStatus = "Creating new proposal...";
             StateHasChanged();
-            
+
             NotificationService.Notify(new NotificationMessage
             {
                 Severity = NotificationSeverity.Success,
@@ -709,7 +709,7 @@
         {
             InProgress = false;
             StateHasChanged();
-        }    
+        }
     }
 
     private async Task CalculateRoomsForExistingRows()
@@ -733,8 +733,8 @@
 
             // Filter rows that need room assignments
             // #2: Ignore any ProposalRow that has ManualRoom set to any value other than null or empty string
-            var rowsNeedingRooms = proposalRows.Where(row => 
-                string.IsNullOrWhiteSpace(row.ManualRoom) && 
+            var rowsNeedingRooms = proposalRows.Where(row =>
+                string.IsNullOrWhiteSpace(row.ManualRoom) &&
                 string.IsNullOrWhiteSpace(row.SelectedRoom)).ToList();
 
             await LogService.WriteToLogAsync($"[{DateTime.Now}] Found {rowsNeedingRooms.Count} rows needing room assignments");

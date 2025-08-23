@@ -25,7 +25,7 @@
         <RadzenMenuItem Click="OnHomeClicked" Text="Home" Icon="home"></RadzenMenuItem>
         <RadzenMenuItem Click="OnCapacityClicked" Text="Capacity" Icon="aspect_ratio"></RadzenMenuItem>
         <RadzenMenuItem Click="OnKnowledgebaseClicked" Text="Knowledgebase" Icon="library_books"></RadzenMenuItem>
-        <RadzenMenuItem Click="OnProposalClicked" Text="Proposal" Icon="aspect_ratio"></RadzenMenuItem>
+        <RadzenMenuItem Click="OnResponseClicked" Text="Response" Icon="aspect_ratio"></RadzenMenuItem>
         <RadzenMenuItem Click="OnLogsClicked" Text="Logs" Icon="assignment"></RadzenMenuItem>
         <RadzenMenuItem Click="OnSettingsClicked" Text="Settings" Icon="line_style"></RadzenMenuItem>
     }
@@ -48,45 +48,15 @@ else
         <div class="rz-card step-card">
             <h3 class="text-center">Welcome to RFP Response POC</h3>
             <div class="step-message">
-                @if (CapacityFileExists)
+                @if (!KnowledgebaseFileExists)
                 {
-                    if (!KnowledgebaseFileExists)
-                    {
-                        <RadzenButton class="step-button" Text="Build Knowledgebase" Click="@KnowledgebaseClicked" Style="background-color: green;" ButtonStyle="ButtonStyle.Primary" />
-                        <br />
-                        <br />
-                    }
-                    <RadzenButton class="step-button" Text="Upload the RFPs" Click="@PrposalClicked" Style="background-color: green;" ButtonStyle="ButtonStyle.Primary" />
+                    <RadzenButton class="step-button" Text="Build Knowledgebase" Click="@KnowledgebaseClicked" Style="background-color: green;" ButtonStyle="ButtonStyle.Primary" />
+                    <br />
+                    <br />
                 }
                 else
                 {
-                    <p class="text-center">Follow the steps below to get started</p>
-                    <strong>Step One:</strong>
-                    <br />
-                    <br />
-                    <RadzenButton class="step-button" Text="Upload your Capacity Chart" Click="@CapacityClicked" Style="background-color: green;" ButtonStyle="ButtonStyle.Primary" />
-                    <br />
-                    <br />
-                    @if (!KnowledgebaseFileExists)
-                    {
-                        <strong>Step Two:</strong>
-                        <br />
-                        <br />
-                        <RadzenButton class="step-button" Text="Build Knowledgebase" Click="@KnowledgebaseClicked" Style="background-color: green;" ButtonStyle="ButtonStyle.Primary" />
-                        <br />
-                        <br />
-                        <strong>Step Three:</strong>
-                        <br />
-                        <br />
-                        <RadzenButton class="step-button" Text="Upload the RFPs" Click="@PrposalClicked" Style="background-color: green;" ButtonStyle="ButtonStyle.Primary" />
-                    }
-                    else
-                    {
-                        <strong>Step Two:</strong>
-                        <br />
-                        <br />
-                        <RadzenButton class="step-button" Text="Upload the RFPs" Click="@PrposalClicked" Style="background-color: green;" ButtonStyle="ButtonStyle.Primary" />
-                    }
+                    <RadzenButton class="step-button" Text="Upload the RFPs" Click="@ResponseClicked" Style="background-color: green;" ButtonStyle="ButtonStyle.Primary" />
                 }
             </div>
         </div>
@@ -95,9 +65,9 @@ else
     {
         <Capacity></Capacity>
     }
-    @if (ProposalVisible)
+    @if (ResponseVisible)
     {
-        <Proposal></Proposal>
+        <Response></Response>
     }
     @if (KnowledgebaseVisible)
     {
@@ -114,7 +84,7 @@ else
 }
 
 @code {
-    #nullable disable
+#nullable disable
     private IDisposable registration;
 
     // Allow access to the JSRuntime
@@ -131,9 +101,8 @@ else
     bool SettingsVisible = false;
     bool LogsVisible = false;
     bool CapacityVisible = false;
-    bool ProposalVisible = false;
+    bool ResponseVisible = false;
     bool KnowledgebaseVisible = false;
-    bool CapacityFileExists = false;
     bool KnowledgebaseFileExists = false;
 
     ZipService objZipService = new ZipService();
@@ -159,7 +128,7 @@ else
 
                 if (ZipFileExists)
                 {
-                    // If it exists, unzip the file 
+                    // If it exists, unzip the file
                     await objZipService.UnzipFile();
                 }
                 else
@@ -178,7 +147,7 @@ else
                     SettingsVisible = true;
                     LogsVisible = false;
                     CapacityVisible = false;
-                    ProposalVisible = false;
+                    ResponseVisible = false;
                     KnowledgebaseVisible = false;
                 }
             }
@@ -196,7 +165,7 @@ else
             AIModel = _SettingsService.Settings.ApplicationSettings.AIModel;
 
             // Check if API Key is entered
-            if(ApiKey.Length > 1)
+            if (ApiKey.Length > 1)
             {
                 ShowMainMenu = true;
             }
@@ -209,33 +178,8 @@ else
                 SettingsVisible = true;
                 LogsVisible = false;
                 CapacityVisible = false;
-                ProposalVisible = false;
+                ResponseVisible = false;
                 KnowledgebaseVisible = false;
-            }
-
-            // Check if there is a Capacity Chart file
-            if (File.Exists($"{BasePath}//Capacity.json"))
-            {
-                // count how many records are in the file
-                var capacityFileContent = await File.ReadAllTextAsync($"{BasePath}//Capacity.json");
-                if (!string.IsNullOrEmpty(capacityFileContent))
-                {
-                    try
-                    {
-                        // Deserialize the content to check if it is valid JSON
-                        var capacityData = JsonConvert.DeserializeObject<CapacityRoot>(capacityFileContent);
-
-                        if (capacityData != null && capacityData.Rooms.Count > 0)
-                        {
-                            CapacityFileExists = true;
-                        }
-                    }
-                    catch (System.Text.Json.JsonException)
-                    {
-                        // If deserialization fails, treat it as no valid data
-                        CapacityFileExists = false;
-                    }
-                }
             }
 
             // Check if there is a Knowledgebase file with data
@@ -270,7 +214,7 @@ else
         HomeVisible = true;
         SettingsVisible = false;
         CapacityVisible = false;
-        ProposalVisible = false;
+        ResponseVisible = false;
         LogsVisible = false;
         KnowledgebaseVisible = false;
     }
@@ -280,7 +224,7 @@ else
         HomeVisible = false;
         SettingsVisible = true;
         CapacityVisible = false;
-        ProposalVisible = false;
+        ResponseVisible = false;
         LogsVisible = false;
         KnowledgebaseVisible = false;
     }
@@ -290,7 +234,7 @@ else
         HomeVisible = false;
         SettingsVisible = false;
         CapacityVisible = false;
-        ProposalVisible = false;
+        ResponseVisible = false;
         LogsVisible = true;
         KnowledgebaseVisible = false;
     }
@@ -300,7 +244,7 @@ else
         HomeVisible = false;
         SettingsVisible = false;
         CapacityVisible = true;
-        ProposalVisible = false;
+        ResponseVisible = false;
         LogsVisible = false;
         KnowledgebaseVisible = false;
     }
@@ -310,17 +254,17 @@ else
         HomeVisible = false;
         SettingsVisible = false;
         CapacityVisible = true;
-        ProposalVisible = false;
+        ResponseVisible = false;
         LogsVisible = false;
         KnowledgebaseVisible = false;
     }
 
-    void OnProposalClicked(MenuItemEventArgs args)
+    void OnResponseClicked(MenuItemEventArgs args)
     {
         HomeVisible = false;
         SettingsVisible = false;
         CapacityVisible = false;
-        ProposalVisible = true;
+        ResponseVisible = true;
         LogsVisible = false;
         KnowledgebaseVisible = false;
     }
@@ -330,7 +274,7 @@ else
         HomeVisible = false;
         SettingsVisible = false;
         CapacityVisible = false;
-        ProposalVisible = false;
+        ResponseVisible = false;
         LogsVisible = false;
         KnowledgebaseVisible = true;
     }
@@ -340,17 +284,17 @@ else
         HomeVisible = false;
         SettingsVisible = false;
         CapacityVisible = false;
-        ProposalVisible = false;
+        ResponseVisible = false;
         LogsVisible = false;
         KnowledgebaseVisible = true;
     }
 
-    void PrposalClicked(MouseEventArgs args)
+    void ResponseClicked(MouseEventArgs args)
     {
         HomeVisible = false;
         SettingsVisible = false;
         CapacityVisible = false;
-        ProposalVisible = true;
+        ResponseVisible = true;
         LogsVisible = false;
         KnowledgebaseVisible = false;
     }
@@ -365,7 +309,7 @@ else
         HomeVisible = true;
         SettingsVisible = false;
         CapacityVisible = false;
-        ProposalVisible = false;
+        ResponseVisible = false;
         LogsVisible = false;
         KnowledgebaseVisible = false;
 
@@ -409,7 +353,7 @@ else
         // User is navigating away from the page - Zip any files
         // Zip up any files and store in LocalStorage
         await objZipService.ZipTheFiles();
-    }    
+    }
     #endregion
 
     #region private int ConvertToInteger(string strParamVersion)
