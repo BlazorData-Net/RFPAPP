@@ -24,7 +24,7 @@
 @inject NavigationManager Navigation
 @inject PdfToPngService PdfService
 @inject HttpClient Http
-<h3>Proposal</h3>
+<h3>Response</h3>
 @if (InProgress)
 {
     <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -36,150 +36,149 @@
         </div>
     </div>
 }
-<br />
-<RadzenUpload @ref="uploader"
-              ChooseText="Upload Proposal (.docx/.pdf/.png/.jpg/.jpeg)" Accept=".docx,.png,.jpg,.jpeg,.pdf"
-              Change=@OnProposalUpload
-              Multiple="false"
-              Auto="true"
-              Style="width: 100%"
-              InputAttributes="@(new Dictionary<string,object>{ { "aria-label", "select file" }})">
-</RadzenUpload>
-<br />
 <div style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
-    <RadzenDropDown @bind-Value="SelectedTemplate" Data="@templateOptions" TextProperty="" ValueProperty="" Placeholder="Select Template" Style="width: 200px;" Change="OnTemplateSelectionChanged" />
+    <span><b>Template:</b></span><RadzenDropDown @bind-Value="SelectedTemplate" Data="@templateOptions" TextProperty="" ValueProperty="" Placeholder="Select Template" Style="width: 200px;" Change="OnTemplateSelectionChanged" />
     <RadzenButton Text="Edit Template" Icon="edit" Style="background-color: gray;" ButtonStyle="ButtonStyle.Primary" Click="EditTemplate" />
-
+    <RadzenButton Text="Create Response" Icon="add" Style="margin-top: 3px; background-color: orange;" ButtonStyle="ButtonStyle.Primary" Click="CreateProposal" />
     <span>&nbsp;</span>
-    <RadzenButton Text="Create Proposal" Icon="add" Style="margin-top: 4px; background-color: orange;" ButtonStyle="ButtonStyle.Primary" Click="CreateProposal" />
-    <span>&nbsp;</span>
-    @if (ShowCalculateButton)
-    {
-        <RadzenButton Text="Calculate/Re-Calculate" Icon="calculate" Style="margin-top: 4px; background-color: green;" ButtonStyle="ButtonStyle.Primary" Click="CalculateProposal" />
-    }
 </div>
 <br />
 <RadzenCard>
-    <RadzenTextArea @bind-Value="RFPText" Rows="5" Style="width: 100%; height: 150px;" />
+    <RadzenTextArea @bind-Value="RFPText" Placeholder="Enter text from RFP (optional)" Rows="2" Style="width: 100%; height: 100px;" />
+    <br />
+    <RadzenUpload @ref="uploader"
+                  ChooseText="Or upload RFP (.docx/.pdf/.png/.jpg/.jpeg)" Accept=".docx,.png,.jpg,.jpeg,.pdf"
+                  Change=@OnProposalUpload
+                  Multiple="false"
+                  Auto="true"
+                  Style="width: 100%"
+                  InputAttributes="@(new Dictionary<string,object>{ { "aria-label", "select file" }})">
+    </RadzenUpload>
 </RadzenCard>
 
-@if (proposalRows?.Any() == true)
+@if (VenueTypeSelected)
 {
     <RadzenButton Text="Add Row" Icon="add" Style="margin-top:10px" ButtonStyle="ButtonStyle.Primary" Click="InsertRow" />
-    <RadzenDataGrid @ref="grid" Data="@proposalRows" TItem="ProposalRow" EditMode="DataGridEditMode.Single" Editable="true" Style="margin-top:20px">
-        <Columns>
-            <RadzenDataGridColumn TItem="ProposalRow" Filterable="false" Sortable="false" Width="110px" TextAlign="TextAlign.Center" Title="EDIT/DEL">
-                <Template Context="row">
-                    @if (grid.IsRowInEditMode(row))
-                    {
-                        <RadzenButton Icon="save" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.ExtraSmall"
-                                      Click="@((args) => SaveRow(row))" @onclick:stopPropagation="true"
-                                      title="Save row" />
-                        <span>&nbsp;</span>
-                        <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.ExtraSmall"
-                                      Click="@((args) => ConfirmDeleteRow(row))" @onclick:stopPropagation="true"
-                                      title="Delete row" />
-                    }
-                    else
-                    {
-                        <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.ExtraSmall"
-                                      Click="@((args) => EditRow(row))" @onclick:stopPropagation="true"
-                                      title="Edit row" />
-                    }
-                </Template>
-            </RadzenDataGridColumn>
+    <span>&nbsp;</span>
+    @if (proposalRows?.Any() == true)
+    {
+        <RadzenButton Text="Calculate/Re-Calculate" Icon="calculate" Style="margin-top: 4px; background-color: green;" ButtonStyle="ButtonStyle.Primary" Click="CalculateProposal" />
+        <br />
+        <RadzenDataGrid @ref="grid" Data="@proposalRows" TItem="ProposalRow" EditMode="DataGridEditMode.Single" Editable="true" Style="margin-top:20px">
+            <Columns>
+                <RadzenDataGridColumn TItem="ProposalRow" Filterable="false" Sortable="false" Width="110px" TextAlign="TextAlign.Center" Title="EDIT/DEL">
+                    <Template Context="row">
+                        @if (grid.IsRowInEditMode(row))
+                        {
+                            <RadzenButton Icon="save" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.ExtraSmall"
+                                          Click="@((args) => SaveRow(row))" @onclick:stopPropagation="true"
+                                          title="Save row" />
+                            <span>&nbsp;</span>
+                            <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.ExtraSmall"
+                                          Click="@((args) => ConfirmDeleteRow(row))" @onclick:stopPropagation="true"
+                                          title="Delete row" />
+                        }
+                        else
+                        {
+                            <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.ExtraSmall"
+                                          Click="@((args) => EditRow(row))" @onclick:stopPropagation="true"
+                                          title="Edit row" />
+                        }
+                    </Template>
+                </RadzenDataGridColumn>
 
-            <RadzenDataGridColumn TItem="ProposalRow" Property="Name" Title="Name" Width="200px">
-                <Template Context="row">
-                    <div style="white-space:normal; overflow-wrap:break-word; line-height:1.4;">@row.Name</div>
-                </Template>
-                <EditTemplate Context="row">
-                    <RadzenTextBox @bind-Value="row.Name" Style="width:100%" />
-                </EditTemplate>
-            </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="ProposalRow" Property="Name" Title="Name" Width="200px">
+                    <Template Context="row">
+                        <div style="white-space:normal; overflow-wrap:break-word; line-height:1.4;">@row.Name</div>
+                    </Template>
+                    <EditTemplate Context="row">
+                        <RadzenTextBox @bind-Value="row.Name" Style="width:100%" />
+                    </EditTemplate>
+                </RadzenDataGridColumn>
 
-            <RadzenDataGridColumn TItem="ProposalRow" Title="Room" Width="180px">
-                <Template Context="row">
-                    <div style="white-space:normal; overflow-wrap:break-word; line-height:1.4;">
-                        @(string.IsNullOrWhiteSpace(row.ManualRoom) ? row.SelectedRoom : row.ManualRoom)
-                    </div>
-                </Template>
-                <EditTemplate Context="row">
-                    <div style="display:flex; flex-direction:column">
-                        <RadzenDropDown Data="@roomOptions" @bind-Value="row.SelectedRoom" AllowClear="true" Style="width:100%" />
-                        <RadzenTextBox @bind-Value="row.ManualRoom" Style="width:100%; margin-top:5px" Placeholder="Override room" />
-                    </div>
-                </EditTemplate>
-            </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="ProposalRow" Title="Room" Width="180px">
+                    <Template Context="row">
+                        <div style="white-space:normal; overflow-wrap:break-word; line-height:1.4;">
+                            @(string.IsNullOrWhiteSpace(row.ManualRoom) ? row.SelectedRoom : row.ManualRoom)
+                        </div>
+                    </Template>
+                    <EditTemplate Context="row">
+                        <div style="display:flex; flex-direction:column">
+                            <RadzenDropDown Data="@roomOptions" @bind-Value="row.SelectedRoom" AllowClear="true" Style="width:100%" />
+                            <RadzenTextBox @bind-Value="row.ManualRoom" Style="width:100%; margin-top:5px" Placeholder="Override room" />
+                        </div>
+                    </EditTemplate>
+                </RadzenDataGridColumn>
 
-            <RadzenDataGridColumn TItem="ProposalRow" Property="StartDate" Title="Start Date" Width="130px">
-                <Template Context="row">@row.StartDate.ToShortDateString()</Template>
-                <EditTemplate Context="row">
-                    <RadzenDatePicker @bind-Value="row.StartDate" TValue="DateTime"
-                                      ShowTime="false"
-                                      DateFormat="MM/dd/yyyy" Style="width:100%" />
-                </EditTemplate>
-            </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="ProposalRow" Property="StartDate" Title="Start Date" Width="130px">
+                    <Template Context="row">@row.StartDate.ToShortDateString()</Template>
+                    <EditTemplate Context="row">
+                        <RadzenDatePicker @bind-Value="row.StartDate" TValue="DateTime"
+                                          ShowTime="false"
+                                          DateFormat="MM/dd/yyyy" Style="width:100%" />
+                    </EditTemplate>
+                </RadzenDataGridColumn>
 
-            <RadzenDataGridColumn TItem="ProposalRow" Title="Start Time" Width="110px">
-                <Template Context="row">@DateTime.Today.Add(row.StartTime).ToString("h:mm tt")</Template>
-                <EditTemplate Context="row">
-                    <RadzenDatePicker @bind-Value="@row.StartTimeBinding"
-                                      TValue="DateTime"
-                                      ShowTime="true"
-                                      TimeOnly="true"
-                                      DateFormat="hh:mm tt"
-                                      HourFormat="12" />
-                </EditTemplate>
-            </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="ProposalRow" Title="Start Time" Width="110px">
+                    <Template Context="row">@DateTime.Today.Add(row.StartTime).ToString("h:mm tt")</Template>
+                    <EditTemplate Context="row">
+                        <RadzenDatePicker @bind-Value="@row.StartTimeBinding"
+                                          TValue="DateTime"
+                                          ShowTime="true"
+                                          TimeOnly="true"
+                                          DateFormat="hh:mm tt"
+                                          HourFormat="12" />
+                    </EditTemplate>
+                </RadzenDataGridColumn>
 
-            <RadzenDataGridColumn TItem="ProposalRow" Property="EndDate" Title="End Date" Width="130px">
-                <Template Context="row">@row.EndDate.ToShortDateString()</Template>
-                <EditTemplate Context="row">
-                    <RadzenDatePicker @bind-Value="row.EndDate" TValue="DateTime"
-                                      ShowTime="false"
-                                      DateFormat="MM/dd/yyyy" Style="width:100%" />
-                </EditTemplate>
-            </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="ProposalRow" Property="EndDate" Title="End Date" Width="130px">
+                    <Template Context="row">@row.EndDate.ToShortDateString()</Template>
+                    <EditTemplate Context="row">
+                        <RadzenDatePicker @bind-Value="row.EndDate" TValue="DateTime"
+                                          ShowTime="false"
+                                          DateFormat="MM/dd/yyyy" Style="width:100%" />
+                    </EditTemplate>
+                </RadzenDataGridColumn>
 
-            <RadzenDataGridColumn TItem="ProposalRow" Title="End Time" Width="110px">
-                <Template Context="row">@DateTime.Today.Add(row.EndTime).ToString("h:mm tt")</Template>
-                <EditTemplate Context="row">
-                    <RadzenDatePicker @bind-Value="@row.EndTimeBinding"
-                                      TValue="DateTime"
-                                      ShowTime="true"
-                                      TimeOnly="true"
-                                      DateFormat="hh:mm tt"
-                                      HourFormat="12" />
-                </EditTemplate>
-            </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="ProposalRow" Title="End Time" Width="110px">
+                    <Template Context="row">@DateTime.Today.Add(row.EndTime).ToString("h:mm tt")</Template>
+                    <EditTemplate Context="row">
+                        <RadzenDatePicker @bind-Value="@row.EndTimeBinding"
+                                          TValue="DateTime"
+                                          ShowTime="true"
+                                          TimeOnly="true"
+                                          DateFormat="hh:mm tt"
+                                          HourFormat="12" />
+                    </EditTemplate>
+                </RadzenDataGridColumn>
 
-            <RadzenDataGridColumn TItem="ProposalRow" Property="RoomType" Title="Room Type" Width="120px">
-                <Template Context="row">@row.RoomType</Template>
-                <EditTemplate Context="row">
-                    <RadzenDropDown Data="@roomTypeOptions" @bind-Value="row.RoomType" Style="width:100%" />
-                </EditTemplate>
-            </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="ProposalRow" Property="RoomType" Title="Room Type" Width="120px">
+                    <Template Context="row">@row.RoomType</Template>
+                    <EditTemplate Context="row">
+                        <RadzenDropDown Data="@roomTypeOptions" @bind-Value="row.RoomType" Style="width:100%" />
+                    </EditTemplate>
+                </RadzenDataGridColumn>
 
-            <RadzenDataGridColumn TItem="ProposalRow" Property="Attendance" Title="Attendance" Width="100px">
-                <Template Context="row">@row.Attendance</Template>
-                <EditTemplate Context="row">
-                    <RadzenNumeric @bind-Value="row.Attendance" Style="width:100%" />
-                </EditTemplate>
-            </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="ProposalRow" Property="Attendance" Title="Attendance" Width="100px">
+                    <Template Context="row">@row.Attendance</Template>
+                    <EditTemplate Context="row">
+                        <RadzenNumeric @bind-Value="row.Attendance" Style="width:100%" />
+                    </EditTemplate>
+                </RadzenDataGridColumn>
 
-            <RadzenDataGridColumn TItem="ProposalRow" Property="Notes" Title="Notes" Width="250px">
-                <Template Context="row">
-                    <div style="white-space:normal; overflow-wrap:break-word; line-height:1.4; max-height:100px; overflow-y:auto;">
-                        @row.Notes
-                    </div>
-                </Template>
-                <EditTemplate Context="row">
-                    <RadzenTextArea @bind-Value="row.Notes" Style="width:100%; min-height:60px;" Rows="3" />
-                </EditTemplate>
-            </RadzenDataGridColumn>
-        </Columns>
-    </RadzenDataGrid>
+                <RadzenDataGridColumn TItem="ProposalRow" Property="Notes" Title="Notes" Width="250px">
+                    <Template Context="row">
+                        <div style="white-space:normal; overflow-wrap:break-word; line-height:1.4; max-height:100px; overflow-y:auto;">
+                            @row.Notes
+                        </div>
+                    </Template>
+                    <EditTemplate Context="row">
+                        <RadzenTextArea @bind-Value="row.Notes" Style="width:100%; min-height:60px;" Rows="3" />
+                    </EditTemplate>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    }
 }
 <br />
 <br />
@@ -219,7 +218,7 @@
     string BasePath = @"/RFPResponsePOC";
     string SelectedTemplate = "Default";
     private List<string> templateOptions = new();
-    private bool ShowCalculateButton = false;
+    private bool VenueTypeSelected = false;
 
     public class ProposalRow
     {
@@ -415,16 +414,16 @@
         try
         {
             var templateContent = await GetTemplateContentAsync(SelectedTemplate);
-            ShowCalculateButton = !string.IsNullOrWhiteSpace(templateContent) &&
+            VenueTypeSelected = !string.IsNullOrWhiteSpace(templateContent) &&
                                    templateContent.Contains("[VENUE_PROPOSAL]", StringComparison.OrdinalIgnoreCase);
 
-            await LogService.WriteToLogAsync($"[{DateTime.Now}] Template '{SelectedTemplate}' contains [VENUE_PROPOSAL]: {ShowCalculateButton}");
+            await LogService.WriteToLogAsync($"[{DateTime.Now}] Template '{SelectedTemplate}' contains [VENUE_PROPOSAL]: {VenueTypeSelected}");
             StateHasChanged();
         }
         catch (Exception ex)
         {
             await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Failed to check template content - {ex.Message}");
-            ShowCalculateButton = false;
+            VenueTypeSelected = false;
             StateHasChanged();
         }
     }

@@ -23,7 +23,6 @@
     @if (ShowMainMenu)
     {
         <RadzenMenuItem Click="OnHomeClicked" Text="Home" Icon="home"></RadzenMenuItem>
-        <RadzenMenuItem Click="OnCapacityClicked" Text="Capacity" Icon="aspect_ratio"></RadzenMenuItem>
         <RadzenMenuItem Click="OnKnowledgebaseClicked" Text="Knowledgebase" Icon="library_books"></RadzenMenuItem>
         <RadzenMenuItem Click="OnResponseClicked" Text="Response" Icon="aspect_ratio"></RadzenMenuItem>
         <RadzenMenuItem Click="OnLogsClicked" Text="Logs" Icon="assignment"></RadzenMenuItem>
@@ -61,10 +60,6 @@ else
             </div>
         </div>
     }
-    @if (CapacityVisible)
-    {
-        <Capacity></Capacity>
-    }
     @if (ResponseVisible)
     {
         <Response></Response>
@@ -100,7 +95,6 @@ else
     bool HomeVisible = true;
     bool SettingsVisible = false;
     bool LogsVisible = false;
-    bool CapacityVisible = false;
     bool ResponseVisible = false;
     bool KnowledgebaseVisible = false;
     bool KnowledgebaseFileExists = false;
@@ -146,7 +140,6 @@ else
                     HomeVisible = false;
                     SettingsVisible = true;
                     LogsVisible = false;
-                    CapacityVisible = false;
                     ResponseVisible = false;
                     KnowledgebaseVisible = false;
                 }
@@ -177,7 +170,6 @@ else
                 HomeVisible = false;
                 SettingsVisible = true;
                 LogsVisible = false;
-                CapacityVisible = false;
                 ResponseVisible = false;
                 KnowledgebaseVisible = false;
             }
@@ -213,7 +205,6 @@ else
     {
         HomeVisible = true;
         SettingsVisible = false;
-        CapacityVisible = false;
         ResponseVisible = false;
         LogsVisible = false;
         KnowledgebaseVisible = false;
@@ -223,7 +214,6 @@ else
     {
         HomeVisible = false;
         SettingsVisible = true;
-        CapacityVisible = false;
         ResponseVisible = false;
         LogsVisible = false;
         KnowledgebaseVisible = false;
@@ -233,29 +223,8 @@ else
     {
         HomeVisible = false;
         SettingsVisible = false;
-        CapacityVisible = false;
         ResponseVisible = false;
         LogsVisible = true;
-        KnowledgebaseVisible = false;
-    }
-
-    void OnCapacityClicked(MenuItemEventArgs args)
-    {
-        HomeVisible = false;
-        SettingsVisible = false;
-        CapacityVisible = true;
-        ResponseVisible = false;
-        LogsVisible = false;
-        KnowledgebaseVisible = false;
-    }
-
-    void CapacityClicked(MouseEventArgs args)
-    {
-        HomeVisible = false;
-        SettingsVisible = false;
-        CapacityVisible = true;
-        ResponseVisible = false;
-        LogsVisible = false;
         KnowledgebaseVisible = false;
     }
 
@@ -263,7 +232,6 @@ else
     {
         HomeVisible = false;
         SettingsVisible = false;
-        CapacityVisible = false;
         ResponseVisible = true;
         LogsVisible = false;
         KnowledgebaseVisible = false;
@@ -273,7 +241,6 @@ else
     {
         HomeVisible = false;
         SettingsVisible = false;
-        CapacityVisible = false;
         ResponseVisible = false;
         LogsVisible = false;
         KnowledgebaseVisible = true;
@@ -283,7 +250,6 @@ else
     {
         HomeVisible = false;
         SettingsVisible = false;
-        CapacityVisible = false;
         ResponseVisible = false;
         LogsVisible = false;
         KnowledgebaseVisible = true;
@@ -293,7 +259,6 @@ else
     {
         HomeVisible = false;
         SettingsVisible = false;
-        CapacityVisible = false;
         ResponseVisible = true;
         LogsVisible = false;
         KnowledgebaseVisible = false;
@@ -308,7 +273,6 @@ else
 
         HomeVisible = true;
         SettingsVisible = false;
-        CapacityVisible = false;
         ResponseVisible = false;
         LogsVisible = false;
         KnowledgebaseVisible = false;
