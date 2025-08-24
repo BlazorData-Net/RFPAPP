@@ -706,37 +706,67 @@
             }
             else
             {
-                byte[] pdfBytes;
-
                 if (file.ContentType == "application/pdf")
                 {
-                    var pdfUrl = await PdfService.GetPdfDataUrlAsync(file);
-                    if (pdfUrl != null)
+                    // Process all pages of the PDF
+                    var pages = await PdfService.GetPdfPagesAsPngBytesAsync(file);
+                    if (pages?.Any() == true)
                     {
-                        await PdfService.RenderPdfToCanvasAsync(pdfUrl, "pdfCanvas");
-                        pdfBytes = await PdfService.GetCanvasPngBytesAsync("pdfCanvas");
+                        var OCRprompt = await Http.GetStringAsync("Prompts/OCR.prompt");
+                        var objOrchestratorMethods = new OrchestratorMethods(_SettingsService, LogService);
+                        var settingsService = new SettingsService();
+                        
+                        var allPageText = new StringBuilder();
+                        
+                        for (int pageIndex = 0; pageIndex < pages.Count; pageIndex++)
+                        {
+                            CurrentStatus = $"Processing page {pageIndex + 1} of {pages.Count}...";
+                            StateHasChanged();
+
+                            var pageResult = await objOrchestratorMethods.CallOpenAIFileAsync(settingsService, OCRprompt, pages[pageIndex]);
+                            
+                            if (!string.IsNullOrWhiteSpace(pageResult.Error))
+                            {
+                                await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: OCR failed for page {pageIndex + 1} - {pageResult.Error}");
+                                // Continue with other pages even if one fails
+                                continue;
+                            }
+                            
+                            allPageText.AppendLine(pageResult.Response);
+                            await LogService.WriteToLogAsync($"[{DateTime.Now}] Successfully processed page {pageIndex + 1}");
+                        }
+                        
+                        RFPText = allPageText.ToString();
                     }
                     else
                     {
                         InProgress = false;
                         StateHasChanged();
+                        NotificationService.Notify(new NotificationMessage
+                        {
+                            Severity = NotificationSeverity.Error,
+                            Summary = "Error",
+                            Detail = "Failed to extract pages from PDF.",
+                            Duration = 4000
+                        });
                         return;
                     }
                 }
                 else
                 {
+                    // Handle other image formats (PNG, JPG, JPEG)
                     using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
                     using var ms = new MemoryStream();
                     await stream.CopyToAsync(ms);
-                    pdfBytes = ms.ToArray();
+                    var imageBytes = ms.ToArray();
+
+                    var OCRprompt = await Http.GetStringAsync("Prompts/OCR.prompt");
+                    var objOrchestratorMethods = new OrchestratorMethods(_SettingsService, LogService);
+                    var settingsService = new SettingsService();
+
+                    result = await objOrchestratorMethods.CallOpenAIFileAsync(settingsService, OCRprompt, imageBytes);
+                    RFPText = result.Response;
                 }
-
-                var OCRprompt = await Http.GetStringAsync("Prompts/OCR.prompt");
-                var objOrchestratorMethods = new OrchestratorMethods(_SettingsService, LogService);
-                var settingsService = new SettingsService();
-
-                result = await objOrchestratorMethods.CallOpenAIFileAsync(settingsService, OCRprompt, pdfBytes);
-                RFPText = result.Response;
             }
 
             await uploader.ClearFiles();
