@@ -317,7 +317,7 @@
 <canvas id="pdfCanvas" style="display:none; border:1px solid #ccc;"></canvas>
 
 @code {
-#nullable disable
+    #nullable disable
     private IDisposable registration;
     Radzen.Blazor.RadzenUpload uploader;
     RadzenDataGrid<ProposalRow> grid;
@@ -325,6 +325,7 @@
     private DotNetObjectReference<Response> objRef;
 
     private string RFPText = string.Empty;
+    private bool ProcessedRFP = false;
 
     private bool InProgress = false;
     private string CurrentStatus = "";
@@ -378,7 +379,7 @@
 
     private bool CanGenerateResponse()
     {
-        return !string.IsNullOrEmpty(SelectedTemplate) &&
+        return !string.IsNullOrEmpty(SelectedTemplate) && ProcessedRFP &&
                (!string.IsNullOrEmpty(RFPText) || identifiedQuestions?.Any() == true);
     }
 
@@ -974,6 +975,7 @@
     {
         try
         {
+            ProcessedRFP = true;
             InProgress = true;
             CurrentStatus = "Detecting any questions...";
             StateHasChanged();
@@ -994,12 +996,7 @@
             // Refresh QuestionGrid data grid if it's not null
             if (QuestionGrid != null)
             {
-                await LogService.WriteToLogAsync($"[{DateTime.Now}] CreateProposal: Reloading QuestionGrid");
                 await QuestionGrid.Reload();
-            }
-            else
-            {
-                await LogService.WriteToLogAsync($"[{DateTime.Now}] CreateProposal: QuestionGrid is null");
             }
 
             // Force UI update
