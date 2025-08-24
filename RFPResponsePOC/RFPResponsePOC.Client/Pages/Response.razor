@@ -29,8 +29,8 @@
 @if (InProgress)
 {
     <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-                            background-color: rgba(0,0,0,0.5); z-index: 1000;
-                            display: flex; align-items: center; justify-content: center;">
+                                background-color: rgba(0,0,0,0.5); z-index: 1000;
+                                display: flex; align-items: center; justify-content: center;">
         <div class="rz-card" style="padding: 20px;">
             <RadzenText Text="@CurrentStatus" class="rz-m-10" Style="text-align: center" />
             <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
@@ -40,23 +40,37 @@
 
 <!-- Step 1: Choose or Create Template -->
 <RadzenCard Style="margin-bottom: 20px;">
-    <RadzenText TextStyle="TextStyle.H5" Text="Step #1: Choose or Create a Template" Style="margin-bottom: 15px;" />
+    <div style="display: flex; align-items: center;margin-bottom: 15px;">
+        @if (!string.IsNullOrEmpty(SelectedTemplate))
+        {
+            <RadzenIcon Icon="check_circle" Style="color: green; margin-right: 5px;" />
+        }
+        <RadzenText TextStyle="TextStyle.H5"
+                    Text="Step #1: Choose or Create a Template"
+                    Style="margin-bottom: 0;" />
+    </div>
     <div style="display: flex; align-items: center; gap: 10px;">
         <span><b>Template:</b></span>
-        <RadzenDropDown @bind-Value="SelectedTemplate" Data="@templateOptions" TextProperty="" ValueProperty="" 
+        <RadzenDropDown @bind-Value="SelectedTemplate" Data="@templateOptions" TextProperty="" ValueProperty=""
                         Placeholder="Select Template" Style="width: 200px;" Change="OnTemplateSelectionChanged" />
-        <RadzenButton Text="Edit Template" Icon="edit" Style="background-color: gray;" 
+        <RadzenButton Text="Edit Template" Icon="edit" Style="background-color: gray;"
                       ButtonStyle="ButtonStyle.Primary" Click="EditTemplate" />
     </div>
 </RadzenCard>
 
 <!-- Step 2: Enter or Upload Request for Proposal -->
 <RadzenCard Style="margin-bottom: 20px;">
-    <RadzenText TextStyle="TextStyle.H5" Text="Step #2: Enter or Upload Request for Proposal" Style="margin-bottom: 15px;" />
-    <RadzenTextArea @bind-Value="RFPText" 
-                    Placeholder="Enter text from RFP (optional)" 
-                    Rows="3" 
-                    Style="width: 100%; margin-bottom: 10px;" 
+    <div style="display: flex; align-items: center;margin-bottom: 15px;">
+        @if ((string.IsNullOrEmpty(RFPText)) == false)
+        {
+            <RadzenIcon Icon="check_circle" Style="color: green; margin-right: 5px;" />
+        }
+        <RadzenText TextStyle="TextStyle.H5" Text="Step #2: Enter or Upload Request for Proposal" Style="margin-bottom: 0;" />
+    </div>
+    <RadzenTextArea @bind-Value="RFPText"
+                    Placeholder="Enter text from RFP (optional)"
+                    Rows="3"
+                    Style="width: 100%; margin-bottom: 10px;"
                     id="rfp-text-area" />
     <RadzenUpload @ref="uploader"
                   ChooseText="Or upload RFP (.docx/.pdf/.png/.jpg/.jpeg)" Accept=".docx,.png,.jpg,.jpeg,.pdf"
@@ -66,29 +80,24 @@
                   Style="width: 100%"
                   InputAttributes="@(new Dictionary<string,object>{ { "aria-label", "select file" }})">
     </RadzenUpload>
-    @if (!string.IsNullOrEmpty(RFPText))
-    {
-        <div style="margin-top: 10px;">
-            <RadzenIcon Icon="check_circle" Style="color: green; margin-right: 5px;" />
-            <span style="color: green;">RFP content loaded (@RFPText.Length characters)</span>
-        </div>
-    }
     <div style="margin-top: 10px;">
-        <RadzenButton Text="Process RFP" Icon="play_arrow" Style="background-color: #28a745;" 
-                      ButtonStyle="ButtonStyle.Primary" Click="CreateProposal" 
+        <RadzenButton Text="Process RFP" Icon="play_arrow" Style="background-color: #28a745;"
+                      ButtonStyle="ButtonStyle.Primary" Click="CreateProposal"
                       Disabled="@(string.IsNullOrEmpty(RFPText))" />
     </div>
 </RadzenCard>
 
 <!-- Step 3: Edit Answers to Detected Questions -->
 <RadzenCard Style="margin-bottom: 20px;">
-    <RadzenText TextStyle="TextStyle.H5" Text="Step #3: Edit Answers to Detected Questions" Style="margin-bottom: 15px;" />
+    <div style="display: flex; align-items: center;margin-bottom: 15px;">
+        @if (identifiedQuestions?.Any() == true)
+        {
+            <RadzenIcon Icon="check_circle" Style="color: green; margin-right: 5px;" />
+        }
+        <RadzenText TextStyle="TextStyle.H5" Text="Step #3: Edit Answers to Detected Questions" Style="margin-bottom: 0;" />
+    </div>
     @if (identifiedQuestions?.Any() == true)
     {
-        <div style="margin-bottom: 10px;">
-            <RadzenIcon Icon="check_circle" Style="color: green; margin-right: 5px;" />
-            <span style="color: green;">@identifiedQuestions.Count question(s) detected</span>
-        </div>
         <div style="max-height:400px; overflow-y:auto;">
             <RadzenDataGrid @ref="QuestionGrid" Data="@identifiedQuestions" TItem="QuestionResponse" AllowPaging="false">
                 <Columns>
@@ -99,16 +108,16 @@
                             </div>
                         </Template>
                     </RadzenDataGridColumn>
-                    
+
                     <RadzenDataGridColumn TItem="QuestionResponse" Property="Response" Title="Answer" Width="45%">
                         <Template Context="questionResponse">
-                            <RadzenTextArea @bind-Value="questionResponse.Response" 
-                                          Style="width:100%; min-height:80px;" 
-                                          Rows="4" 
-                                          Placeholder="Enter your answer here..." />
+                            <RadzenTextArea @bind-Value="questionResponse.Response"
+                                            Style="width:100%; min-height:80px;"
+                                            Rows="4"
+                                            Placeholder="Enter your answer here..." />
                         </Template>
                     </RadzenDataGridColumn>
-                    
+
                     <RadzenDataGridColumn TItem="QuestionResponse" Property="AddToDatabase" Title="Add to Knowledgebase" Width="15%">
                         <Template Context="questionResponse">
                             <div style="text-align:center; padding:8px;">
@@ -122,7 +131,7 @@
     }
     else
     {
-        <div style="color: #6c757d; font-style: italic;">
+        <div style="color: lightgray; font-style: italic;">
             No questions detected yet. Please complete Step #2 first.
         </div>
     }
@@ -130,16 +139,21 @@
 
 <!-- Step 4: Create Response -->
 <RadzenCard Style="margin-bottom: 20px;">
-    <RadzenText TextStyle="TextStyle.H5" Text="Step #4: Create Response" Style="margin-bottom: 15px;" />
-    
+    <div style="display: flex; align-items: center;margin-bottom: 15px;">
+        @if (CanGenerateResponse())
+        {
+            <RadzenIcon Icon="check_circle" Style="color: green; margin-right: 5px;" />
+        }
+        <RadzenText TextStyle="TextStyle.H5" Text="Step #4: Create Response" Style="margin-bottom: 0;" />
+    </div>
     @if (VenueTypeSelected)
     {
         <RadzenTabs RenderMode="TabRenderMode.Client">
             <Tabs>
                 <RadzenTabsItem Text="Generate Final Response">
                     <div style="padding: 20px 0;">
-                        <RadzenButton Text="Generate Response Document" Icon="description" Style="background-color: #007bff; margin-right: 10px;" 
-                                      ButtonStyle="ButtonStyle.Primary" Click="GenerateResponseDocument" 
+                        <RadzenButton Text="Generate Response Document" Icon="description" Style="background-color: #007bff; margin-right: 10px;"
+                                      ButtonStyle="ButtonStyle.Primary" Click="GenerateResponseDocument"
                                       Disabled="@(!CanGenerateResponse())" />
                         @if (CanGenerateResponse())
                         {
@@ -147,11 +161,11 @@
                         }
                         else
                         {
-                            <span style="color: #dc3545;">Complete previous steps to enable response generation</span>
+                            <span style="color: lightgray;">Complete previous steps to enable response generation</span>
                         }
                     </div>
                 </RadzenTabsItem>
-                
+
                 <RadzenTabsItem Text="Venue Options">
                     <RadzenButton Text="Edit Capacity" Icon="edit" Style="margin-top:10px" ButtonStyle="ButtonStyle.Success" Click="EditCapacity" />
                     <span>&nbsp;</span>
@@ -282,19 +296,15 @@
     }
     else
     {
-        <div style="padding: 20px 0;">
-            <RadzenButton Text="Generate Response Document" Icon="description" Style="background-color: #007bff;" 
-                          ButtonStyle="ButtonStyle.Primary" Click="GenerateResponseDocument" 
+        <div style="padding: 10px 0;">
+            <RadzenButton Text="Generate Response Document" Icon="description" Style="background-color: #007bff;"
+                          ButtonStyle="ButtonStyle.Primary" Click="GenerateResponseDocument"
                           Disabled="@(!CanGenerateResponse())" />
-            @if (CanGenerateResponse())
-            {
-                <span style="color: green; margin-left: 10px;">Ready to generate response</span>
-            }
-            else
-            {
-                <span style="color: #dc3545; margin-left: 10px;">Complete previous steps to enable response generation</span>
-            }
         </div>
+        @if (!CanGenerateResponse())
+        {
+            <span style="color: lightgray;">Complete previous steps to enable response generation</span>
+        }
     }
 </RadzenCard>
 <br />
@@ -368,7 +378,7 @@
 
     private bool CanGenerateResponse()
     {
-        return !string.IsNullOrEmpty(SelectedTemplate) && 
+        return !string.IsNullOrEmpty(SelectedTemplate) &&
                (!string.IsNullOrEmpty(RFPText) || identifiedQuestions?.Any() == true);
     }
 
@@ -680,9 +690,9 @@
                 if (JsRuntime != null)
                 {
                     await JsRuntime.InvokeVoidAsync("setupBeforeUnload", objRef);
-                    
+
                     // Setup real-time text monitoring for RFP text area
-                    await JsRuntime.InvokeVoidAsync("pdfInterop.setupTextAreaMonitoring", 
+                    await JsRuntime.InvokeVoidAsync("pdfInterop.setupTextAreaMonitoring",
                         "#rfp-text-area", objRef, "OnRFPTextChanged", 500);
                 }
 
@@ -755,13 +765,13 @@
         {
             // Update the RFPText property
             RFPText = newValue ?? string.Empty;
-            
+
             // Optional: Log the change for debugging
             await LogService.WriteToLogAsync($"[{DateTime.Now}] RFP Text changed in real-time. Length: {RFPText.Length}");
-            
+
             // Optional: You can add additional logic here when text changes
             // For example, auto-save, validation, etc.
-            
+
             // Force UI refresh to update any related components
             StateHasChanged();
         }
@@ -886,27 +896,27 @@
                         var OCRprompt = await Http.GetStringAsync("Prompts/OCR.prompt");
                         var objOrchestratorMethods = new OrchestratorMethods(_SettingsService, LogService);
                         var settingsService = new SettingsService();
-                        
+
                         var allPageText = new StringBuilder();
-                        
+
                         for (int pageIndex = 0; pageIndex < pages.Count; pageIndex++)
                         {
                             CurrentStatus = $"Processing page {pageIndex + 1} of {pages.Count}...";
                             StateHasChanged();
 
                             var pageResult = await objOrchestratorMethods.CallOpenAIFileAsync(settingsService, OCRprompt, pages[pageIndex]);
-                            
+
                             if (!string.IsNullOrWhiteSpace(pageResult.Error))
                             {
                                 await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: OCR failed for page {pageIndex + 1} - {pageResult.Error}");
                                 // Continue with other pages even if one fails
                                 continue;
                             }
-                            
+
                             allPageText.AppendLine(pageResult.Response);
                             await LogService.WriteToLogAsync($"[{DateTime.Now}] Successfully processed page {pageIndex + 1}");
                         }
-                        
+
                         RFPText = allPageText.ToString();
                     }
                     else
@@ -1362,7 +1372,7 @@
         }
     }
 
-    public void Dispose() 
+    public void Dispose()
     {
         try
         {

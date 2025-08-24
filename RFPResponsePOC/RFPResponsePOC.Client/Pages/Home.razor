@@ -22,15 +22,15 @@
 <RadzenMenu>
     @if (ShowMainMenu)
     {
-        <RadzenMenuItem Click="OnHomeClicked" Text="Home" Icon="home"></RadzenMenuItem>
-        <RadzenMenuItem Click="OnKnowledgebaseClicked" Text="Knowledgebase" Icon="library_books"></RadzenMenuItem>
-        <RadzenMenuItem Click="OnResponseClicked" Text="Response" Icon="aspect_ratio"></RadzenMenuItem>
-        <RadzenMenuItem Click="OnLogsClicked" Text="Logs" Icon="assignment"></RadzenMenuItem>
-        <RadzenMenuItem Click="OnSettingsClicked" Text="Settings" Icon="line_style"></RadzenMenuItem>
+        <RadzenMenuItem Click="OnHomeClicked" Text="Home" Icon="home" Style="@GetMenuItemStyle("Home")"></RadzenMenuItem>
+        <RadzenMenuItem Click="OnKnowledgebaseClicked" Text="Knowledgebase" Icon="library_books" Style="@GetMenuItemStyle("Knowledgebase")"></RadzenMenuItem>
+        <RadzenMenuItem Click="OnResponseClicked" Text="Response" Icon="aspect_ratio" Style="@GetMenuItemStyle("Response")"></RadzenMenuItem>
+        <RadzenMenuItem Click="OnLogsClicked" Text="Logs" Icon="assignment" Style="@GetMenuItemStyle("Logs")"></RadzenMenuItem>
+        <RadzenMenuItem Click="OnSettingsClicked" Text="Settings" Icon="line_style" Style="@GetMenuItemStyle("Settings")"></RadzenMenuItem>
     }
     else
     {
-        <RadzenMenuItem Click="OnSettingsClicked" Text="Settings" Icon="line_style"></RadzenMenuItem>
+        <RadzenMenuItem Click="OnSettingsClicked" Text="Settings" Icon="line_style" Style="@GetMenuItemStyle("Settings")"></RadzenMenuItem>
     }
 </RadzenMenu>
 <br />
@@ -99,8 +99,19 @@ else
     bool KnowledgebaseVisible = false;
     bool KnowledgebaseFileExists = false;
 
+    // Track active menu item for highlighting
+    string ActiveMenuItem = "Home";
+
     ZipService objZipService = new ZipService();
     bool ZipFileExists = false;
+
+    // Helper method to get inline style for menu items
+    private string GetMenuItemStyle(string menuItem)
+    {
+        return ActiveMenuItem == menuItem 
+            ? "background-color: lightgray !important; color: white !important; font-weight: bold !important;"
+            : "";
+    }
 
     // Run on page load
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -137,6 +148,7 @@ else
                     }
 
                     // Switch to the Settings page
+                    ActiveMenuItem = "Settings";
                     HomeVisible = false;
                     SettingsVisible = true;
                     LogsVisible = false;
@@ -167,6 +179,7 @@ else
                 ShowMainMenu = false;
 
                 // Switch to the Settings page
+                ActiveMenuItem = "Settings";
                 HomeVisible = false;
                 SettingsVisible = true;
                 LogsVisible = false;
@@ -203,6 +216,7 @@ else
 
     void OnHomeClicked(MenuItemEventArgs args)
     {
+        ActiveMenuItem = "Home";
         HomeVisible = true;
         SettingsVisible = false;
         ResponseVisible = false;
@@ -212,6 +226,7 @@ else
 
     void OnSettingsClicked(MenuItemEventArgs args)
     {
+        ActiveMenuItem = "Settings";
         HomeVisible = false;
         SettingsVisible = true;
         ResponseVisible = false;
@@ -221,6 +236,7 @@ else
 
     void OnLogsClicked(MenuItemEventArgs args)
     {
+        ActiveMenuItem = "Logs";
         HomeVisible = false;
         SettingsVisible = false;
         ResponseVisible = false;
@@ -230,6 +246,7 @@ else
 
     void OnResponseClicked(MenuItemEventArgs args)
     {
+        ActiveMenuItem = "Response";
         HomeVisible = false;
         SettingsVisible = false;
         ResponseVisible = true;
@@ -239,6 +256,7 @@ else
 
     void OnKnowledgebaseClicked(MenuItemEventArgs args)
     {
+        ActiveMenuItem = "Knowledgebase";
         HomeVisible = false;
         SettingsVisible = false;
         ResponseVisible = false;
@@ -248,6 +266,7 @@ else
 
     void KnowledgebaseClicked(MouseEventArgs args)
     {
+        ActiveMenuItem = "Knowledgebase";
         HomeVisible = false;
         SettingsVisible = false;
         ResponseVisible = false;
@@ -257,6 +276,7 @@ else
 
     void ResponseClicked(MouseEventArgs args)
     {
+        ActiveMenuItem = "Response";
         HomeVisible = false;
         SettingsVisible = false;
         ResponseVisible = true;
@@ -271,6 +291,7 @@ else
         ApiKey = _SettingsService.Settings.ApplicationSettings.ApiKey;
         AIModel = _SettingsService.Settings.ApplicationSettings.AIModel;
 
+        ActiveMenuItem = "Home";
         HomeVisible = true;
         SettingsVisible = false;
         ResponseVisible = false;
