@@ -60,16 +60,16 @@ namespace RFPResponsePOC.AI
                 var reply = response.Value.Content.FirstOrDefault()?.Text;
 
                 await LogService.WriteToLogAsync(
-                    $"CallOpenAIAsync: AI model: {objSettings.Settings.ApplicationSettings.AIModel} Reply: {reply}");
+                    $"[{DateTime.Now}] CallOpenAIAsync: AI model: {objSettings.Settings.ApplicationSettings.AIModel} Reply: {reply}");
 
                 var json = ExtractJsonFromResponse(reply);
 
                 await LogService.WriteToLogAsync(
-                    $"CallOpenAIAsync: AI model: {objSettings.Settings.ApplicationSettings.AIModel} JSON: {json}");
+                    $"[{DateTime.Now}] CallOpenAIAsync: AI model: {objSettings.Settings.ApplicationSettings.AIModel} JSON: {json}");
 
                 var usage = response.Value.Usage;
                 await LogService.WriteToLogAsync(
-                    $"Tokens - Input: {usage.InputTokenCount}, Output: {usage.OutputTokenCount}");
+                    $"[{DateTime.Now}] Tokens - Input: {usage.InputTokenCount}, Output: {usage.OutputTokenCount}");
 
                 return new AIResponse
                 {
