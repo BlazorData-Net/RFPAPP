@@ -268,6 +268,17 @@ namespace RFPResponsePOC.AI
             if (string.IsNullOrWhiteSpace(input))
                 return string.Empty;
 
+            // First try to find JSON array
+            int arrayStartIndex = input.IndexOf('[');
+            int arrayEndIndex = input.LastIndexOf(']');
+
+            // If we found a valid JSON array, return it
+            if (arrayStartIndex != -1 && arrayEndIndex != -1 && arrayEndIndex > arrayStartIndex)
+            {
+                return input.Substring(arrayStartIndex, arrayEndIndex - arrayStartIndex + 1);
+            }
+
+            // Fallback to JSON object extraction
             int startIndex = input.IndexOf('{');
             int endIndex = input.LastIndexOf('}');
 

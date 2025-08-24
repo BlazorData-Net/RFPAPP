@@ -1,4 +1,6 @@
-Please review the following text and identify any questions it contains. Return only a JSON array of strings. If no questions are found, return an empty JSON array.
+File: RFPResponsePOC\RFPResponsePOC.Client\wwwroot\Prompts\IdentifyQuestions.prompt
+````````
+Please review the following text and identify any questions it contains. Return only a JSON array of objects with a "Question" property. If no questions are found, return an empty JSON array.
 
 ### RFP TEXT START
 {{RFPText}}
@@ -6,7 +8,7 @@ Please review the following text and identify any questions it contains. Return 
 
 ### JSON FORMAT START
 [
-  "What is the budget?",
-  "Is catering required?"
+  { "Question": "What is the budget?" },
+  { "Question": "Is catering required?" }
 ]
 ### JSON FORMAT STOP

@@ -15,6 +15,7 @@
 @using System.IO.Compression
 @using System.Xml.Linq
 @using Microsoft.AspNetCore.Components.Web
+@using Radzen.Blazor
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 @inject IJSRuntime JsRuntime
@@ -39,8 +40,6 @@
 <div style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
     <span><b>Template:</b></span><RadzenDropDown @bind-Value="SelectedTemplate" Data="@templateOptions" TextProperty="" ValueProperty="" Placeholder="Select Template" Style="width: 200px;" Change="OnTemplateSelectionChanged" />
     <RadzenButton Text="Edit Template" Icon="edit" Style="background-color: gray;" ButtonStyle="ButtonStyle.Primary" Click="EditTemplate" />
-    <RadzenButton Text="Create Response" Icon="add" Style="margin-top: 3px; background-color: orange;" ButtonStyle="ButtonStyle.Primary" Click="CreateProposal" />
-    <span>&nbsp;</span>
 </div>
 <br />
 <RadzenCard>
@@ -55,14 +54,22 @@
                   InputAttributes="@(new Dictionary<string,object>{ { "aria-label", "select file" }})">
     </RadzenUpload>
 </RadzenCard>
+<div style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
+    <RadzenButton Text="Create Response" Icon="add" Style="margin-top: 3px; background-color: green;" ButtonStyle="ButtonStyle.Primary" Click="CreateProposal" />
+    <span>&nbsp;</span>
+</div>
 <br />
 <RadzenTabs RenderMode="TabRenderMode.Client">
     <Tabs>
         <RadzenTabsItem Text="Edit Response">
             <div style="max-height:300px; overflow-y:auto;">
-                <RadzenDataGrid Data="@identifiedQuestions" TItem="string">
+                <RadzenDataGrid @ref="QuestionGrid" Data="@identifiedQuestions" TItem="QuestionResponse">
                     <Columns>
-                        <RadzenDataGridColumn TItem="string" Property="." Title="Questions" />
+                        <RadzenDataGridColumn TItem="QuestionResponse" Property="Question" Title="Questions">
+                            <Template Context="questionResponse">
+                                @questionResponse.Question
+                            </Template>
+                        </RadzenDataGridColumn>
                     </Columns>
                 </RadzenDataGrid>
             </div>
@@ -209,6 +216,7 @@
     private IDisposable registration;
     Radzen.Blazor.RadzenUpload uploader;
     RadzenDataGrid<ProposalRow> grid;
+    RadzenDataGrid<QuestionResponse> QuestionGrid;
     private DotNetObjectReference<Response> objRef;
 
     private string RFPText = string.Empty;
@@ -219,8 +227,7 @@
     AIResponse result = new AIResponse();
     ZipService objZipService = new ZipService();
 
-    private List<string> identifiedQuestions = new();
-    private bool skipIdentifyQuestions = false;
+    private List<QuestionResponse> identifiedQuestions = new();
 
     private List<ProposalRow> proposalRows = new();
     private List<string> roomOptions = new();
@@ -240,6 +247,13 @@
     string SelectedTemplate = "Default";
     private List<string> templateOptions = new();
     private bool VenueTypeSelected = false;
+
+    public class QuestionResponse
+    {
+        public string Question { get; set; }
+        public string Response { get; set; }
+        public bool AddToDatabase { get; set; }
+    }
 
     public class ProposalRow
     {
@@ -587,36 +601,42 @@
     public async Task HandleBeforeUnload() => await objZipService.ZipTheFiles();
     #endregion
 
-    private async Task<List<string>> IdentifyQuestions()
+    private async Task<List<QuestionResponse>> IdentifyQuestions()
     {
+        List<QuestionResponse> _IdentifiedQuestions = new List<QuestionResponse>();
+
         try
         {
             var prompt = await Http.GetStringAsync("Prompts/IdentifyQuestions.prompt");
             prompt = prompt.Replace("{{RFPText}}", RFPText ?? string.Empty);
+
+            await LogService.WriteToLogAsync($"[{DateTime.Now}] IdentifyQuestions: Sending prompt to AI...");
 
             var objOrchestratorMethods = new OrchestratorMethods(_SettingsService, LogService);
             var settingsService = new SettingsService();
 
             var response = await objOrchestratorMethods.CallOpenAIAsync(settingsService, prompt);
 
+            await LogService.WriteToLogAsync($"[{DateTime.Now}] IdentifyQuestions: AI response received. Error: {response.Error ?? "None"}");
+            await LogService.WriteToLogAsync($"[{DateTime.Now}] IdentifyQuestions: AI response length: {response.Response?.Length ?? 0}");
+
             if (string.IsNullOrWhiteSpace(response.Error))
             {
-                identifiedQuestions = JsonConvert.DeserializeObject<List<string>>(response.Response) ?? new List<string>();
+                await LogService.WriteToLogAsync($"[{DateTime.Now}] IdentifyQuestions: Attempting to deserialize JSON response");
+                _IdentifiedQuestions = JsonConvert.DeserializeObject<List<QuestionResponse>>(response.Response) ?? new List<QuestionResponse>();
+                await LogService.WriteToLogAsync($"[{DateTime.Now}] IdentifyQuestions: Deserialized {_IdentifiedQuestions.Count} questions");
             }
             else
             {
-                identifiedQuestions = new List<string>();
                 await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: IdentifyQuestions failed - {response.Error}");
             }
         }
         catch (Exception ex)
         {
-            identifiedQuestions = new List<string>();
             await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Exception in IdentifyQuestions - {ex.Message}");
         }
 
-        StateHasChanged();
-        return identifiedQuestions;
+        return _IdentifiedQuestions;
     }
 
     private async Task OnProposalUpload(UploadChangeEventArgs e)
@@ -721,8 +741,6 @@
 
             await uploader.ClearFiles();
 
-            await IdentifyQuestions();
-            skipIdentifyQuestions = true;
             await CreateProposal();
         }
         catch (Exception ex)
@@ -749,11 +767,32 @@
             CurrentStatus = "Creating new proposal...";
             StateHasChanged();
 
-            if (!skipIdentifyQuestions)
+            var questionsFromAI = await IdentifyQuestions();
+
+            // No need to convert since IdentifyQuestions now returns List<QuestionResponse>
+            identifiedQuestions = questionsFromAI ?? new List<QuestionResponse>();
+
+            // Add logging to debug the QuestionGrid issue
+            await LogService.WriteToLogAsync($"[{DateTime.Now}] CreateProposal: identifiedQuestions count = {identifiedQuestions?.Count ?? 0}");
+
+            if (identifiedQuestions?.Any() == true)
             {
-                await IdentifyQuestions();
+                await LogService.WriteToLogAsync($"[{DateTime.Now}] CreateProposal: First few questions: {string.Join(", ", identifiedQuestions.Take(3).Select(q => q.Question))}");
             }
-            skipIdentifyQuestions = false;
+
+            // Refresh QuestionGrid data grid if it's not null
+            if (QuestionGrid != null)
+            {
+                await LogService.WriteToLogAsync($"[{DateTime.Now}] CreateProposal: Reloading QuestionGrid");
+                await QuestionGrid.Reload();
+            }
+            else
+            {
+                await LogService.WriteToLogAsync($"[{DateTime.Now}] CreateProposal: QuestionGrid is null");
+            }
+
+            // Force UI update
+            StateHasChanged();
 
             NotificationService.Notify(new NotificationMessage
             {
