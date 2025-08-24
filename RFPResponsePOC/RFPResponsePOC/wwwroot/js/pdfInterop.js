@@ -1,4 +1,48 @@
 window.pdfInterop = {
+    setupTextAreaMonitoring: function(textAreaSelector, dotNetRef, methodName, debounceMs = 300) {
+        const textArea = document.querySelector(textAreaSelector);
+        if (!textArea) {
+            console.error("TextArea not found with selector:", textAreaSelector);
+            return;
+        }
+
+        let debounceTimer;
+        
+        const handleInput = function(event) {
+            const currentValue = event.target.value;
+            
+            // Clear existing timer
+            if (debounceTimer) {
+                clearTimeout(debounceTimer);
+            }
+            
+            // Set new timer
+            debounceTimer = setTimeout(() => {
+                dotNetRef.invokeMethodAsync(methodName, currentValue);
+            }, debounceMs);
+        };
+
+        // Add event listener for input changes
+        textArea.addEventListener('input', handleInput);
+        
+        // Return cleanup function
+        return function cleanup() {
+            textArea.removeEventListener('input', handleInput);
+            if (debounceTimer) {
+                clearTimeout(debounceTimer);
+            }
+        };
+    },
+
+    removeTextAreaMonitoring: function(textAreaSelector) {
+        const textArea = document.querySelector(textAreaSelector);
+        if (textArea) {
+            // Clone the element to remove all event listeners
+            const newTextArea = textArea.cloneNode(true);
+            textArea.parentNode.replaceChild(newTextArea, textArea);
+        }
+    },
+
     loadPdf: async function (pdfUrl, canvasId) {
         // Dynamically import PDF.js as an ES module
         if (!window.pdfjsLib) {
