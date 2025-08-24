@@ -59,8 +59,14 @@
 <RadzenTabs RenderMode="TabRenderMode.Client">
     <Tabs>
         <RadzenTabsItem Text="Edit Response">
-            <p>In Progress...</p>
-            </RadzenTabsItem>
+            <div style="max-height:300px; overflow-y:auto;">
+                <RadzenDataGrid Data="@identifiedQuestions" TItem="string">
+                    <Columns>
+                        <RadzenDataGridColumn TItem="string" Property="." Title="Questions" />
+                    </Columns>
+                </RadzenDataGrid>
+            </div>
+        </RadzenTabsItem>
             @if (VenueTypeSelected)
             {
              <RadzenTabsItem Text="Venue Options">
@@ -212,6 +218,9 @@
 
     AIResponse result = new AIResponse();
     ZipService objZipService = new ZipService();
+
+    private List<string> identifiedQuestions = new();
+    private bool skipIdentifyQuestions = false;
 
     private List<ProposalRow> proposalRows = new();
     private List<string> roomOptions = new();
@@ -578,6 +587,38 @@
     public async Task HandleBeforeUnload() => await objZipService.ZipTheFiles();
     #endregion
 
+    private async Task<List<string>> IdentifyQuestions()
+    {
+        try
+        {
+            var prompt = await Http.GetStringAsync("Prompts/IdentifyQuestions.prompt");
+            prompt = prompt.Replace("{{RFPText}}", RFPText ?? string.Empty);
+
+            var objOrchestratorMethods = new OrchestratorMethods(_SettingsService, LogService);
+            var settingsService = new SettingsService();
+
+            var response = await objOrchestratorMethods.CallOpenAIAsync(settingsService, prompt);
+
+            if (string.IsNullOrWhiteSpace(response.Error))
+            {
+                identifiedQuestions = JsonConvert.DeserializeObject<List<string>>(response.Response) ?? new List<string>();
+            }
+            else
+            {
+                identifiedQuestions = new List<string>();
+                await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: IdentifyQuestions failed - {response.Error}");
+            }
+        }
+        catch (Exception ex)
+        {
+            identifiedQuestions = new List<string>();
+            await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Exception in IdentifyQuestions - {ex.Message}");
+        }
+
+        StateHasChanged();
+        return identifiedQuestions;
+    }
+
     private async Task OnProposalUpload(UploadChangeEventArgs e)
     {
         try
@@ -680,6 +721,8 @@
 
             await uploader.ClearFiles();
 
+            await IdentifyQuestions();
+            skipIdentifyQuestions = true;
             await CreateProposal();
         }
         catch (Exception ex)
@@ -705,6 +748,12 @@
             InProgress = true;
             CurrentStatus = "Creating new proposal...";
             StateHasChanged();
+
+            if (!skipIdentifyQuestions)
+            {
+                await IdentifyQuestions();
+            }
+            skipIdentifyQuestions = false;
 
             NotificationService.Notify(new NotificationMessage
             {
