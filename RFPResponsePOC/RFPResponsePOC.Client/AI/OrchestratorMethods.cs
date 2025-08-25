@@ -241,8 +241,8 @@ namespace RFPResponsePOC.AI
         }
         #endregion
 
-        #region public async Task AnswerQuestionsFromKnowledgebase(Response.QuestionResponse question, string basePath)
-        public async Task AnswerQuestionsFromKnowledgebase(Response.QuestionResponse question, string basePath)
+        #region public async Task AnswerQuestionsFromKnowledgebase(QuestionResponse question, string basePath)
+        public async Task AnswerQuestionsFromKnowledgebase(QuestionResponse question, string basePath)
         {
             if (question == null)
                 return;
