@@ -1,0 +1,9 @@
+Answer the question using only the information provided in the knowledge base.
+Return only a JSON object with a single property "answer".
+If the knowledge base does not contain the answer, return {"answer": ""}.
+
+### QUESTION
+{{Question}}
+
+### KNOWLEDGE BASE
+{{Knowledgebase}}
