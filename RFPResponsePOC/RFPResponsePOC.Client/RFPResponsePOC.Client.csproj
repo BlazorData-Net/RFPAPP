@@ -24,6 +24,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Update="wwwroot\Prompts\AnswerQuestion.prompt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Update="wwwroot\Prompts\IdentifyQuestions.prompt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Update="wwwroot\Prompts\Proposal.prompt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

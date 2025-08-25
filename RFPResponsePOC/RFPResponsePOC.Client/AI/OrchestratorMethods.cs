@@ -241,8 +241,8 @@ namespace RFPResponsePOC.AI
         }
         #endregion
 
-        #region public async Task AnswerQuestionsFromKnowledgebase(QuestionResponse question, string basePath)
-        public async Task AnswerQuestionsFromKnowledgebase(QuestionResponse question, string basePath)
+        #region public async Task AnswerQuestionsFromKnowledgebase(QuestionResponse question, string prompt, string basePath)
+        public async Task AnswerQuestionsFromKnowledgebase(QuestionResponse question, string prompt, string basePath)
         {
             if (question == null)
                 return;
@@ -274,8 +274,48 @@ namespace RFPResponsePOC.AI
                     }
                     catch
                     {
-                        var parts = embeddingText.Trim('[', ']').Split(',', StringSplitOptions.RemoveEmptyEntries);
-                        entryEmbedding = parts.Select(p => float.Parse(p.Trim())).ToArray();
+                        try
+                        {
+                            // Remove any brackets and split by comma
+                            var trimmedText = embeddingText.Trim('[', ']');
+                            var parts = trimmedText.Split(',', StringSplitOptions.RemoveEmptyEntries);
+                            
+                            // Filter out any parts that are not valid float numbers
+                            var validParts = new List<string>();
+                            foreach (var part in parts)
+                            {
+                                var trimmedPart = part.Trim();
+                                if (float.TryParse(trimmedPart, out _))
+                                {
+                                    validParts.Add(trimmedPart);
+                                }
+                            }
+                            
+                            // Only proceed if we have valid float values
+                            if (validParts.Any())
+                            {
+                                entryEmbedding = validParts.Select(p => float.Parse(p)).ToArray();
+                            }
+                            else
+                            {
+                                // Skip this entry if no valid embeddings found
+                                await LogService.WriteToLogAsync($"[{DateTime.Now}] WARNING: No valid embedding data found for entry, skipping similarity calculation");
+                                continue;
+                            }
+                        }
+                        catch (Exception parseEx)
+                        {
+                            // If all parsing attempts fail, skip this entry
+                            await LogService.WriteToLogAsync($"[{DateTime.Now}] WARNING: Failed to parse embedding data for entry - {parseEx.Message}. Skipping entry.");
+                            continue;
+                        }
+                    }
+
+                    // Ensure both embeddings have the same dimensions before calculating similarity
+                    if (questionEmbedding.Length != entryEmbedding.Length)
+                    {
+                        await LogService.WriteToLogAsync($"[{DateTime.Now}] WARNING: Embedding dimension mismatch. Question: {questionEmbedding.Length}, Entry: {entryEmbedding.Length}. Skipping entry.");
+                        continue;
                     }
 
                     var score = CosineSimilarity(questionEmbedding, entryEmbedding);
@@ -291,8 +331,6 @@ namespace RFPResponsePOC.AI
                 if (!topChunks.Any())
                     return;
 
-                var promptPath = $"{basePath}//wwwroot//Prompts//AnswerQuestion.prompt";
-                var prompt = await File.ReadAllTextAsync(promptPath);
                 var knowledgeText = string.Join("\n", topChunks);
                 prompt = prompt.Replace("{{Question}}", question.Question)
                                .Replace("{{Knowledgebase}}", knowledgeText);

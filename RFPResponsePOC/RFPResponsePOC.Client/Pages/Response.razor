@@ -983,6 +983,9 @@
 
             if (identifiedQuestions?.Any() == true)
             {
+                // Get the prompt
+                var prompt = await Http.GetStringAsync("Prompts/AnswerQuestion.prompt");
+
                 await LogService.WriteToLogAsync($"[{DateTime.Now}] CreateProposal: First few questions: {string.Join(", ", identifiedQuestions.Take(3).Select(q => q.Question))}");
                 var orchestrator = new OrchestratorMethods(_SettingsService, LogService);
                 var total = identifiedQuestions.Count;
@@ -990,7 +993,7 @@
                 {
                     CurrentStatus = $"Answering question {i + 1} out of {total}...";
                     StateHasChanged();
-                    await orchestrator.AnswerQuestionsFromKnowledgebase(identifiedQuestions[i], BasePath);
+                    await orchestrator.AnswerQuestionsFromKnowledgebase(identifiedQuestions[i], prompt, BasePath);
                 }
             }
 
