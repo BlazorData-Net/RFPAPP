@@ -1,13 +1,17 @@
 using Azure;
 using Azure.AI.OpenAI;
 using Microsoft.AspNetCore.Components.Forms;
+using Newtonsoft.Json;
 using OpenAI;
 using RFPResponsePOC.Client.Models;
 using RFPResponsePOC.Model;
+using System;
 using System.ClientModel;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Linq;
+using RFPResponsePOC.Client.Pages;
 
 namespace RFPResponsePOC.AI
 {
@@ -234,6 +238,86 @@ namespace RFPResponsePOC.AI
             sanitized = sanitized.Replace("|", "");
 
             return sanitized;
+        }
+        #endregion
+
+        #region public async Task AnswerQuestionsFromKnowledgebase(Response.QuestionResponse question, string basePath)
+        public async Task AnswerQuestionsFromKnowledgebase(Response.QuestionResponse question, string basePath)
+        {
+            if (question == null)
+                return;
+
+            try
+            {
+                var kbPath = $"{basePath}//knowledgebase.json";
+                if (!File.Exists(kbPath))
+                    return;
+
+                var kbJson = await File.ReadAllTextAsync(kbPath);
+                var entries = JsonConvert.DeserializeObject<List<KnowledgeChunk>>(kbJson) ?? new List<KnowledgeChunk>();
+                if (!entries.Any())
+                    return;
+
+                var questionEmbedding = await GetVectorEmbeddingAsFloats(question.Question);
+
+                var scores = new List<(KnowledgeChunk chunk, float score)>();
+                foreach (var entry in entries)
+                {
+                    var embeddingText = entry.Embedding ?? string.Empty;
+                    if (embeddingText.Contains("|"))
+                        embeddingText = embeddingText[(embeddingText.IndexOf('|') + 1)..];
+
+                    float[] entryEmbedding;
+                    try
+                    {
+                        entryEmbedding = JsonConvert.DeserializeObject<float[]>(embeddingText);
+                    }
+                    catch
+                    {
+                        var parts = embeddingText.Trim('[', ']').Split(',', StringSplitOptions.RemoveEmptyEntries);
+                        entryEmbedding = parts.Select(p => float.Parse(p.Trim())).ToArray();
+                    }
+
+                    var score = CosineSimilarity(questionEmbedding, entryEmbedding);
+                    scores.Add((entry, score));
+                }
+
+                var topChunks = scores
+                    .OrderByDescending(s => s.score)
+                    .Take(20)
+                    .Select(s => s.chunk.Content)
+                    .ToList();
+
+                if (!topChunks.Any())
+                    return;
+
+                var promptPath = $"{basePath}//wwwroot//Prompts//AnswerQuestion.prompt";
+                var prompt = await File.ReadAllTextAsync(promptPath);
+                var knowledgeText = string.Join("\n", topChunks);
+                prompt = prompt.Replace("{{Question}}", question.Question)
+                               .Replace("{{Knowledgebase}}", knowledgeText);
+
+                var aiResponse = await CallOpenAIAsync(SettingsService, prompt);
+                if (!string.IsNullOrWhiteSpace(aiResponse.Error) || string.IsNullOrWhiteSpace(aiResponse.Response))
+                    return;
+
+                try
+                {
+                    var obj = JsonConvert.DeserializeObject<Dictionary<string, string>>(aiResponse.Response);
+                    if (obj != null && obj.TryGetValue("answer", out var answer) && !string.IsNullOrWhiteSpace(answer))
+                    {
+                        question.Response = answer;
+                    }
+                }
+                catch
+                {
+                    // Ignore parsing errors
+                }
+            }
+            catch (Exception ex)
+            {
+                await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: AnswerQuestionsFromKnowledgebase - {ex.Message}");
+            }
         }
         #endregion
 
