@@ -1,4 +1,5 @@
 @using System.Net.Http
+@using System.Text
 @using Newtonsoft.Json
 @using RFPResponsePOC.Client.Services
 @using System.IO
@@ -13,7 +14,10 @@
 
 <RadzenTextArea @bind-Value="templateContent" Rows="20" Style="width:100%; min-height:400px;" />
 <div style="margin-top:10px;">
-    <RadzenButton Text="Save" Style="background-color: green;" ButtonStyle="ButtonStyle.Primary" Click="SaveTemplate" />
+    @if (!IsDefaultTemplate)
+    {
+        <RadzenButton Text="Save" Style="background-color: green;" ButtonStyle="ButtonStyle.Primary" Click="SaveTemplate" />
+    }
     <RadzenButton Text="Save As" Style="background-color: blue; margin-left:10px;" ButtonStyle="ButtonStyle.Primary" Click="SaveAsTemplate" />
     <RadzenButton Text="Delete" Style="background-color: red; margin-left:10px;" ButtonStyle="ButtonStyle.Danger" Click="DeleteTemplate" Disabled="@IsDefaultTemplate" />
     <RadzenButton Text="Cancel" Style="margin-left:10px;" ButtonStyle="ButtonStyle.Light" Click="Cancel" />
@@ -36,7 +40,7 @@
 
     RFPResponsePOC.Client.Services.ZipService objZipService = new RFPResponsePOC.Client.Services.ZipService();
 
-     // Run on page load
+    // Run on page load
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -126,16 +130,64 @@
 
         if (!string.IsNullOrWhiteSpace(templateName))
         {
-            await SaveTemplateToLocalStorage(templateName, templateContent);
+            // Remove spaces and capitalize letters following spaces
+            var processedName = ProcessTemplateName(templateName);
+            
+            // Check if it's trying to use reserved names
+            if (processedName.Equals("Default", StringComparison.OrdinalIgnoreCase) || 
+                processedName.Equals("DefaultVenue", StringComparison.OrdinalIgnoreCase))
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = "Invalid Name",
+                    Detail = "Template name cannot be 'Default' or 'DefaultVenue'. Please choose a different name.",
+                    Duration = 4000
+                });
+                return;
+            }
+
+            await SaveTemplateToLocalStorage(processedName, templateContent);
             NotificationService.Notify(new NotificationMessage
             {
                 Severity = NotificationSeverity.Success,
                 Summary = "Saved",
-                Detail = $"Template saved as '{templateName}'",
+                Detail = $"Template saved as '{processedName}'",
                 Duration = 4000
             });
             DialogService.Close(true);
         }
+    }
+
+    private string ProcessTemplateName(string templateName)
+    {
+        if (string.IsNullOrWhiteSpace(templateName))
+            return templateName;
+
+        var result = new StringBuilder();
+        bool capitalizeNext = true;
+
+        foreach (char c in templateName)
+        {
+            if (char.IsWhiteSpace(c))
+            {
+                capitalizeNext = true;
+                // Skip spaces - don't add them to result
+                continue;
+            }
+
+            if (capitalizeNext && char.IsLetter(c))
+            {
+                result.Append(char.ToUpper(c));
+                capitalizeNext = false;
+            }
+            else
+            {
+                result.Append(c);
+            }
+        }
+
+        return result.ToString();
     }
 
     private async Task DeleteTemplate()

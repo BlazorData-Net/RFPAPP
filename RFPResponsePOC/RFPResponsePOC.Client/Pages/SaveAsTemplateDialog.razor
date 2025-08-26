@@ -1,5 +1,7 @@
 @using Radzen
+@using System.Text
 @inject DialogService DialogService
+@inject NotificationService NotificationService
 
 <RadzenTemplateForm Data="@TemplateData" TItem="TemplateModel" Submit="@OnSubmit">
     <ChildContent>
@@ -26,7 +28,63 @@
 
     void OnSubmit()
     {
+        if (!ValidateTemplateName(TemplateData.Name))
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = "Invalid Name",
+                Detail = "Template name cannot be 'Default' or 'DefaultVenue'. Please choose a different name.",
+                Duration = 4000
+            });
+            return;
+        }
         DialogService.Close(TemplateData.Name);
+    }
+
+    bool ValidateTemplateName(string name)
+    {
+        if (!string.IsNullOrWhiteSpace(name))
+        {
+            // Process the name the same way as in EditTemplate
+            var processedName = ProcessTemplateName(name);
+            
+            // Check if it matches reserved names
+            return !processedName.Equals("Default", StringComparison.OrdinalIgnoreCase) && 
+                   !processedName.Equals("DefaultVenue", StringComparison.OrdinalIgnoreCase);
+        }
+        return true; // Let the required validator handle empty values
+    }
+
+    private string ProcessTemplateName(string templateName)
+    {
+        if (string.IsNullOrWhiteSpace(templateName))
+            return templateName;
+
+        var result = new StringBuilder();
+        bool capitalizeNext = true;
+
+        foreach (char c in templateName)
+        {
+            if (char.IsWhiteSpace(c))
+            {
+                capitalizeNext = true;
+                // Skip spaces - don't add them to result
+                continue;
+            }
+
+            if (capitalizeNext && char.IsLetter(c))
+            {
+                result.Append(char.ToUpper(c));
+                capitalizeNext = false;
+            }
+            else
+            {
+                result.Append(c);
+            }
+        }
+
+        return result.ToString();
     }
 
     public class TemplateModel
