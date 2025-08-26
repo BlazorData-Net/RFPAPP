@@ -51,7 +51,7 @@
     </div>
     <div style="display: flex; align-items: center; gap: 10px;">
         <span><b>Template:</b></span>
-        <RadzenDropDown @bind-Value="SelectedTemplate" Data="@templateOptions" TextProperty="" ValueProperty=""
+        <RadzenDropDown @bind-Value="SelectedTemplate" Data="@templateOptions" TextProperty="Text" ValueProperty="Value"
                         Placeholder="Select Template" Style="width: 200px;" Change="OnTemplateSelectionChanged" />
         <RadzenButton Text="Edit Template" Icon="edit" Style="background-color: gray;"
                       ButtonStyle="ButtonStyle.Primary" Click="EditTemplate" />
@@ -157,7 +157,7 @@
                                       Disabled="@(!CanGenerateResponse())" />
                         @if (!CanGenerateResponse())
                         {                        
-                            <span style="color: lightgray;">Complete previous steps to enable response generation</span>
+                            <div style="color: lightgray;">Complete previous steps to enable response generation</div>
                         }
                     </div>
                 </RadzenTabsItem>
@@ -299,7 +299,7 @@
         </div>
         @if (!CanGenerateResponse())
         {
-            <p style="color: lightgray;">Complete previous steps to enable response generation</p>
+            <div style="color: lightgray;">Complete previous steps to enable response generation</div>
         }
     }
 </RadzenCard>
@@ -347,8 +347,14 @@
     };
     string BasePath = @"/RFPResponsePOC";
     string SelectedTemplate = "Default";
-    private List<string> templateOptions = new();
+    private List<TemplateNames> templateOptions = new();
     private bool VenueTypeSelected = false;
+
+    public class TemplateNames
+    {
+        public string Text { get; set; }
+        public string Value { get; set; }
+    }
 
     public class ProposalRow
     {
@@ -470,7 +476,17 @@
         {
             // Start with built-in templates
             var builtInTemplates = new List<string> { "Default", "DefaultVenue" };
-            templateOptions = new List<string>(builtInTemplates);
+            var templateNames = new List<TemplateNames>();
+
+            // Add built-in templates with formatted text
+            foreach (var template in builtInTemplates)
+            {
+                templateNames.Add(new TemplateNames
+                {
+                    Text = AddSpacesBeforeCapitals(template),
+                    Value = template
+                });
+            }
 
             // Add user-saved templates from local storage
             try
@@ -483,15 +499,24 @@
                     .OrderBy(name => name)
                     .ToList();
 
-                templateOptions.AddRange(userTemplates);
+                foreach (var template in userTemplates)
+                {
+                    templateNames.Add(new TemplateNames
+                    {
+                        Text = AddSpacesBeforeCapitals(template),
+                        Value = template
+                    });
+                }
             }
             catch (Exception ex)
             {
                 await LogService.WriteToLogAsync($"[{DateTime.Now}] WARNING: Failed to load user templates from local storage - {ex.Message}");
             }
 
+            templateOptions = templateNames;
+
             // Set default selection if current selection is not available
-            if (!templateOptions.Contains(SelectedTemplate))
+            if (!templateOptions.Any(t => t.Value == SelectedTemplate))
             {
                 SelectedTemplate = "Default";
             }
@@ -502,6 +527,25 @@
         {
             await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Failed to load template options - {ex.Message}");
         }
+    }
+
+    private string AddSpacesBeforeCapitals(string input)
+    {
+        if (string.IsNullOrEmpty(input))
+            return input;
+
+        var result = new StringBuilder();
+        
+        for (int i = 0; i < input.Length; i++)
+        {
+            if (i > 0 && char.IsUpper(input[i]))
+            {
+                result.Append(' ');
+            }
+            result.Append(input[i]);
+        }
+        
+        return result.ToString();
     }
 
     async Task EditCapacity()
