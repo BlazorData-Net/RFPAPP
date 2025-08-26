@@ -155,12 +155,8 @@
                         <RadzenButton Text="Generate Response Document" Icon="description" Style="background-color: #007bff; margin-right: 10px;"
                                       ButtonStyle="ButtonStyle.Primary" Click="GenerateResponseDocument"
                                       Disabled="@(!CanGenerateResponse())" />
-                        @if (CanGenerateResponse())
-                        {
-                            <span style="color: green;">Ready to generate response</span>
-                        }
-                        else
-                        {
+                        @if (!CanGenerateResponse())
+                        {                        
                             <span style="color: lightgray;">Complete previous steps to enable response generation</span>
                         }
                     </div>
@@ -303,7 +299,7 @@
         </div>
         @if (!CanGenerateResponse())
         {
-            <span style="color: lightgray;">Complete previous steps to enable response generation</span>
+            <p style="color: lightgray;">Complete previous steps to enable response generation</p>
         }
     }
 </RadzenCard>
@@ -792,7 +788,7 @@
 
             var response = await objOrchestratorMethods.CallOpenAIAsync(settingsService, prompt);
 
-            await LogService.WriteToLogAsync($"[{DateTime.Now}] IdentifyQuestions: AI response received. Error: {response.Error ?? "None"}");
+            // Log response length
             await LogService.WriteToLogAsync($"[{DateTime.Now}] IdentifyQuestions: AI response length: {response.Response?.Length ?? 0}");
 
             if (string.IsNullOrWhiteSpace(response.Error))
