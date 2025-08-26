@@ -151,12 +151,14 @@
         <RadzenTabs RenderMode="TabRenderMode.Client">
             <Tabs>
                 <RadzenTabsItem Text="Generate Final Response">
-                    <div style="padding: 20px 0;">
+                    <div style="padding: 10px 0;">
                         <RadzenButton Text="Generate Response Document" Icon="description" Style="background-color: #007bff; margin-right: 10px;"
                                       ButtonStyle="ButtonStyle.Primary" Click="GenerateResponseDocument"
                                       Disabled="@(!CanGenerateResponse())" />
                         @if (!CanGenerateResponse())
-                        {                        
+                        {
+                            <br />                  
+                            <br />
                             <div style="color: lightgray;">Complete previous steps to enable response generation</div>
                         }
                     </div>
