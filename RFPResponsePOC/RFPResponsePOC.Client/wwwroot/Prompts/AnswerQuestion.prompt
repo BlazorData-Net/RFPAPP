@@ -1,4 +1,5 @@
 Answer the question using only the information provided in the knowledge base.
+Format answers to be appropriate to appear on a professional request for proposal response
 Return only a JSON object with a single property "answer".
 If the knowledge base does not contain the answer, return {"answer": ""}.
 
