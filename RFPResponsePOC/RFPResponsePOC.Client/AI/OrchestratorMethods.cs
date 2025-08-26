@@ -70,6 +70,9 @@ namespace RFPResponsePOC.AI
             // Get embeddings for the text
             var EmbeddingClient = api.GetEmbeddingClient("text-embedding-3-small");
 
+            // Strip out the characters from EmbeddingContent
+            EmbeddingContent = EmbeddingContent.Replace("|", "").Replace("[", "").Replace("]", "").Trim();
+
             var embeddings = await EmbeddingClient.GenerateEmbeddingAsync(EmbeddingContent);
 
             // Get embeddings as an array of floats
@@ -113,6 +116,9 @@ namespace RFPResponsePOC.AI
 
             // Get embeddings for the text
             var EmbeddingClient = api.GetEmbeddingClient("text-embedding-3-small");
+
+            // Strip out the characters from EmbeddingContent
+            EmbeddingContent = EmbeddingContent.Replace("|", "").Replace("[", "").Replace("]", "").Trim();
 
             var embeddings = await EmbeddingClient.GenerateEmbeddingAsync(EmbeddingContent);
 
