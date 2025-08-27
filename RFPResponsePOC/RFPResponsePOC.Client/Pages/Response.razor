@@ -389,14 +389,40 @@
             CurrentStatus = "Generating response document...";
             StateHasChanged();
 
-            // TODO: Implement the actual document generation logic
-            // This would typically involve:
-            // 1. Loading the selected template
-            // 2. Replacing placeholders with answers from identifiedQuestions
-            // 3. Adding venue proposal data if VenueTypeSelected
-            // 4. Generating the final document (Word/PDF)
+            var questionsToAdd = identifiedQuestions.Where(q => q.AddToDatabase && !string.IsNullOrWhiteSpace(q.Response));
 
-            await Task.Delay(2000); // Simulate processing
+            if (questionsToAdd.Any())
+            {
+                var orchestrator = new OrchestratorMethods(_SettingsService, LogService);
+                var kbJson = await KnowledgebaseService.GetKnowledgebaseJsonAsync();
+                var entries = !string.IsNullOrWhiteSpace(kbJson)
+                    ? JsonConvert.DeserializeObject<List<KnowledgeChunk>>(kbJson) ?? new List<KnowledgeChunk>()
+                    : new List<KnowledgeChunk>();
+
+                foreach (var q in questionsToAdd)
+                {
+                    var embedding = await orchestrator.GetVectorEmbeddingAsync(q.Response, true);
+                    var existingIndex = entries.FindIndex(e => e.EntryTitle == q.Question);
+                    var newEntry = new KnowledgeChunk
+                    {
+                        Id = existingIndex >= 0 ? entries[existingIndex].Id : Guid.NewGuid().ToString(),
+                        EntryTitle = q.Question,
+                        Content = q.Response,
+                        Embedding = embedding
+                    };
+
+                    if (existingIndex >= 0)
+                    {
+                        entries[existingIndex] = newEntry;
+                    }
+                    else
+                    {
+                        entries.Add(newEntry);
+                    }
+                }
+
+                await KnowledgebaseService.SaveKnowledgebaseDataAsync(entries);
+            }
 
             NotificationService.Notify(new NotificationMessage
             {
@@ -1028,47 +1054,17 @@
                 var prompt = await Http.GetStringAsync("Prompts/AnswerQuestion.prompt");
 
                 await LogService.WriteToLogAsync($"[{DateTime.Now}] CreateProposal: First few questions: {string.Join(", ", identifiedQuestions.Take(3).Select(q => q.Question))}");
+                
                 var orchestrator = new OrchestratorMethods(_SettingsService, LogService);
+                
                 var total = identifiedQuestions.Count;
+                
                 for (int i = 0; i < identifiedQuestions.Count; i++)
                 {
                     CurrentStatus = $"Answering question {i + 1} out of {total}...";
                     StateHasChanged();
                     await orchestrator.AnswerQuestionsFromKnowledgebase(identifiedQuestions[i], prompt, BasePath);
-                }
-
-                var questionsToAdd = identifiedQuestions.Where(q => q.AddToDatabase && !string.IsNullOrWhiteSpace(q.Response));
-                if (questionsToAdd.Any())
-                {
-                    var kbJson = await KnowledgebaseService.GetKnowledgebaseJsonAsync();
-                    var entries = !string.IsNullOrWhiteSpace(kbJson)
-                        ? JsonConvert.DeserializeObject<List<KnowledgeChunk>>(kbJson) ?? new List<KnowledgeChunk>()
-                        : new List<KnowledgeChunk>();
-
-                    foreach (var q in questionsToAdd)
-                    {
-                        var embedding = await orchestrator.GetVectorEmbeddingAsync(q.Response, true);
-                        var existingIndex = entries.FindIndex(e => e.EntryTitle == q.Question);
-                        var newEntry = new KnowledgeChunk
-                        {
-                            Id = existingIndex >= 0 ? entries[existingIndex].Id : Guid.NewGuid().ToString(),
-                            EntryTitle = q.Question,
-                            Content = q.Response,
-                            Embedding = embedding
-                        };
-
-                        if (existingIndex >= 0)
-                        {
-                            entries[existingIndex] = newEntry;
-                        }
-                        else
-                        {
-                            entries.Add(newEntry);
-                        }
-                    }
-
-                    await KnowledgebaseService.SaveKnowledgebaseDataAsync(entries);
-                }
+                }               
             }
 
             // Refresh QuestionGrid data grid if it's not null
