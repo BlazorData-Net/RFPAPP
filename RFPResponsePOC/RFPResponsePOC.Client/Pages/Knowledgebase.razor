@@ -20,6 +20,7 @@
 @inject PdfToPngService PdfService
 @inject HttpClient Http
 @inject IJSRuntime JsRuntime
+@inject KnowledgebaseService KnowledgebaseService
 <br />
 <RadzenUpload @ref="uploader"
               ChooseText="Upload document (.txt/.pdf/.png/.jpg/.jpeg)" Accept=".txt,.pdf,.png,.jpg,.jpeg"
@@ -45,7 +46,7 @@
 <RadzenButton Text="Add Row" Icon="add" Style="margin-bottom:10px" ButtonStyle="ButtonStyle.Primary" Click="InsertRow" />
 @if (entries?.Any() == true)
 {
-    <RadzenButton Text="Save Knowledgebase" Icon="save" Style="margin-left:10px;margin-bottom:10px;background-color:green;" ButtonStyle="ButtonStyle.Primary" Click="SaveKnowledgebaseData" />
+    <RadzenButton Text="Save Knowledgebase" Icon="save" Style="margin-left:10px;margin-bottom:10px;background-color:green;" ButtonStyle="ButtonStyle.Primary" Click="@((async () => await KnowledgebaseService.SaveKnowledgebaseDataAsync(entries)))" />
     <RadzenDataGrid @ref="grid"
                     Data="@groupedEntries"
                     TItem="KnowledgeEntry"
@@ -87,7 +88,6 @@
     // Allow access to the JSRuntime
     private DotNetObjectReference<Knowledgebase> objRef;
     ZipService objZipService = new ZipService();
-    string BasePath = @"/RFPResponsePOC";
     Radzen.Blazor.RadzenUpload uploader;
     Radzen.Blazor.RadzenDataGrid<KnowledgeEntry> grid;
     List<KnowledgeChunk> entries = new();
@@ -114,7 +114,7 @@
             objZipService = new ZipService(JsRuntime, localStorage, _SettingsService, LogService);
 
             objOrchestratorMethods = new OrchestratorMethods(_SettingsService, LogService);
-            var json = await GetKnowledgebaseJsonAsync();
+            var json = await KnowledgebaseService.GetKnowledgebaseJsonAsync();
             if (!string.IsNullOrWhiteSpace(json))
             {
                 entries = JsonConvert.DeserializeObject<List<KnowledgeChunk>>(json) ?? new();
@@ -242,7 +242,7 @@
             }
 
             await grid.Reload();
-            await SaveKnowledgebaseData();
+            await KnowledgebaseService.SaveKnowledgebaseDataAsync(entries);
             await uploader.ClearFiles();
 
             InProgress = false;
@@ -274,7 +274,7 @@
             chunk.EntryTitle = result.EntryTitle;
             chunk.Content = result.Content;
             chunk.Embedding = await objOrchestratorMethods.GetVectorEmbeddingAsync(chunk.Content, false);
-            await SaveKnowledgebaseData();
+            await KnowledgebaseService.SaveKnowledgebaseDataAsync(entries);
             await grid.Reload();
         }
     }
@@ -309,7 +309,7 @@
         {
             entries.Remove(chunk);
             await grid.Reload();
-            await SaveKnowledgebaseData();
+            await KnowledgebaseService.SaveKnowledgebaseDataAsync(entries);
         }
     }
 
@@ -326,31 +326,9 @@
         {
             result.Embedding = await objOrchestratorMethods.GetVectorEmbeddingAsync(result.Content, true);
             entries.Insert(0, result);
-            await SaveKnowledgebaseData();
+            await KnowledgebaseService.SaveKnowledgebaseDataAsync(entries);
             await grid.Reload();
         }
-    }
-
-    async Task SaveKnowledgebaseData()
-    {
-        var json = JsonConvert.SerializeObject(entries, Formatting.Indented);
-        await File.WriteAllTextAsync($"{BasePath}//knowledgebase.json", json);
-    }
-
-    private async Task<string> GetKnowledgebaseJsonAsync()
-    {
-        try
-        {
-            if (File.Exists($"{BasePath}//knowledgebase.json"))
-            {
-                return await File.ReadAllTextAsync($"{BasePath}//knowledgebase.json");
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error reading knowledgebase.json: {ex.Message}");
-        }
-        return null;
     }
 
     public void Dispose()

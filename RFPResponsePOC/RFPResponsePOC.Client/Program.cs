@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Radzen;
 using RFPResponsePOC.Model;
 using RFPResponsePOC.Models;
+using RFPResponsePOC.Client.Services;
 
 namespace RFPResponsePOC.Client;
 
@@ -27,6 +28,7 @@ class Program
         builder.Services.AddScoped<DatabaseService>();
         builder.Services.AddScoped<PdfToPngService>();
         builder.Services.AddScoped<DialogService>();
+        builder.Services.AddScoped<KnowledgebaseService>();
 
         // Set the base address for the application
         var http = new HttpClient()
