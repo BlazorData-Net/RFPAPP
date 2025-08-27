@@ -25,6 +25,7 @@
 @inject NavigationManager Navigation
 @inject PdfToPngService PdfService
 @inject HttpClient Http
+@inject KnowledgebaseService KnowledgebaseService
 
 @if (InProgress)
 {
@@ -1036,6 +1037,39 @@
                     CurrentStatus = $"Answering question {i + 1} out of {total}...";
                     StateHasChanged();
                     await orchestrator.AnswerQuestionsFromKnowledgebase(identifiedQuestions[i], prompt, BasePath);
+                }
+
+                var questionsToAdd = identifiedQuestions.Where(q => q.AddToDatabase && !string.IsNullOrWhiteSpace(q.Response));
+                if (questionsToAdd.Any())
+                {
+                    var kbJson = await KnowledgebaseService.GetKnowledgebaseJsonAsync();
+                    var entries = !string.IsNullOrWhiteSpace(kbJson)
+                        ? JsonConvert.DeserializeObject<List<KnowledgeChunk>>(kbJson) ?? new List<KnowledgeChunk>()
+                        : new List<KnowledgeChunk>();
+
+                    foreach (var q in questionsToAdd)
+                    {
+                        var embedding = await orchestrator.GetVectorEmbeddingAsync(q.Response, true);
+                        var existingIndex = entries.FindIndex(e => e.EntryTitle == q.Question);
+                        var newEntry = new KnowledgeChunk
+                        {
+                            Id = existingIndex >= 0 ? entries[existingIndex].Id : Guid.NewGuid().ToString(),
+                            EntryTitle = q.Question,
+                            Content = q.Response,
+                            Embedding = embedding
+                        };
+
+                        if (existingIndex >= 0)
+                        {
+                            entries[existingIndex] = newEntry;
+                        }
+                        else
+                        {
+                            entries.Add(newEntry);
+                        }
+                    }
+
+                    await KnowledgebaseService.SaveKnowledgebaseDataAsync(entries);
                 }
             }
 
