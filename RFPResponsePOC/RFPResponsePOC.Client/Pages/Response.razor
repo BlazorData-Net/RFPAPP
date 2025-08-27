@@ -651,8 +651,6 @@
             var templateContent = await GetTemplateContentAsync(SelectedTemplate);
             VenueTypeSelected = !string.IsNullOrWhiteSpace(templateContent) &&
                                    templateContent.Contains("[VENUE_PROPOSAL]", StringComparison.OrdinalIgnoreCase);
-
-            await LogService.WriteToLogAsync($"[{DateTime.Now}] Template '{SelectedTemplate}' contains [VENUE_PROPOSAL]: {VenueTypeSelected}");
             StateHasChanged();
         }
         catch (Exception ex)
