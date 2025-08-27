@@ -26,7 +26,7 @@ namespace RFPResponsePOC.Client.Services
             await File.WriteAllTextAsync($"{_basePath}//knowledgebase.json", json);
         }
 
-        public async Task<string?> GetKnowledgebaseJsonAsync()
+        public async Task<string> GetKnowledgebaseJsonAsync()
         {
             try
             {
