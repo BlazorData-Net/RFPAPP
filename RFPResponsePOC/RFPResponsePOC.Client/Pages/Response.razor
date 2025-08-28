@@ -12,6 +12,9 @@
 @using RFPResponsePOC.AI
 @using System.IO
 @using Openize.Words
+@using DocumentFormat.OpenXml
+@using DocumentFormat.OpenXml.Packaging
+@using DocumentFormat.OpenXml.Wordprocessing
 @using System.IO.Compression
 @using System.Xml.Linq
 @using Microsoft.AspNetCore.Components.Web
@@ -388,6 +391,127 @@
             InProgress = true;
             CurrentStatus = "Generating response document...";
             StateHasChanged();
+            var templateContent = await GetTemplateContentAsync(SelectedTemplate);
+            if (string.IsNullOrWhiteSpace(templateContent))
+            {
+                throw new InvalidOperationException("Template not found.");
+            }
+
+            string proposalSummary = string.Empty;
+            string qnaSummary = string.Empty;
+
+            if (!VenueTypeSelected)
+            {
+                var sbPrompt = new StringBuilder();
+                sbPrompt.AppendLine("Summarize the following RFP text and question/answer pairs into a single proposal paragraph.");
+                sbPrompt.AppendLine("RFP Text:");
+                sbPrompt.AppendLine(RFPText ?? string.Empty);
+                if (identifiedQuestions?.Any() == true)
+                {
+                    sbPrompt.AppendLine("Questions and Answers:");
+                    foreach (var q in identifiedQuestions)
+                    {
+                        sbPrompt.AppendLine($"Q: {q.Question}");
+                        sbPrompt.AppendLine($"A: {q.Response}");
+                    }
+                }
+
+                var prompt = sbPrompt.ToString();
+                var promptPath = Path.Combine(AppContext.BaseDirectory, "wwwroot", "Prompts", "DefaultTemplate.prompt");
+                Directory.CreateDirectory(Path.GetDirectoryName(promptPath));
+                await File.WriteAllTextAsync(promptPath, prompt);
+
+                var orchestrator = new OrchestratorMethods(_SettingsService, LogService);
+                var settingsService = new SettingsService();
+                var aiResponse = await orchestrator.CallOpenAIAsync(settingsService, prompt);
+                if (string.IsNullOrWhiteSpace(aiResponse.Error))
+                {
+                    proposalSummary = aiResponse.Response;
+                }
+
+                if (templateContent.Contains("[QUESTIONS_AND_ANSWERS]", StringComparison.OrdinalIgnoreCase) && identifiedQuestions?.Any() == true)
+                {
+                    var sb = new StringBuilder();
+                    foreach (var q in identifiedQuestions)
+                    {
+                        sb.AppendLine($"Q: {q.Question}");
+                        sb.AppendLine($"A: {q.Response}");
+                        sb.AppendLine();
+                    }
+                    qnaSummary = sb.ToString().Trim();
+                    templateContent = templateContent.Replace("[QUESTIONS_AND_ANSWERS]", qnaSummary);
+                }
+            }
+            else
+            {
+                await DetectRoomRequests();
+                await CalculateProposal();
+
+                if (identifiedQuestions?.Any() == true && templateContent.Contains("[QUESTIONS_AND_ANSWERS]", StringComparison.OrdinalIgnoreCase))
+                {
+                    var sbPrompt = new StringBuilder();
+                    sbPrompt.AppendLine("Summarize the following questions and answers into concise paragraphs.");
+                    foreach (var q in identifiedQuestions)
+                    {
+                        sbPrompt.AppendLine($"Q: {q.Question}");
+                        sbPrompt.AppendLine($"A: {q.Response}");
+                    }
+
+                    var prompt = sbPrompt.ToString();
+                    var promptPath = Path.Combine(AppContext.BaseDirectory, "wwwroot", "Prompts", "VenueTemplate.prompt");
+                    Directory.CreateDirectory(Path.GetDirectoryName(promptPath));
+                    await File.WriteAllTextAsync(promptPath, prompt);
+
+                    var orchestrator = new OrchestratorMethods(_SettingsService, LogService);
+                    var settingsService = new SettingsService();
+                    var aiResponse = await orchestrator.CallOpenAIAsync(settingsService, prompt);
+                    if (string.IsNullOrWhiteSpace(aiResponse.Error))
+                    {
+                        qnaSummary = aiResponse.Response;
+                        templateContent = templateContent.Replace("[QUESTIONS_AND_ANSWERS]", qnaSummary);
+                    }
+                }
+            }
+
+            using (var ms = new MemoryStream())
+            {
+                using (var wordDoc = WordprocessingDocument.Create(ms, WordprocessingDocumentType.Document, true))
+                {
+                    var mainPart = wordDoc.AddMainDocumentPart();
+                    mainPart.Document = new Document();
+                    var body = mainPart.Document.AppendChild(new Body());
+
+                    var lines = templateContent.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+                    foreach (var line in lines)
+                    {
+                        if (VenueTypeSelected && line.Contains("[VENUE_PROPOSAL]", StringComparison.OrdinalIgnoreCase))
+                        {
+                            var table = BuildProposalTable(proposalRows.Where(r => !string.IsNullOrEmpty(r.SelectedRoom) || !string.IsNullOrEmpty(r.ManualRoom)));
+                            body.Append(table);
+                        }
+                        else if (VenueTypeSelected && line.Contains("[VENUE_UNABLE_TO_ACCOMMODATE_AGENDA_ITEMS]", StringComparison.OrdinalIgnoreCase))
+                        {
+                            var table = BuildProposalTable(proposalRows.Where(r => string.IsNullOrEmpty(r.SelectedRoom) && string.IsNullOrEmpty(r.ManualRoom)));
+                            body.Append(table);
+                        }
+                        else if (!VenueTypeSelected && line.Contains("[PROPOSAL]", StringComparison.OrdinalIgnoreCase))
+                        {
+                            body.Append(new Paragraph(new Run(new Text(proposalSummary ?? string.Empty) { Space = SpaceProcessingModeValues.Preserve })));
+                        }
+                        else
+                        {
+                            body.Append(new Paragraph(new Run(new Text(line) { Space = SpaceProcessingModeValues.Preserve })));
+                        }
+                    }
+
+                    mainPart.Document.Save();
+                }
+
+                var bytes = ms.ToArray();
+                var base64 = Convert.ToBase64String(bytes);
+                var fileName = $"RFPResponse_{DateTime.Now:yyyyMMdd_HHmmss}.docx";
+                await JsRuntime.InvokeVoidAsync("eval", $@"const bytes = atob('{base64}');\nconst byteNumbers = new Array(bytes.length);\nfor (let i = 0; i < bytes.length; i++) {{ byteNumbers[i] = bytes.charCodeAt(i); }}\nconst byteArray = new Uint8Array(byteNumbers);\nconst blob = new Blob([byteArray], {{ type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }});\nconst link = document.createElement('a');\nconst url = URL.createObjectURL(blob);\nlink.setAttribute('href', url);\nlink.setAttribute('download', '{fileName}');\ndocument.body.appendChild(link);\nlink.click();\ndocument.body.removeChild(link);\nURL.revokeObjectURL(url);");
+            }
 
             var questionsToAdd = identifiedQuestions.Where(q => q.AddToDatabase && !string.IsNullOrWhiteSpace(q.Response));
 
@@ -451,6 +575,57 @@
     }
 
     async Task EditRow(ProposalRow row) => await grid.EditRow(row);
+
+    private Table BuildProposalTable(IEnumerable<ProposalRow> rows)
+    {
+        var table = new Table();
+        var props = new TableProperties(
+            new TableBorders(
+                new TopBorder { Val = BorderValues.Single, Size = 4 },
+                new BottomBorder { Val = BorderValues.Single, Size = 4 },
+                new LeftBorder { Val = BorderValues.Single, Size = 4 },
+                new RightBorder { Val = BorderValues.Single, Size = 4 },
+                new InsideHorizontalBorder { Val = BorderValues.Single, Size = 4 },
+                new InsideVerticalBorder { Val = BorderValues.Single, Size = 4 }
+            )
+        );
+        table.AppendChild(props);
+
+        var header = new TableRow();
+        header.Append(
+            CreateCell("Name"),
+            CreateCell("Room"),
+            CreateCell("Start"),
+            CreateCell("End"),
+            CreateCell("Room Type"),
+            CreateCell("Attendance"),
+            CreateCell("Notes")
+        );
+        table.Append(header);
+
+        foreach (var r in rows)
+        {
+            var row = new TableRow();
+            var room = !string.IsNullOrEmpty(r.SelectedRoom) ? r.SelectedRoom : r.ManualRoom;
+            row.Append(
+                CreateCell(r.Name),
+                CreateCell(room),
+                CreateCell($"{r.StartDate:MM/dd/yyyy} {r.StartTime}"),
+                CreateCell($"{r.EndDate:MM/dd/yyyy} {r.EndTime}"),
+                CreateCell(r.RoomType),
+                CreateCell(r.Attendance.ToString()),
+                CreateCell(r.Notes)
+            );
+            table.Append(row);
+        }
+
+        return table;
+    }
+
+    private TableCell CreateCell(string text)
+    {
+        return new TableCell(new Paragraph(new Run(new Text(text ?? string.Empty))));
+    }
 
     ProposalRow newRow;
 
