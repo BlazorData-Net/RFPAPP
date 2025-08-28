@@ -1,4 +1,4 @@
-Subject: Venue Proposal – [EVENT_NAME] at [BUSINESS]
+Subject: Venue Proposal [EVENT_NAME] at [BUSINESS]
 
 Dear [REQUESTOR_NAME],
 

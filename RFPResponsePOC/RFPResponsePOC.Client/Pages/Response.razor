@@ -415,10 +415,13 @@
                     }
                 }
 
-                var prompt = sbPrompt.ToString();
-                var promptPath = Path.Combine(AppContext.BaseDirectory, "wwwroot", "Prompts", "DefaultTemplate.prompt");
-                Directory.CreateDirectory(Path.GetDirectoryName(promptPath));
-                await File.WriteAllTextAsync(promptPath, prompt);
+                // Read the existing DefaultTemplate.prompt file
+                var promptTemplate = await Http.GetStringAsync("Prompts/DefaultTemplate.prompt");
+                
+                // Replace placeholders in the prompt template
+                var prompt = promptTemplate
+                    .Replace("{{Template}}", templateContent)
+                    .Replace("{{Knowledgebase}}", sbPrompt.ToString());
 
                 var orchestrator = new OrchestratorMethods(_SettingsService, LogService);
                 var settingsService = new SettingsService();
@@ -456,10 +459,13 @@
                         sbPrompt.AppendLine($"A: {q.Response}");
                     }
 
-                    var prompt = sbPrompt.ToString();
-                    var promptPath = Path.Combine(AppContext.BaseDirectory, "wwwroot", "Prompts", "VenueTemplate.prompt");
-                    Directory.CreateDirectory(Path.GetDirectoryName(promptPath));
-                    await File.WriteAllTextAsync(promptPath, prompt);
+                    // Read the existing VenueTemplate.prompt file
+                    var promptTemplate = await Http.GetStringAsync("Prompts/VenueTemplate.prompt");
+                    
+                    // Replace placeholders in the prompt template
+                    var prompt = promptTemplate
+                        .Replace("{{Template}}", templateContent)
+                        .Replace("{{Knowledgebase}}", sbPrompt.ToString());
 
                     var orchestrator = new OrchestratorMethods(_SettingsService, LogService);
                     var settingsService = new SettingsService();
