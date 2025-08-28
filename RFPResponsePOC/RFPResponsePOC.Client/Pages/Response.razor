@@ -11,14 +11,13 @@
 @using Microsoft.AspNetCore.Components.Forms
 @using RFPResponsePOC.AI
 @using System.IO
-@using Openize.Words
-@using DocumentFormat.OpenXml
-@using DocumentFormat.OpenXml.Packaging
-@using DocumentFormat.OpenXml.Wordprocessing
 @using System.IO.Compression
 @using System.Xml.Linq
 @using Microsoft.AspNetCore.Components.Web
 @using Radzen.Blazor
+@using DocumentFormat.OpenXml
+@using DocumentFormat.OpenXml.Packaging
+@using DocumentFormat.OpenXml.Wordprocessing
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 @inject IJSRuntime JsRuntime
@@ -1648,4 +1647,4 @@
             objRef?.Dispose();
         }
     }
-}
+}}
