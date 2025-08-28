@@ -509,7 +509,14 @@
                 var bytes = ms.ToArray();
                 var base64 = Convert.ToBase64String(bytes);
                 var fileName = $"RFPResponse_{DateTime.Now:yyyyMMdd_HHmmss}.docx";
-                await JsRuntime.InvokeVoidAsync("eval", $@"const bytes = atob('{base64}');\nconst byteNumbers = new Array(bytes.length);\nfor (let i = 0; i < bytes.length; i++) {{ byteNumbers[i] = bytes.charCodeAt(i); }}\nconst byteArray = new Uint8Array(byteNumbers);\nconst blob = new Blob([byteArray], {{ type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }});\nconst link = document.createElement('a');\nconst url = URL.createObjectURL(blob);\nlink.setAttribute('href', url);\nlink.setAttribute('download', '{fileName}');\ndocument.body.appendChild(link);\nlink.click();\ndocument.body.removeChild(link);\nURL.revokeObjectURL(url);");
+                
+                // Use the downloadWordDocument function from App.razor
+                var success = await JsRuntime.InvokeAsync<bool>("downloadWordDocument", fileName, base64);
+                
+                if (!success)
+                {
+                    throw new InvalidOperationException("Failed to download the Word document. Please try again.");
+                }
             }
 
             var questionsToAdd = identifiedQuestions.Where(q => q.AddToDatabase && !string.IsNullOrWhiteSpace(q.Response));

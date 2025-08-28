@@ -48,6 +48,35 @@
         }
     </script>
     <script>
+        window.downloadWordDocument = function (filename, base64String) {
+            try {
+                // Convert Base64 string to a Blob
+                const byteCharacters = atob(base64String);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) {
+                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                const blob = new Blob([byteArray], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+
+                // Create a link element and download the file
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', filename);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                
+                return true;
+            } catch (error) {
+                console.error('Error downloading Word document:', error);
+                return false;
+            }
+        }
+    </script>
+    <script>
         window.setupBeforeUnload = function (callback) {
             window.addEventListener("beforeunload", function (event) {
                 callback.invokeMethodAsync("HandleBeforeUnload");
