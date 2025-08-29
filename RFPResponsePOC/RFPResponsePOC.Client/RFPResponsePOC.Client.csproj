@@ -24,6 +24,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Update="wwwroot\Prompts\SumarizeQuestions.prompt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Update="wwwroot\Prompts\DefaultTemplate.prompt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

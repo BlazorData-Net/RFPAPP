@@ -390,94 +390,65 @@
             InProgress = true;
             CurrentStatus = "Generating response document...";
             StateHasChanged();
+
             var templateContent = await GetTemplateContentAsync(SelectedTemplate);
             if (string.IsNullOrWhiteSpace(templateContent))
             {
                 throw new InvalidOperationException("Template not found.");
             }
 
-            string proposalSummary = string.Empty;
-            string qnaSummary = string.Empty;
+            // **************************************
+            // Get QAText and proposalSummary
+            // **************************************
+            string proposalSummary = "";
 
-            if (!VenueTypeSelected)
+            var QAText = new StringBuilder();
+
+            if (identifiedQuestions?.Any() == true)
             {
-                var sbPrompt = new StringBuilder();
-                sbPrompt.AppendLine("Summarize the following RFP text and question/answer pairs into a single proposal paragraph.");
-                sbPrompt.AppendLine("RFP Text:");
-                sbPrompt.AppendLine(RFPText ?? string.Empty);
-                if (identifiedQuestions?.Any() == true)
+                foreach (var q in identifiedQuestions)
                 {
-                    sbPrompt.AppendLine("Questions and Answers:");
-                    foreach (var q in identifiedQuestions)
-                    {
-                        sbPrompt.AppendLine($"Q: {q.Question}");
-                        sbPrompt.AppendLine($"A: {q.Response}");
-                    }
-                }
-
-                // Read the existing DefaultTemplate.prompt file
-                var promptTemplate = await Http.GetStringAsync("Prompts/DefaultTemplate.prompt");
-                
-                // Replace placeholders in the prompt template
-                var prompt = promptTemplate
-                    .Replace("{{Template}}", templateContent)
-                    .Replace("{{Knowledgebase}}", sbPrompt.ToString());
-
-                var orchestrator = new OrchestratorMethods(_SettingsService, LogService);
-                var settingsService = new SettingsService();
-                var aiResponse = await orchestrator.CallOpenAIAsync(settingsService, prompt);
-                if (string.IsNullOrWhiteSpace(aiResponse.Error))
-                {
-                    proposalSummary = aiResponse.Response;
-                }
-
-                if (templateContent.Contains("[QUESTIONS_AND_ANSWERS]", StringComparison.OrdinalIgnoreCase) && identifiedQuestions?.Any() == true)
-                {
-                    var sb = new StringBuilder();
-                    foreach (var q in identifiedQuestions)
-                    {
-                        sb.AppendLine($"Q: {q.Question}");
-                        sb.AppendLine($"A: {q.Response}");
-                        sb.AppendLine();
-                    }
-                    qnaSummary = sb.ToString().Trim();
-                    templateContent = templateContent.Replace("[QUESTIONS_AND_ANSWERS]", qnaSummary);
+                    QAText.AppendLine($"Q: {q.Question}");
+                    QAText.AppendLine($"A: {q.Response}");
                 }
             }
-            else
+
+            // Read the existing DefaultTemplate.prompt file
+            var SumarizeQuestionsPromptTemplate = await Http.GetStringAsync("Prompts/SumarizeQuestions.prompt");
+
+            // Replace placeholders in the prompt template
+            var ProposalSummaryPrompt = SumarizeQuestionsPromptTemplate
+                .Replace("{{RFPText}}", RFPText)
+                .Replace("{{QnA}}", QAText.ToString());
+
+            var orchestrator = new OrchestratorMethods(_SettingsService, LogService);
+            var settingsService = new SettingsService();
+            var aiResponse = await orchestrator.CallOpenAIAsync(settingsService, ProposalSummaryPrompt);
+            if (string.IsNullOrWhiteSpace(aiResponse.Error))
             {
+                proposalSummary = aiResponse.Response;
+            }
+
+            // *********************************************
+            // Replace [PROPOSAL] placeholder
+            // *********************************************
+            if (templateContent.Contains("[PROPOSAL]", StringComparison.OrdinalIgnoreCase))
+            {
+                templateContent = templateContent.Replace("[PROPOSAL]", proposalSummary);
+            }
+
+            // *********************************************
+            // Process VENUE Template Type 
+            // *********************************************
+            if (VenueTypeSelected) 
+            {               
                 await DetectRoomRequests();
                 await CalculateProposal();
-
-                if (identifiedQuestions?.Any() == true && templateContent.Contains("[QUESTIONS_AND_ANSWERS]", StringComparison.OrdinalIgnoreCase))
-                {
-                    var sbPrompt = new StringBuilder();
-                    sbPrompt.AppendLine("Summarize the following questions and answers into concise paragraphs.");
-                    foreach (var q in identifiedQuestions)
-                    {
-                        sbPrompt.AppendLine($"Q: {q.Question}");
-                        sbPrompt.AppendLine($"A: {q.Response}");
-                    }
-
-                    // Read the existing VenueTemplate.prompt file
-                    var promptTemplate = await Http.GetStringAsync("Prompts/VenueTemplate.prompt");
-                    
-                    // Replace placeholders in the prompt template
-                    var prompt = promptTemplate
-                        .Replace("{{Template}}", templateContent)
-                        .Replace("{{Knowledgebase}}", sbPrompt.ToString());
-
-                    var orchestrator = new OrchestratorMethods(_SettingsService, LogService);
-                    var settingsService = new SettingsService();
-                    var aiResponse = await orchestrator.CallOpenAIAsync(settingsService, prompt);
-                    if (string.IsNullOrWhiteSpace(aiResponse.Error))
-                    {
-                        qnaSummary = aiResponse.Response;
-                        templateContent = templateContent.Replace("[QUESTIONS_AND_ANSWERS]", qnaSummary);
-                    }
-                }
             }
 
+            // *********************************************
+            // Generate Word Document
+            // *********************************************
             using (var ms = new MemoryStream())
             {
                 using (var wordDoc = WordprocessingDocument.Create(ms, WordprocessingDocumentType.Document, true))
@@ -487,6 +458,7 @@
                     var body = mainPart.Document.AppendChild(new Body());
 
                     var lines = templateContent.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+                    
                     foreach (var line in lines)
                     {
                         if (VenueTypeSelected && line.Contains("[VENUE_PROPOSAL]", StringComparison.OrdinalIgnoreCase))
@@ -498,11 +470,7 @@
                         {
                             var table = BuildProposalTable(proposalRows.Where(r => string.IsNullOrEmpty(r.SelectedRoom) && string.IsNullOrEmpty(r.ManualRoom)));
                             body.Append(table);
-                        }
-                        else if (!VenueTypeSelected && line.Contains("[PROPOSAL]", StringComparison.OrdinalIgnoreCase))
-                        {
-                            body.Append(new Paragraph(new Run(new Text(proposalSummary ?? string.Empty) { Space = SpaceProcessingModeValues.Preserve })));
-                        }
+                        }                        
                         else
                         {
                             body.Append(new Paragraph(new Run(new Text(line) { Space = SpaceProcessingModeValues.Preserve })));
@@ -525,11 +493,14 @@
                 }
             }
 
+            // *********************************************
+            // Update Knowledgebase with new Q&A
+            // *********************************************
+
             var questionsToAdd = identifiedQuestions.Where(q => q.AddToDatabase && !string.IsNullOrWhiteSpace(q.Response));
 
             if (questionsToAdd.Any())
             {
-                var orchestrator = new OrchestratorMethods(_SettingsService, LogService);
                 var kbJson = await KnowledgebaseService.GetKnowledgebaseJsonAsync();
                 var entries = !string.IsNullOrWhiteSpace(kbJson)
                     ? JsonConvert.DeserializeObject<List<KnowledgeChunk>>(kbJson) ?? new List<KnowledgeChunk>()

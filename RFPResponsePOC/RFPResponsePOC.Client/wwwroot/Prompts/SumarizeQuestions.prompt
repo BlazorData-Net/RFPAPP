@@ -1,0 +1,8 @@
+Summarize the following RFP text and question/answer pairs into a single proposal paragraph.
+Format answers to be appropriate to appear on a professional request for proposal response
+
+### RFP TEXT
+{{RFPText}}
+
+### QUESTIONS AND ANSWERS
+{{QnA}}	
