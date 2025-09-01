@@ -53,6 +53,11 @@
                     AllowPaging="false"
                     ExpandMode="DataGridExpandMode.Single">
         <Columns>
+            <RadzenDataGridColumn TItem="KnowledgeEntry" Filterable="false" Sortable="false" Width="60px" TextAlign="TextAlign.Center" Title="DEL">
+                <Template Context="entry">
+                    <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.ExtraSmall" Click="@(() => ConfirmDeleteEntryGroup(entry.EntryTitle))" @onclick:stopPropagation="true" />
+                </Template>
+            </RadzenDataGridColumn>
             <RadzenDataGridColumn TItem="KnowledgeEntry" Property="EntryTitle" Title="Entry Title" />
         </Columns>
         <Template Context="entry">
@@ -303,6 +308,31 @@
         }
     }
 
+    private async Task ConfirmDeleteEntryGroup(string entryTitle)
+    {
+        var chunksToDelete = entries.Where(e => e.EntryTitle == entryTitle).ToList();
+        var confirmed = await DialogService.Confirm(
+            $"Are you sure you want to delete all {chunksToDelete.Count} chunks for '{entryTitle}'?",
+            "Confirm Delete Entry Group",
+            new ConfirmOptions
+            {
+                OkButtonText = "Delete All",
+                CancelButtonText = "Cancel"
+            });
+
+        if (confirmed == true)
+        {
+            await DeleteEntryGroup(entryTitle);
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Info,
+                Summary = "Deleted",
+                Detail = $"Entry group '{entryTitle}' and all its chunks removed.",
+                Duration = 3000
+            });
+        }
+    }
+
     async Task DeleteRow(KnowledgeChunk chunk)
     {
         if (entries.Contains(chunk))
@@ -311,6 +341,17 @@
             await grid.Reload();
             await KnowledgebaseService.SaveKnowledgebaseDataAsync(entries);
         }
+    }
+
+    async Task DeleteEntryGroup(string entryTitle)
+    {
+        var chunksToRemove = entries.Where(e => e.EntryTitle == entryTitle).ToList();
+        foreach (var chunk in chunksToRemove)
+        {
+            entries.Remove(chunk);
+        }
+        await grid.Reload();
+        await KnowledgebaseService.SaveKnowledgebaseDataAsync(entries);
     }
 
     async Task InsertRow()
