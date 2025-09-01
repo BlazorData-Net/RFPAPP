@@ -20,13 +20,14 @@
         </div>
         <div class="d-flex align-items-center">
             <a href="https://BlazorData.net/" target="_blank" class="me-2">BlazorData.net</a>
-            <RadzenButton Click="@(async () => await SaveSettingsaaAndCloseBrowserTab())" Disabled="@isSaving">
+            <RadzenButton Click="@(async () => await SaveSettingsaaAndCloseBrowserTab())" Disabled="@isSaving" Size="ButtonSize.ExtraSmall">
                 @if (isSaving)
                 {
                     <span class="spinner-border spinner-border-sm"></span>
                 }
                 else
                 {
+                    <RadzenIcon Icon="save" class="me-1" />
                     <span>Save and Close</span>
                 }
             </RadzenButton>
