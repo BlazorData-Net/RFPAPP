@@ -1,5 +1,13 @@
-﻿@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+﻿@using RFPResponsePOC.Client.Services
+@using RFPResponsePOC.Model
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 @inherits LayoutComponentBase
+@inject IJSRuntime JSRuntime
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@inject NotificationService NotificationService
+@inject DialogService DialogService
+@inject SettingsService SettingsService
+@inject LogService _LogService
 <RadzenDialog />
 <RadzenNotification />
 <RadzenTooltip />
@@ -30,3 +38,33 @@
     <a href="." class="reload">Reload</a>
     <span class="dismiss">🗙</span>
 </div>
+@code {
+    #nullable disable
+    [Parameter] public EventCallback SettingsChanged { get; set; }
+
+    private DotNetObjectReference<MainLayout> objRef;
+    ZipService objZipService = new ZipService();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            objRef = DotNetObjectReference.Create(this);
+            await JSRuntime.InvokeVoidAsync("setupBeforeUnload", objRef);
+
+            objZipService = new ZipService(JSRuntime, localStorage, SettingsService, _LogService, DialogService);
+        }
+    }
+
+    private async Task SaveSettingsaaAndCloseBrowserTab()
+    {
+        await SettingsService.SaveSettingsAsync();
+
+        await objZipService.ZipTheFiles();
+
+        // Close the web browser tab
+        await JSRuntime.InvokeVoidAsync("closeBrowserTab");
+    }
+
+    public void Dispose() => objRef?.Dispose();
+}
