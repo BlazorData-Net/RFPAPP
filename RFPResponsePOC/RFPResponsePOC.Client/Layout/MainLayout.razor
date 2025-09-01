@@ -20,7 +20,7 @@
         </div>
         <div class="d-flex align-items-center">
             <a href="https://BlazorData.net/" target="_blank" class="me-2">BlazorData.net</a>
-            <RadzenButton Click="@SaveSettingsaaAndCloseBrowserTab" Disabled="@isSaving">
+            <RadzenButton Click="@(async () => await SaveSettingsaaAndCloseBrowserTab())" Disabled="@isSaving">
                 @if (isSaving)
                 {
                     <span class="spinner-border spinner-border-sm"></span>
@@ -73,6 +73,12 @@
     private async Task SaveSettingsaaAndCloseBrowserTab()
     {
         isSaving = true;
+
+        StateHasChanged();
+
+        // pause for 1 second to show spinner
+        await Task.Delay(1000);
+
         await SettingsService.SaveSettingsAsync();
 
         await objZipService.ZipTheFiles();
