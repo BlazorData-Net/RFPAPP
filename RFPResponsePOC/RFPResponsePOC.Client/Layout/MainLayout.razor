@@ -56,7 +56,7 @@
 
     private DotNetObjectReference<MainLayout> objRef;
     ZipService objZipService = new ZipService();
-    private IJSObjectReference? _browserModule;
+    private IJSObjectReference _browserModule;
     private bool isSaving;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -92,6 +92,19 @@
 
     public async ValueTask DisposeAsync()
     {
+        // Remove the beforeunload callback when component is disposed
+        if (objRef != null)
+        {
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("removeBeforeUnloadCallback", objRef);
+            }
+            catch (Exception)
+            {
+                // Ignore errors during disposal
+            }
+        }
+        
         if (_browserModule is not null)
         {
             await _browserModule.DisposeAsync();

@@ -276,6 +276,20 @@
 
     public void Dispose()
     {
-        objRef?.Dispose();
+        // Remove the beforeunload callback when component is disposed
+        if (objRef != null)
+        {
+            try
+            {
+                JsRuntime.InvokeVoidAsync("removeBeforeUnloadCallback", objRef);
+            }
+            catch (Exception)
+            {
+                // Ignore errors during disposal
+            }
+            objRef?.Dispose();
+        }
+        
+        registration?.Dispose();
     }
 }

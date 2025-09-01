@@ -349,5 +349,22 @@
     [JSInvokable]
     public async Task HandleBeforeUnload() => await objZipService.ZipTheFiles();
 
-    public void Dispose() => objRef?.Dispose();
+    public void Dispose()
+    {
+        // Remove the beforeunload callback when component is disposed
+        if (objRef != null)
+        {
+            try
+            {
+                JSRuntime.InvokeVoidAsync("removeBeforeUnloadCallback", objRef);
+            }
+            catch (Exception)
+            {
+                // Ignore errors during disposal
+            }
+            objRef?.Dispose();
+        }
+        
+        registration?.Dispose();
+    }
 }

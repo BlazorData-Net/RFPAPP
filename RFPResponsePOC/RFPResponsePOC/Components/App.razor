@@ -77,10 +77,42 @@
         }
     </script>
     <script>
-        window.setupBeforeUnload = function (callback) {
-            window.addEventListener("beforeunload", function (event) {
-                callback.invokeMethodAsync("HandleBeforeUnload");
-            });
+        // Store multiple beforeunload callbacks
+        window.beforeUnloadCallbacks = window.beforeUnloadCallbacks || [];
+        window.beforeUnloadHandlerAttached = window.beforeUnloadHandlerAttached || false;
+
+        window.setupBeforeUnload = function (dotNetRef) {
+            // Add the callback to our array if it has the HandleBeforeUnload method
+            if (dotNetRef && typeof dotNetRef.invokeMethodAsync === 'function') {
+                // Remove any existing reference to the same object to avoid duplicates
+                window.beforeUnloadCallbacks = window.beforeUnloadCallbacks.filter(ref => ref !== dotNetRef);
+                window.beforeUnloadCallbacks.push(dotNetRef);
+            }
+
+            // Only attach the event listener once
+            if (!window.beforeUnloadHandlerAttached) {
+                window.addEventListener("beforeunload", function (event) {
+                    // Call HandleBeforeUnload on all registered callbacks
+                    window.beforeUnloadCallbacks.forEach(callback => {
+                        try {
+                            // Check if the method exists before calling it
+                            callback.invokeMethodAsync("HandleBeforeUnload").catch(error => {
+                                console.warn("Error calling HandleBeforeUnload:", error);
+                            });
+                        } catch (error) {
+                            console.warn("Error invoking HandleBeforeUnload:", error);
+                        }
+                    });
+                });
+                window.beforeUnloadHandlerAttached = true;
+            }
+        };
+
+        // Optional: Function to remove a callback
+        window.removeBeforeUnloadCallback = function (dotNetRef) {
+            if (window.beforeUnloadCallbacks) {
+                window.beforeUnloadCallbacks = window.beforeUnloadCallbacks.filter(ref => ref !== dotNetRef);
+            }
         };
     </script>
 </body>
