@@ -1,5 +1,6 @@
 ﻿@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 @using System.Text
+@using System.Text.RegularExpressions
 @using System.Collections.Generic
 @using System.Linq
 @using BlazorWebAssemblyPDF.Services
@@ -435,6 +436,26 @@
             if (templateContent.Contains("[PROPOSAL]", StringComparison.OrdinalIgnoreCase))
             {
                 templateContent = templateContent.Replace("[PROPOSAL]", proposalSummary);
+            }
+
+            // *********************************************
+            // Replace Knowledgebase tokens
+            // *********************************************
+            var kbJson = await KnowledgebaseService.GetKnowledgebaseJsonAsync();
+            if (!string.IsNullOrWhiteSpace(kbJson))
+            {
+                var kbEntries = JsonConvert.DeserializeObject<List<KnowledgeChunk>>(kbJson) ?? new List<KnowledgeChunk>();
+                var matches = Regex.Matches(templateContent, @"\[(.*?)\]");
+                foreach (Match match in matches.Cast<Match>())
+                {
+                    var token = match.Groups[1].Value;
+                    var entry = kbEntries.FirstOrDefault(e => e.EntryTitle == token);
+                    if (entry != null)
+                    {
+                        templateContent = templateContent.Replace($"[{token}]", entry.Content);
+                    }
+                }
+            }
             }
 
             // *********************************************
