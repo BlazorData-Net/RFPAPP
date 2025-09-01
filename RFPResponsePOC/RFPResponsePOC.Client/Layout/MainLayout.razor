@@ -1,7 +1,8 @@
-﻿@using RFPResponsePOC.Client.Services
+@using RFPResponsePOC.Client.Services
 @using RFPResponsePOC.Model
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 @inherits LayoutComponentBase
+@implements IAsyncDisposable
 @inject IJSRuntime JSRuntime
 @inject Blazored.LocalStorage.ILocalStorageService localStorage
 @inject NotificationService NotificationService
@@ -15,10 +16,20 @@
 <main>
     <div class="top-row px-4 d-flex justify-content-between align-items-center">
         <div class="d-flex align-items-center">
-            <img src="images\RFPResponseCreatorLogo_small.png" alt="RFP Response Creator Logo" class="logo me-3" style="height: 40px; width: auto;" />
+            <img src="images\\RFPResponseCreatorLogo_small.png" alt="RFP Response Creator Logo" class="logo me-3" style="height:40px; width: auto;" />
         </div>
-        <div>
-            <a href="https://BlazorData.net/" target="_blank">BlazorData.net</a>
+        <div class="d-flex align-items-center">
+            <a href="https://BlazorData.net/" target="_blank" class="me-2">BlazorData.net</a>
+            <RadzenButton Click="@SaveSettingsaaAndCloseBrowserTab" Disabled="@isSaving">
+                @if (isSaving)
+                {
+                    <span class="spinner-border spinner-border-sm"></span>
+                }
+                else
+                {
+                    <span>Save and Close</span>
+                }
+            </RadzenButton>
         </div>
     </div>
 
@@ -44,6 +55,8 @@
 
     private DotNetObjectReference<MainLayout> objRef;
     ZipService objZipService = new ZipService();
+    private IJSObjectReference? _browserModule;
+    private bool isSaving;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -53,18 +66,29 @@
             await JSRuntime.InvokeVoidAsync("setupBeforeUnload", objRef);
 
             objZipService = new ZipService(JSRuntime, localStorage, SettingsService, _LogService, DialogService);
+            _browserModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./js/browserInterop.js");
         }
     }
 
     private async Task SaveSettingsaaAndCloseBrowserTab()
     {
+        isSaving = true;
         await SettingsService.SaveSettingsAsync();
 
         await objZipService.ZipTheFiles();
 
-        // Close the web browser tab
-        await JSRuntime.InvokeVoidAsync("closeBrowserTab");
+        if (_browserModule is not null)
+        {
+            await _browserModule.InvokeVoidAsync("closeBrowserTab");
+        }
     }
 
-    public void Dispose() => objRef?.Dispose();
+    public async ValueTask DisposeAsync()
+    {
+        if (_browserModule is not null)
+        {
+            await _browserModule.DisposeAsync();
+        }
+        objRef?.Dispose();
+    }
 }
