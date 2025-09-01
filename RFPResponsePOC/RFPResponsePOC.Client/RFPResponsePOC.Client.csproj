@@ -24,6 +24,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Update="wwwroot\DefaultContent\DefaultKnowledgebase.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Update="wwwroot\Prompts\SumarizeQuestions.prompt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
