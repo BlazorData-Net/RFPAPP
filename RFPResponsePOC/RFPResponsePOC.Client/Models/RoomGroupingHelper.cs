@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-using RFPResponsePOC.Models;
+using RFPResponseAPP.Models;
 
-namespace RFPResponsePOC.Client.Models
+namespace RFPResponseAPP.Client.Models
 {
     public static class RoomGroupingHelper
     {

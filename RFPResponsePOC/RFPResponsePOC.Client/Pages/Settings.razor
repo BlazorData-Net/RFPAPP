@@ -1,12 +1,12 @@
 ﻿@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 @inherits OwningComponentBase
-@using static RFPResponsePOC.AI.OrchestratorMethods
+@using static RFPResponseAPP.AI.OrchestratorMethods
 @using Newtonsoft.Json;
-@using RFPResponsePOC.AI
-@using RFPResponsePOC.Client.Services
-@using RFPResponsePOC.Model
+@using RFPResponseAPP.AI
+@using RFPResponseAPP.Client.Services
+@using RFPResponseAPP.Model
 @using Radzen
-@using RFPResponsePOC.Client.Pages
+@using RFPResponseAPP.Client.Pages
 @using Microsoft.AspNetCore.Components.Forms
 @inject Blazored.LocalStorage.ILocalStorageService localStorage
 @inject NotificationService NotificationService

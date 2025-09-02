@@ -1,11 +1,11 @@
 using Blazored.LocalStorage;
 using Radzen;
-using RFPResponsePOC.Client.Pages;
-using RFPResponsePOC.Components;
-using RFPResponsePOC.Model;
-using RFPResponsePOC.Models;
+using RFPResponseAPP.Client.Pages;
+using RFPResponseAPP.Components;
+using RFPResponseAPP.Model;
+using RFPResponseAPP.Models;
 
-namespace RFPResponsePOC;
+namespace RFPResponseAPP;
 
 public class Program
 {

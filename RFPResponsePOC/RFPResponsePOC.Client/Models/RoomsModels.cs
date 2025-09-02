@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace RFPResponsePOC.Client.Models
+namespace RFPResponseAPP.Client.Models
 {
     public class RoomsRequest
     {

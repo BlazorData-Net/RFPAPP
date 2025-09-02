@@ -5,11 +5,11 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
-using RFPResponsePOC.Client.Models;
-using RFPResponsePOC.Models;
-using RFPResponsePOC.Model;
+using RFPResponseAPP.Client.Models;
+using RFPResponseAPP.Models;
+using RFPResponseAPP.Model;
 
-namespace RFPResponsePOC.Client.Services
+namespace RFPResponseAPP.Client.Services
 {
     /// <summary>
     /// Represents the assignment of a room request to a specific room.
@@ -47,9 +47,9 @@ namespace RFPResponsePOC.Client.Services
         /// <summary>
         /// Initializes a new instance of the CalculateProposale service
         /// </summary>
-        /// <param name="basePath">Base path for configuration files (defaults to "/RFPResponsePOC")</param>
+        /// <param name="basePath">Base path for configuration files (defaults to "/RFPResponseAPP")</param>
         /// <param name="logService">Logging service instance (creates new if null)</param>
-        public CalculateProposal(string basePath = "/RFPResponsePOC", LogService logService = null)
+        public CalculateProposal(string basePath = "/RFPResponseAPP", LogService logService = null)
         {
             _basePath = basePath;
             _logService = logService ?? new LogService();

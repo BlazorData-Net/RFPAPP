@@ -1,6 +1,6 @@
 using System;
 
-namespace RFPResponsePOC.Client.Models
+namespace RFPResponseAPP.Client.Models
 {
     public class KnowledgeChunk
     {

@@ -3,14 +3,14 @@
 @using System.Collections.Generic
 @using System.Linq
 @using BlazorWebAssemblyPDF.Services
-@using RFPResponsePOC.Client.Models
-@using RFPResponsePOC.Client.Services
+@using RFPResponseAPP.Client.Models
+@using RFPResponseAPP.Client.Services
 @using System.IO
-@using RFPResponsePOC.Model
-@using RFPResponsePOC.Models
+@using RFPResponseAPP.Model
+@using RFPResponseAPP.Models
 @using Newtonsoft.Json
 @using Microsoft.AspNetCore.Components.Forms
-@using RFPResponsePOC.AI
+@using RFPResponseAPP.AI
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 @inject LogService LogService
@@ -104,7 +104,7 @@
 #nullable disable
     private IDisposable registration;
 
-    string BasePath = @"/RFPResponsePOC";
+    string BasePath = @"/RFPResponseAPP";
     private bool InProgress = false;
     private string CurrentStatus = "";
 

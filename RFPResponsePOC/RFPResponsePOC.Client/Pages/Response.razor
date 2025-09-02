@@ -5,12 +5,12 @@
 @using System.Linq
 @using BlazorWebAssemblyPDF.Services
 @using Newtonsoft.Json
-@using RFPResponsePOC.Client.Services
-@using RFPResponsePOC.Client.Models
-@using RFPResponsePOC.Model
-@using RFPResponsePOC.Models
+@using RFPResponseAPP.Client.Services
+@using RFPResponseAPP.Client.Models
+@using RFPResponseAPP.Model
+@using RFPResponseAPP.Models
 @using Microsoft.AspNetCore.Components.Forms
-@using RFPResponsePOC.AI
+@using RFPResponseAPP.AI
 @using System.IO
 @using System.IO.Compression
 @using System.Xml.Linq
@@ -352,7 +352,7 @@
         "Crescent Rounds",
         "Reception"
     };
-    string BasePath = @"/RFPResponsePOC";
+    string BasePath = @"/RFPResponseAPP";
     string SelectedTemplate = "Default";
     private List<TemplateNames> templateOptions = new();
     private bool VenueTypeSelected = false;
@@ -1383,7 +1383,7 @@
             await LogService.WriteToLogAsync($"[{DateTime.Now}] Created requests JSON for calculation: {requestsJson.Substring(0, Math.Min(500, requestsJson.Length))}");
 
             // Calculate room assignments
-            var calculator = new CalculateProposal("/RFPResponsePOC", LogService);
+            var calculator = new CalculateProposal("/RFPResponseAPP", LogService);
             var assignments = await calculator.CalculateAsync(requestsJson);
             await LogService.WriteToLogAsync($"[{DateTime.Now}] Calculator returned {assignments?.Count ?? 0} assignments");
 
@@ -1406,7 +1406,7 @@
             // Load room options for dropdown
             try
             {
-                var capacityJson = await File.ReadAllTextAsync("/RFPResponsePOC/Capacity.json");
+                var capacityJson = await File.ReadAllTextAsync("/RFPResponseAPP/Capacity.json");
                 var capacity = JsonConvert.DeserializeObject<CapacityRoot>(capacityJson);
                 roomOptions = capacity?.Rooms?.Select(r => r.Name).OrderBy(n => n).ToList() ?? new List<string>();
             }
@@ -1502,7 +1502,7 @@
 
             await LogService.WriteToLogAsync($"[{DateTime.Now}] Processed JSON text (first 1000 chars): {processedJsonText?.Substring(0, Math.Min(1000, processedJsonText?.Length ?? 0))}");
 
-            var calculator = new CalculateProposal("/RFPResponsePOC", LogService);
+            var calculator = new CalculateProposal("/RFPResponseAPP", LogService);
 
             List<RoomAssignment> assigned;
             try
@@ -1532,7 +1532,7 @@
 
             try
             {
-                var capacityJson = await File.ReadAllTextAsync("/RFPResponsePOC/Capacity.json");
+                var capacityJson = await File.ReadAllTextAsync("/RFPResponseAPP/Capacity.json");
                 var capacity = JsonConvert.DeserializeObject<CapacityRoot>(capacityJson);
                 roomOptions = capacity?.Rooms?.Select(r => r.Name).OrderBy(n => n).ToList() ?? new List<string>();
             }

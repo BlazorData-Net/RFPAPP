@@ -2,11 +2,11 @@ using Blazored.LocalStorage;
 using BlazorWebAssemblyPDF.Services;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Radzen;
-using RFPResponsePOC.Model;
-using RFPResponsePOC.Models;
-using RFPResponsePOC.Client.Services;
+using RFPResponseAPP.Model;
+using RFPResponseAPP.Models;
+using RFPResponseAPP.Client.Services;
 
-namespace RFPResponsePOC.Client;
+namespace RFPResponseAPP.Client;
 
 class Program
 {

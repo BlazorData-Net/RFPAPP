@@ -3,17 +3,16 @@ using Azure.AI.OpenAI;
 using Microsoft.AspNetCore.Components.Forms;
 using Newtonsoft.Json;
 using OpenAI;
-using RFPResponsePOC.Client.Models;
-using RFPResponsePOC.Model;
+using RFPResponseAPP.Client.Models;
+using RFPResponseAPP.Model;
 using System;
 using System.ClientModel;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Linq;
-using RFPResponsePOC.Client.Pages;
 
-namespace RFPResponsePOC.AI
+namespace RFPResponseAPP.AI
 {
     public partial class OrchestratorMethods
     {

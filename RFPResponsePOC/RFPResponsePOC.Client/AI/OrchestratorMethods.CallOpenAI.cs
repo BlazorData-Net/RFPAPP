@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OpenAI;
 using OpenAI.Chat;
-using RFPResponsePOC.Model;
+using RFPResponseAPP.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,7 +12,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace RFPResponsePOC.AI
+namespace RFPResponseAPP.AI
 {
     public class AIResponse
     {

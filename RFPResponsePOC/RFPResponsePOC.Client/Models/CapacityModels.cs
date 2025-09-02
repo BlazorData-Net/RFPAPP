@@ -2,7 +2,7 @@ using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations; // Add this for validation attributes
 
-namespace RFPResponsePOC.Models
+namespace RFPResponseAPP.Models
 {
     public class CapacityRoot
     {

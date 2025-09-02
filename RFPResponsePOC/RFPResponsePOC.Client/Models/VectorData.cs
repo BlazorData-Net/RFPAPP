@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace RFPResponsePOC.Client.Models
+namespace RFPResponseAPP.Client.Models
 {
     public class VectorData
     {

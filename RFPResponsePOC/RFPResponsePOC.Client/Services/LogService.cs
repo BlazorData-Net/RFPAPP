@@ -1,62 +1,62 @@
 using Newtonsoft.Json;
 using OpenAI.Files;
 
-namespace RFPResponsePOC.Model
+namespace RFPResponseAPP.Model
 {
     public class LogService
     {
         // Properties
-        public string[] RFPResponsePOCLog { get; set; }
+        public string[] RFPResponseAPPLog { get; set; }
 
         public async Task WriteToLogAsync(string LogText)
         {
             await Task.Run(() =>
             {
                 // Open the file to get existing content
-                var RFPResponsePOCLogPath =
-                    $"/RFPResponsePOC/RFPResponsePOCLog.csv";
+                var RFPResponseAPPLogPath =
+                    $"/RFPResponseAPP/RFPResponseAPPLog.csv";
 
                 // Ensure the directory exists
-                var directory = Path.GetDirectoryName(RFPResponsePOCLogPath);
+                var directory = Path.GetDirectoryName(RFPResponseAPPLogPath);
                 if (!Directory.Exists(directory))
                 {
                     Directory.CreateDirectory(directory);
                 }
 
                 // Check if file exists, if not create it
-                if (!File.Exists(RFPResponsePOCLogPath))
+                if (!File.Exists(RFPResponseAPPLogPath))
                 {
-                    using (var streamWriter = new StreamWriter(RFPResponsePOCLogPath))
+                    using (var streamWriter = new StreamWriter(RFPResponseAPPLogPath))
                     {
                         streamWriter.WriteLine("Log started at " + DateTime.Now + " [" + DateTime.Now.Ticks.ToString() + "]");
                     }
                 }
 
                 // Read existing content
-                using (var file = new System.IO.StreamReader(RFPResponsePOCLogPath))
+                using (var file = new System.IO.StreamReader(RFPResponseAPPLogPath))
                 {
-                    RFPResponsePOCLog = file.ReadToEnd().Split('\n');
+                    RFPResponseAPPLog = file.ReadToEnd().Split('\n');
 
-                    if (RFPResponsePOCLog[RFPResponsePOCLog.Length - 1].Trim() == "")
+                    if (RFPResponseAPPLog[RFPResponseAPPLog.Length - 1].Trim() == "")
                     {
-                        RFPResponsePOCLog = RFPResponsePOCLog.Take(RFPResponsePOCLog.Length - 1).ToArray();
+                        RFPResponseAPPLog = RFPResponseAPPLog.Take(RFPResponseAPPLog.Length - 1).ToArray();
                     }
                 }
 
                 // If log has more than 1000 lines, keep only the recent 1000 lines
-                if (RFPResponsePOCLog.Length > 1000)
+                if (RFPResponseAPPLog.Length > 1000)
                 {
-                    RFPResponsePOCLog = RFPResponsePOCLog.Take(1000).ToArray();
+                    RFPResponseAPPLog = RFPResponseAPPLog.Take(1000).ToArray();
                 }
 
                 // Append the text to csv file
-                using (var streamWriter = new StreamWriter(RFPResponsePOCLogPath))
+                using (var streamWriter = new StreamWriter(RFPResponseAPPLogPath))
                 {
                     // Remove line breaks from the log text
                     LogText = LogText.Replace("\n", " ");
 
                     streamWriter.WriteLine(LogText);
-                    streamWriter.WriteLine(string.Join("\n", RFPResponsePOCLog));
+                    streamWriter.WriteLine(string.Join("\n", RFPResponseAPPLog));
                 }
             });
         }

@@ -1,4 +1,4 @@
-﻿namespace RFPResponsePOC.Models
+﻿namespace RFPResponseAPP.Models
 {
     public class AppMetadata
     {

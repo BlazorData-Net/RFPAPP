@@ -22,7 +22,7 @@
 </div>
 <RadzenDataGrid AllowFiltering="false" AllowColumnResize="true" AllowAlternatingRows="true"
                 PageSize="5" AllowPaging="true" PagerHorizontalAlign="HorizontalAlign.Left"
-                Data="@RFPResponsePOCLog" TItem="string" ColumnWidth="300px" ShowPagingSummary="true">
+                Data="@RFPResponseAPPLog" TItem="string" ColumnWidth="300px" ShowPagingSummary="true">
     <Columns>
         <RadzenDataGridColumn TItem="string" Title="Entry">
             <Template>
@@ -41,8 +41,8 @@
 <br />
 
 @code {
-    string RFPResponsePOCLogPath = "";
-    string[] RFPResponsePOCLog;
+    string RFPResponseAPPLogPath = "";
+    string[] RFPResponseAPPLog;
     int TotalInputTokens = 0;
     int TotalOutputTokens = 0;
 
@@ -51,26 +51,26 @@
     {
         if (firstRender)
         {
-            RFPResponsePOCLogPath = @"/RFPResponsePOC/RFPResponsePOCLog.csv";
+            RFPResponseAPPLogPath = @"/RFPResponseAPP/RFPResponseAPPLog.csv";
 
             // Check if log file exists before trying to read it
-            if (File.Exists(RFPResponsePOCLogPath))
+            if (File.Exists(RFPResponseAPPLogPath))
             {
                 // Read the lines from the .csv file
-                using (var file = new System.IO.StreamReader(RFPResponsePOCLogPath))
+                using (var file = new System.IO.StreamReader(RFPResponseAPPLogPath))
                 {
-                    RFPResponsePOCLog = file.ReadToEnd().Split('\n');
+                    RFPResponseAPPLog = file.ReadToEnd().Split('\n');
 
-                    if (RFPResponsePOCLog[RFPResponsePOCLog.Length - 1].Trim() == "")
+                    if (RFPResponseAPPLog[RFPResponseAPPLog.Length - 1].Trim() == "")
                     {
-                        RFPResponsePOCLog = RFPResponsePOCLog.Distinct().Take(RFPResponsePOCLog.Length - 1).ToArray();
+                        RFPResponseAPPLog = RFPResponseAPPLog.Distinct().Take(RFPResponseAPPLog.Length - 1).ToArray();
                     }
                 }
             }
             else
             {
                 // Initialize empty log array if file doesn't exist
-                RFPResponsePOCLog = new string[] { "Log file not found. No entries available." };
+                RFPResponseAPPLog = new string[] { "Log file not found. No entries available." };
             }
 
             CalculateTokenTotals();
@@ -84,24 +84,24 @@
         try
         {
             // Ensure directory exists before trying to write
-            var directory = Path.GetDirectoryName(RFPResponsePOCLogPath);
+            var directory = Path.GetDirectoryName(RFPResponseAPPLogPath);
             if (!Directory.Exists(directory))
             {
                 Directory.CreateDirectory(directory);
             }
 
-            using (var streamWriter = new StreamWriter(RFPResponsePOCLogPath))
+            using (var streamWriter = new StreamWriter(RFPResponseAPPLogPath))
             {
                 streamWriter.WriteLine(string.Join("\n", "Log cleared on " + DateTime.Now));
             }
 
             // Read the lines from the .csv file
-            using (var file = new System.IO.StreamReader(RFPResponsePOCLogPath))
+            using (var file = new System.IO.StreamReader(RFPResponseAPPLogPath))
             {
-                RFPResponsePOCLog = file.ReadToEnd().Split('\n');
-                if (RFPResponsePOCLog[RFPResponsePOCLog.Length - 1].Trim() == "")
+                RFPResponseAPPLog = file.ReadToEnd().Split('\n');
+                if (RFPResponseAPPLog[RFPResponseAPPLog.Length - 1].Trim() == "")
                 {
-                    RFPResponsePOCLog = RFPResponsePOCLog.Take(RFPResponsePOCLog.Length - 1).ToArray();
+                    RFPResponseAPPLog = RFPResponseAPPLog.Take(RFPResponseAPPLog.Length - 1).ToArray();
                 }
             }
 
@@ -131,7 +131,7 @@
     {
         try
         {
-            if (RFPResponsePOCLog == null || RFPResponsePOCLog.Length == 0)
+            if (RFPResponseAPPLog == null || RFPResponseAPPLog.Length == 0)
             {
             NotificationService.Notify(new NotificationMessage
             {
@@ -144,12 +144,12 @@
         }
 
             // Create text content with double line breaks
-            var textContent = string.Join("\n\n", RFPResponsePOCLog) + "\n\n";
+            var textContent = string.Join("\n\n", RFPResponseAPPLog) + "\n\n";
             var bytes = Encoding.UTF8.GetBytes(textContent);
             var base64String = Convert.ToBase64String(bytes);
 
             // Generate filename with timestamp
-            var fileName = $"RFPResponsePOC_Log_{DateTime.Now:yyyyMMdd_HHmmss}.txt";
+            var fileName = $"RFPResponseAPP_Log_{DateTime.Now:yyyyMMdd_HHmmss}.txt";
 
             // Use JavaScript to download the file
             await JsRuntime.InvokeVoidAsync("eval", $@"
@@ -194,9 +194,9 @@
     {
         TotalInputTokens = 0;
         TotalOutputTokens = 0;
-        if (RFPResponsePOCLog != null)
+        if (RFPResponseAPPLog != null)
         {
-            foreach (var line in RFPResponsePOCLog)
+            foreach (var line in RFPResponseAPPLog)
             {
                 var match = Regex.Match(line, @"Tokens - Input: (\d+), Output: (\d+)");
                 if (match.Success)

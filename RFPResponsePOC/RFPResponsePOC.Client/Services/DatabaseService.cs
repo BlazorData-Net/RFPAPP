@@ -3,17 +3,17 @@ using Newtonsoft.Json;
 using OpenAI.Files;
 using OpenAI.Models;
 
-namespace RFPResponsePOC.Model
+namespace RFPResponseAPP.Model
 {
     public class Database
     {
-        public Dictionary<string, string> colRFPResponsePOCDatabase { get; set; }
+        public Dictionary<string, string> colRFPResponseAPPDatabase { get; set; }
     }
 
     public class DatabaseService
     {
         // Properties
-        public Dictionary<string, string> colRFPResponsePOCDatabase { get; set; }
+        public Dictionary<string, string> colRFPResponseAPPDatabase { get; set; }
 
         private ILocalStorageService localStorage;
 
@@ -25,31 +25,31 @@ namespace RFPResponsePOC.Model
 
         public async Task LoadDatabaseAsync()
         {
-            Database RFPResponsePOCDatabase = await localStorage.GetItemAsync<Database>("RFPResponsePOCDatabase");
+            Database RFPResponseAPPDatabase = await localStorage.GetItemAsync<Database>("RFPResponseAPPDatabase");
 
-            if (RFPResponsePOCDatabase == null)
+            if (RFPResponseAPPDatabase == null)
             {
                 // Create a new Database instance
-                RFPResponsePOCDatabase = new Database();
+                RFPResponseAPPDatabase = new Database();
 
-                RFPResponsePOCDatabase.colRFPResponsePOCDatabase = new Dictionary<string, string>();
+                RFPResponseAPPDatabase.colRFPResponseAPPDatabase = new Dictionary<string, string>();
 
-                await localStorage.SetItemAsync("RFPResponsePOCDatabase", RFPResponsePOCDatabase);
+                await localStorage.SetItemAsync("RFPResponseAPPDatabase", RFPResponseAPPDatabase);
             }
 
-            colRFPResponsePOCDatabase = RFPResponsePOCDatabase.colRFPResponsePOCDatabase;
+            colRFPResponseAPPDatabase = RFPResponseAPPDatabase.colRFPResponseAPPDatabase;
         }
 
-        public async Task SaveDatabaseAsync(Dictionary<string, string> paramColRFPResponsePOCDatabase)
+        public async Task SaveDatabaseAsync(Dictionary<string, string> paramColRFPResponseAPPDatabase)
         {
-            var RFPResponsePOCDatabase = new Database();
+            var RFPResponseAPPDatabase = new Database();
 
-            RFPResponsePOCDatabase.colRFPResponsePOCDatabase = paramColRFPResponsePOCDatabase;
+            RFPResponseAPPDatabase.colRFPResponseAPPDatabase = paramColRFPResponseAPPDatabase;
 
-            await localStorage.SetItemAsync("RFPResponsePOCDatabase", RFPResponsePOCDatabase);
+            await localStorage.SetItemAsync("RFPResponseAPPDatabase", RFPResponseAPPDatabase);
 
             // Update the properties
-            colRFPResponsePOCDatabase = paramColRFPResponsePOCDatabase;
+            colRFPResponseAPPDatabase = paramColRFPResponseAPPDatabase;
         }
     }
 }

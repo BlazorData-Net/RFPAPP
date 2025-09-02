@@ -1,15 +1,15 @@
 ﻿using Blazored.LocalStorage;
 using Microsoft.JSInterop;
 using Radzen;
-using RFPResponsePOC.Model;
+using RFPResponseAPP.Model;
 using System.IO.Compression;
-using RFPResponsePOC.Client.Pages; // for LoadingDialog component
+using RFPResponseAPP.Client.Pages; // for LoadingDialog component
 
-namespace RFPResponsePOC.Client.Services
+namespace RFPResponseAPP.Client.Services
 {
     public class ZipService
     {
-        string BasePath = @"/RFPResponsePOC";
+        string BasePath = @"/RFPResponseAPP";
         private readonly IJSRuntime JsRuntime;
         private readonly ILocalStorageService localStorage;
         private readonly SettingsService _SettingsService;
@@ -85,15 +85,15 @@ namespace RFPResponsePOC.Client.Services
             EnsureDirectoryStructure();
 
             // Create a new log file if it doesn't exist
-            if (!File.Exists(@$"{BasePath}/RFPResponsePOCLog.csv"))
+            if (!File.Exists(@$"{BasePath}/RFPResponseAPPLog.csv"))
             {
-                using (var streamWriter = new StreamWriter(@$"{BasePath}/RFPResponsePOCLog.csv"))
+                using (var streamWriter = new StreamWriter(@$"{BasePath}/RFPResponseAPPLog.csv"))
                 {
                     streamWriter.WriteLine("Application reset at " + DateTime.Now + " [" + DateTime.Now.Ticks.ToString() + "]");
                 }
             }
 
-            // Initialize default settings to ensure RFPResponsePOC.config file is not null
+            // Initialize default settings to ensure RFPResponseAPP.config file is not null
             await _SettingsService.InitializeDefaultSettingsAsync();
 
             string exportFileString = await localStorage.GetItemAsync<string>("ZipFiles.zip");

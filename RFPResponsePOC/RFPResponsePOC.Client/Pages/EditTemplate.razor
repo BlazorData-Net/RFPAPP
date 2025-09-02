@@ -1,15 +1,15 @@
 @using System.Net.Http
 @using System.Text
 @using Newtonsoft.Json
-@using RFPResponsePOC.Client.Services
+@using RFPResponseAPP.Client.Services
 @using System.IO
 @inject HttpClient Http
 @inject DialogService DialogService
 @inject NotificationService NotificationService
 @inject NavigationManager Navigation
 @inject Blazored.LocalStorage.ILocalStorageService localStorage
-@inject RFPResponsePOC.Model.SettingsService _SettingsService
-@inject RFPResponsePOC.Model.LogService LogService
+@inject RFPResponseAPP.Model.SettingsService _SettingsService
+@inject RFPResponseAPP.Model.LogService LogService
 @inject IJSRuntime JsRuntime
 
 <RadzenTextArea @bind-Value="templateContent" Rows="20" Style="width:100%; min-height:400px;" />
@@ -27,7 +27,7 @@
     [Parameter] public string SelectedTemplate { get; set; } = "Default";
     
     private IDisposable registration;
-    string BasePath = "/RFPResponsePOC";
+    string BasePath = "/RFPResponseAPP";
     string templateContent;
     string TemplateFile => $"{BasePath}/Template.txt";
     string DefaultTemplateUrl => "Templates/Default.txt";
@@ -38,7 +38,7 @@
     // Allow access to the JSRuntime
     private DotNetObjectReference<EditTemplate> objRef;
 
-    RFPResponsePOC.Client.Services.ZipService objZipService = new RFPResponsePOC.Client.Services.ZipService();
+    RFPResponseAPP.Client.Services.ZipService objZipService = new RFPResponseAPP.Client.Services.ZipService();
 
     // Run on page load
     protected override async Task OnAfterRenderAsync(bool firstRender)

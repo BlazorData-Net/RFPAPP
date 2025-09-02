@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 using OpenAI.Files;
 using System.Text.Json.Serialization;
 
-namespace RFPResponsePOC.Model
+namespace RFPResponseAPP.Model
 {
     public class SettingsService
     {
@@ -68,7 +68,7 @@ namespace RFPResponsePOC.Model
         public SettingsService()
         {
             // Construct the path to the settings file using Path.Combine for cross-platform compatibility
-            _settingsPath = @"/RFPResponsePOC/RFPResponsePOC.config";
+            _settingsPath = @"/RFPResponseAPP/RFPResponseAPP.config";
 
             LoadSettings();
         }

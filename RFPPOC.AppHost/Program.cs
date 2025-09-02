@@ -1,6 +1,6 @@
 ﻿var builder = DistributedApplication.CreateBuilder(args);
 
-builder.AddProject<Projects.RFPResponsePOC>("rfpresponsepoc", launchProfileName: "https")
+builder.AddProject<Projects.RFPResponseAPP>("rfpresponseapp", launchProfileName: "https")
     .WithEndpoint("https", endpoint =>
     {
         endpoint.Port = 7150;          // ✅ Set custom port here so localStorage will work

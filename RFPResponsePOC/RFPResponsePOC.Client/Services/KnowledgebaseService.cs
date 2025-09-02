@@ -1,12 +1,12 @@
 using Newtonsoft.Json;
-using RFPResponsePOC.Client.Models;
+using RFPResponseAPP.Client.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
 
-namespace RFPResponsePOC.Client.Services
+namespace RFPResponseAPP.Client.Services
 {
     public class KnowledgebaseService
     {
@@ -16,7 +16,7 @@ namespace RFPResponsePOC.Client.Services
         public KnowledgebaseService(HttpClient httpClient)
         {
             _httpClient = httpClient;
-            _basePath = "/RFPResponsePOC";
+            _basePath = "/RFPResponseAPP";
         }
 
         public async Task SaveKnowledgebaseDataAsync(IEnumerable<KnowledgeChunk> entries)

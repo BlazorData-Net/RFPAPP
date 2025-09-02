@@ -1,6 +1,6 @@
-using RFPResponsePOC.Models;
+using RFPResponseAPP.Models;
 
-namespace RFPResponsePOC.Client.Models
+namespace RFPResponseAPP.Client.Models
 {
     public class EditRoomDialogResult
     {

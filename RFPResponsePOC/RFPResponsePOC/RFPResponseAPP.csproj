@@ -7,8 +7,8 @@
 	</PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\RFPPOC.ServiceDefaults\RFPPOC.ServiceDefaults.csproj" />
-    <ProjectReference Include="..\RFPResponsePOC.Client\RFPResponsePOC.Client.csproj" />
+    <ProjectReference Include="..\..\RFPPOC.ServiceDefaults\RFPAPP.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\RFPResponsePOC.Client\RFPResponseAPP.Client.csproj" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="9.0.8" />
   </ItemGroup>
 
