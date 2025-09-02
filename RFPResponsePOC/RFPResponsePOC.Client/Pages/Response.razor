@@ -499,7 +499,7 @@
             if (remainingTokens.Any())
             {
                 var result = await DialogService.OpenAsync<TokenInputDialog>(
-                    "Enter Values",
+                    "Enter values for template [Tokens]",
                     new Dictionary<string, object> { { "Tokens", remainingTokens } });
 
                 if (result is Dictionary<string, string> values)
