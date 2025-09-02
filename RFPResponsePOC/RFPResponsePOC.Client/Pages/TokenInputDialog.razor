@@ -1,0 +1,35 @@
+@using Radzen
+@inject DialogService DialogService
+
+<RadzenTemplateForm Data="@TokenValues" TItem="Dictionary<string, string>" Submit="OnSubmit">
+    <ChildContent>
+        @foreach (var token in Tokens)
+        {
+            <RadzenLabel Text="@token" />
+            <RadzenTextBox @bind-Value="TokenValues[token]" Style="width:100%" Name="@token" />
+            <br />
+        }
+        <div style="margin-top:10px">
+            <RadzenButton Text="OK" ButtonType="ButtonType.Submit" Style="margin-right:5px" />
+            <RadzenButton Text="Cancel" ButtonStyle="ButtonStyle.Secondary" Click="@(() => DialogService.Close(null))" />
+        </div>
+    </ChildContent>
+</RadzenTemplateForm>
+
+@code {
+    [Parameter] public List<string> Tokens { get; set; } = new();
+    private Dictionary<string, string> TokenValues = new();
+
+    protected override void OnInitialized()
+    {
+        foreach (var token in Tokens)
+        {
+            TokenValues[token] = string.Empty;
+        }
+    }
+
+    void OnSubmit(Dictionary<string, string> values)
+    {
+        DialogService.Close(TokenValues);
+    }
+}

@@ -486,6 +486,35 @@
             }
 
             // *********************************************
+            // Prompt for any remaining tokens
+            // *********************************************
+            var remainingTokens = Regex.Matches(templateContent, @"\[(.*?)\]")
+                .Cast<Match>()
+                .Select(m => m.Value)
+                .Where(t => !string.Equals(t, "[VENUE_PROPOSAL]", StringComparison.OrdinalIgnoreCase)
+                         && !string.Equals(t, "[VENUE_UNABLE_TO_ACCOMMODATE_AGENDA_ITEMS]", StringComparison.OrdinalIgnoreCase))
+                .Distinct()
+                .ToList();
+
+            if (remainingTokens.Any())
+            {
+                var result = await DialogService.OpenAsync<TokenInputDialog>(
+                    "Enter Values",
+                    new Dictionary<string, object> { { "Tokens", remainingTokens } });
+
+                if (result is Dictionary<string, string> values)
+                {
+                    foreach (var token in remainingTokens)
+                    {
+                        if (values.TryGetValue(token, out var value) && !string.IsNullOrWhiteSpace(value))
+                        {
+                            templateContent = templateContent.Replace(token, value);
+                        }
+                    }
+                }
+            }
+
+            // *********************************************
             // Generate Word Document
             // *********************************************
             using (var ms = new MemoryStream())
