@@ -6,3 +6,7 @@ Format answers to be appropriate to appear on a professional request for proposa
 
 ### QUESTIONS AND ANSWERS
 {{QnA}}	
+
+### JSON FORMAT START
+{ "proposal": "Our dedicated support team operates Monday through Friday, 8:00 AM to 6:00 PM Pacific Standard Time (PST), and is available during these business hours to respond to inquiries, address service needs, and support your organization in accordance with the terms of the engagement." }
+### JSON FORMAT STOP

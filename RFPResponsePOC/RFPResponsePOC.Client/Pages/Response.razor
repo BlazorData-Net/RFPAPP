@@ -33,8 +33,8 @@
 @if (InProgress)
 {
     <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-                                background-color: rgba(0,0,0,0.5); z-index: 1000;
-                                display: flex; align-items: center; justify-content: center;">
+                                    background-color: rgba(0,0,0,0.5); z-index: 1000;
+                                    display: flex; align-items: center; justify-content: center;">
         <div class="rz-card" style="padding: 20px;">
             <RadzenText Text="@CurrentStatus" class="rz-m-10" Style="text-align: center" />
             <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
@@ -161,7 +161,7 @@
                                       Disabled="@(!CanGenerateResponse())" />
                         @if (!CanGenerateResponse())
                         {
-                            <br />                  
+                            <br />
                             <br />
                             <div style="color: lightgray;">Complete previous steps to enable response generation</div>
                         }
@@ -319,7 +319,7 @@
 <canvas id="pdfCanvas" style="display:none; border:1px solid #ccc;"></canvas>
 
 @code {
-    #nullable disable
+#nullable disable
     private IDisposable registration;
     Radzen.Blazor.RadzenUpload uploader;
     RadzenDataGrid<ProposalRow> grid;
@@ -337,6 +337,7 @@
 
     private List<QuestionResponse> identifiedQuestions = new();
 
+    ProposalRow newRow;
     private List<ProposalRow> proposalRows = new();
     private List<string> roomOptions = new();
     private readonly List<string> roomTypeOptions = new()
@@ -409,8 +410,8 @@
             {
                 foreach (var q in identifiedQuestions)
                 {
-                    QAText.AppendLine($"Q: {q.Question}");
-                    QAText.AppendLine($"A: {q.Response}");
+                    QAText.AppendLine($"Question: {q.Question}");
+                    QAText.AppendLine($"Answer: {q.Response}");
                 }
             }
 
@@ -427,7 +428,17 @@
             var aiResponse = await orchestrator.CallOpenAIAsync(settingsService, ProposalSummaryPrompt);
             if (string.IsNullOrWhiteSpace(aiResponse.Error))
             {
-                proposalSummary = aiResponse.Response;
+                try
+                {
+                    // Parse the JSON response to extract just the proposal value
+                    var objProposalResponse = JsonConvert.DeserializeObject<ProposalResponse>(aiResponse.Response);
+                    proposalSummary = objProposalResponse.proposal?.ToString() ?? aiResponse.Response;
+                }
+                catch (JsonException)
+                {
+                    // If JSON parsing fails, use the original response
+                    proposalSummary = aiResponse.Response;
+                }
             }
 
             // *********************************************
@@ -436,6 +447,14 @@
             if (templateContent.Contains("[PROPOSAL]", StringComparison.OrdinalIgnoreCase))
             {
                 templateContent = templateContent.Replace("[PROPOSAL]", proposalSummary);
+            }
+
+            // *********************************************
+            // Replace [QUESTIONS_AND_ANSWERS] placeholder
+            // *********************************************
+            if (templateContent.Contains("[QUESTIONS_AND_ANSWERS]", StringComparison.OrdinalIgnoreCase))
+            {
+                templateContent = templateContent.Replace("[QUESTIONS_AND_ANSWERS]", QAText.ToString());
             }
 
             // *********************************************
@@ -458,10 +477,10 @@
             }
 
             // *********************************************
-            // Process VENUE Template Type 
+            // Process VENUE Template Type
             // *********************************************
-            if (VenueTypeSelected) 
-            {               
+            if (VenueTypeSelected)
+            {
                 await DetectRoomRequests();
                 await CalculateProposal();
             }
@@ -478,7 +497,7 @@
                     var body = mainPart.Document.AppendChild(new Body());
 
                     var lines = templateContent.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
-                    
+
                     foreach (var line in lines)
                     {
                         if (VenueTypeSelected && line.Contains("[VENUE_PROPOSAL]", StringComparison.OrdinalIgnoreCase))
@@ -490,7 +509,7 @@
                         {
                             var table = BuildProposalTable(proposalRows.Where(r => string.IsNullOrEmpty(r.SelectedRoom) && string.IsNullOrEmpty(r.ManualRoom)));
                             body.Append(table);
-                        }                        
+                        }
                         else
                         {
                             body.Append(new Paragraph(new Run(new Text(line) { Space = SpaceProcessingModeValues.Preserve })));
@@ -503,10 +522,10 @@
                 var bytes = ms.ToArray();
                 var base64 = Convert.ToBase64String(bytes);
                 var fileName = $"RFPResponse_{DateTime.Now:yyyyMMdd_HHmmss}.docx";
-                
+
                 // Use the downloadWordDocument function from App.razor
                 var success = await JsRuntime.InvokeAsync<bool>("downloadWordDocument", fileName, base64);
-                
+
                 if (!success)
                 {
                     throw new InvalidOperationException("Failed to download the Word document. Please try again.");
@@ -629,8 +648,6 @@
         return new TableCell(new Paragraph(new Run(new Text(text ?? string.Empty))));
     }
 
-    ProposalRow newRow;
-
     private void SortProposalRows()
     {
         proposalRows = proposalRows
@@ -741,7 +758,7 @@
             return input;
 
         var result = new StringBuilder();
-        
+
         for (int i = 0; i < input.Length; i++)
         {
             if (i > 0 && char.IsUpper(input[i]))
@@ -750,7 +767,7 @@
             }
             result.Append(input[i]);
         }
-        
+
         return result.ToString();
     }
 
@@ -1231,17 +1248,17 @@
                 var prompt = await Http.GetStringAsync("Prompts/AnswerQuestion.prompt");
 
                 await LogService.WriteToLogAsync($"[{DateTime.Now}] CreateProposal: First few questions: {string.Join(", ", identifiedQuestions.Take(3).Select(q => q.Question))}");
-                
+
                 var orchestrator = new OrchestratorMethods(_SettingsService, LogService);
-                
+
                 var total = identifiedQuestions.Count;
-                
+
                 for (int i = 0; i < identifiedQuestions.Count; i++)
                 {
                     CurrentStatus = $"Answering question {i + 1} out of {total}...";
                     StateHasChanged();
                     await orchestrator.AnswerQuestionsFromKnowledgebase(identifiedQuestions[i], prompt, BasePath);
-                }               
+                }
             }
 
             // Refresh QuestionGrid data grid if it's not null
