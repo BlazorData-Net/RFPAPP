@@ -448,14 +448,13 @@
                 var matches = Regex.Matches(templateContent, @"\[(.*?)\]");
                 foreach (Match match in matches.Cast<Match>())
                 {
-                    var token = match.Groups[1].Value;
-                    var entry = kbEntries.FirstOrDefault(e => e.EntryTitle == token);
+                    var token = $"[{match.Groups[1].Value}]";
+                    var entry = kbEntries.FirstOrDefault(e => e.EntryTitle.ToLower() == token.ToLower());
                     if (entry != null)
                     {
-                        templateContent = templateContent.Replace($"[{token}]", entry.Content);
+                        templateContent = templateContent.Replace($"{token}", entry.Content);
                     }
                 }
-            }
             }
 
             // *********************************************
@@ -522,7 +521,6 @@
 
             if (questionsToAdd.Any())
             {
-                var kbJson = await KnowledgebaseService.GetKnowledgebaseJsonAsync();
                 var entries = !string.IsNullOrWhiteSpace(kbJson)
                     ? JsonConvert.DeserializeObject<List<KnowledgeChunk>>(kbJson) ?? new List<KnowledgeChunk>()
                     : new List<KnowledgeChunk>();
