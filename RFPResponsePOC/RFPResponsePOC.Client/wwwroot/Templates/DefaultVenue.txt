@@ -1,10 +1,9 @@
-Subject: Venue Proposal [EVENT_NAME] at [BUSINESS]
+Subject: Venue Proposal [EVENT_NAME] at [BUSINESS_NAME]
 
 Dear [REQUESTOR_NAME],
 
-Thank you for considering [BUSINESS] as your venue partner for [EVENT_NAME] on [EVENT_DATES]. We are excited about the opportunity to work with you.
+Thank you for considering [BUSINESS_NAME] as your venue partner for [EVENT_NAME] on [EVENT_DATES]. We are excited about the opportunity to work with you.
 
-**Event Overview**
 We have reviewed your requirements and are pleased to present our comprehensive proposal:
 
 [VENUE_PROPOSAL]

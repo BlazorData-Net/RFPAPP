@@ -1,12 +1,11 @@
-Subject: RFP Response from [BUSINESS]
+Subject: RFP Response from [BUSINESS_NAME]
 
 Dear [REQUESTOR_NAME],
 
-Thank you for considering [BUSINESS]. We appreciate the opportunity to respond to your Request for Proposal.
+Thank you for considering [BUSINESS_NAME]. We appreciate the opportunity to respond to your Request for Proposal.
 
-We have carefully reviewed your requirements. Based on our current availability and capabilities, we are pleased to present the following:
+We have carefully reviewed your requirements. Based on our current availability and capabilities, we are pleased to present the following proposal:
 
-**Proposal**
 [PROPOSAL]
 
 [QUESTIONS_AND_ANSWERS]
