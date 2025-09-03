@@ -53,118 +53,18 @@
                     Text="Step #1: Choose or Create a Template"
                     Style="margin-bottom: 0;" />
     </div>
-    <div style="display: flex; align-items: center; gap: 10px;">
-        <span><b>Template:</b></span>
-        <RadzenDropDown @bind-Value="SelectedTemplate" Data="@templateOptions" TextProperty="Text" ValueProperty="Value"
-                        Placeholder="Select Template" Style="width: 200px;" Change="OnTemplateSelectionChanged" />
-        <RadzenButton Text="Edit Template" Icon="edit" Style="background-color: gray;"
-                      ButtonStyle="ButtonStyle.Primary" Click="EditTemplate" />
-    </div>
-</RadzenCard>
 
-<!-- Step 2: Enter or Upload Request for Proposal -->
-<RadzenCard Style="margin-bottom: 20px;">
-    <div style="display: flex; align-items: center;margin-bottom: 15px;">
-        @if ((string.IsNullOrEmpty(RFPText)) == false)
-        {
-            <RadzenIcon Icon="check_circle" Style="color: green; margin-right: 5px;" />
-        }
-        <RadzenText TextStyle="TextStyle.H5" Text="Step #2: Enter or Upload Request for Proposal" Style="margin-bottom: 0;" />
-    </div>
-    <RadzenTextArea @bind-Value="RFPText"
-                    Placeholder="Enter text from RFP (optional)"
-                    Rows="3"
-                    Style="width: 100%; margin-bottom: 10px;"
-                    id="rfp-text-area" />
-    <RadzenUpload @ref="uploader"
-                  ChooseText="Or upload RFP (.docx/.pdf/.png/.jpg/.jpeg)" Accept=".docx,.png,.jpg,.jpeg,.pdf"
-                  Change=@OnProposalUpload
-                  Multiple="false"
-                  Auto="true"
-                  Style="width: 100%"
-                  InputAttributes="@(new Dictionary<string,object>{ { "aria-label", "select file" }})">
-    </RadzenUpload>
-    <div style="margin-top: 10px;">
-        <RadzenButton Text="Process RFP" Icon="play_arrow" Style="background-color: #28a745;"
-                      ButtonStyle="ButtonStyle.Primary" Click="CreateProposal"
-                      Disabled="@(string.IsNullOrEmpty(RFPText))" />
-    </div>
-</RadzenCard>
-
-<!-- Step 3: Edit Answers to Detected Questions -->
-<RadzenCard Style="margin-bottom: 20px;">
-    <div style="display: flex; align-items: center;margin-bottom: 15px;">
-        @if (identifiedQuestions?.Any() == true)
-        {
-            <RadzenIcon Icon="check_circle" Style="color: green; margin-right: 5px;" />
-        }
-        <RadzenText TextStyle="TextStyle.H5" Text="Step #3: Edit Answers to Detected Questions" Style="margin-bottom: 0;" />
-    </div>
-    @if (identifiedQuestions?.Any() == true)
-    {
-        <div style="max-height:400px; overflow-y:auto;">
-            <RadzenDataGrid @ref="QuestionGrid" Data="@identifiedQuestions" TItem="QuestionResponse" AllowPaging="false">
-                <Columns>
-                    <RadzenDataGridColumn TItem="QuestionResponse" Property="Question" Title="Question" Width="40%">
-                        <Template Context="questionResponse">
-                            <div style="white-space:normal; overflow-wrap:break-word; line-height:1.4; padding:8px;">
-                                @questionResponse.Question
-                            </div>
-                        </Template>
-                    </RadzenDataGridColumn>
-
-                    <RadzenDataGridColumn TItem="QuestionResponse" Property="Response" Title="Answer" Width="45%">
-                        <Template Context="questionResponse">
-                            <RadzenTextArea @bind-Value="questionResponse.Response"
-                                            Style="width:100%; min-height:80px;"
-                                            Rows="4"
-                                            Placeholder="Enter your answer here..." />
-                        </Template>
-                    </RadzenDataGridColumn>
-
-                    <RadzenDataGridColumn TItem="QuestionResponse" Property="AddToDatabase" Title="Add to Knowledgebase" Width="15%">
-                        <Template Context="questionResponse">
-                            <div style="text-align:center; padding:8px;">
-                                <RadzenCheckBox @bind-Value="questionResponse.AddToDatabase" />
-                            </div>
-                        </Template>
-                    </RadzenDataGridColumn>
-                </Columns>
-            </RadzenDataGrid>
-        </div>
-    }
-    else
-    {
-        <div style="color: lightgray; font-style: italic;">
-            No questions detected yet. Please complete Step #2 first.
-        </div>
-    }
-</RadzenCard>
-
-<!-- Step 4: Create Response -->
-<RadzenCard Style="margin-bottom: 20px;">
-    <div style="display: flex; align-items: center;margin-bottom: 15px;">
-        @if (CanGenerateResponse())
-        {
-            <RadzenIcon Icon="check_circle" Style="color: green; margin-right: 5px;" />
-        }
-        <RadzenText TextStyle="TextStyle.H5" Text="Step #4: Create Response" Style="margin-bottom: 0;" />
-    </div>
     @if (VenueTypeSelected)
     {
         <RadzenTabs RenderMode="TabRenderMode.Client">
             <Tabs>
-                <RadzenTabsItem Text="Generate Final Response">
-                    <div style="padding: 10px 0;">
-                        <RadzenButton Text="Generate Response Document" Icon="description" Style="background-color: #007bff; margin-right: 10px;"
-                                      ButtonStyle="ButtonStyle.Primary" Click="GenerateResponseDocument"
-                                      Disabled="@(!CanGenerateResponse())" />
-                        @if (!CanGenerateResponse())
-                        {
-                            <br />
-                            <br />
-                            <div style="color: lightgray;">Complete previous steps to enable response generation</div>
-                        }
+                <RadzenTabsItem Text="Select Template">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span><b>Template:</b></span>
+                        <RadzenDropDown @bind-Value="SelectedTemplate" Data="@templateOptions" TextProperty="Text" ValueProperty="Value"
+                                        Placeholder="Select Template" Style="width: 200px;" Change="OnTemplateSelectionChanged" />
+                        <RadzenButton Text="Edit Template" Icon="edit" Style="background-color: gray;"
+                                      ButtonStyle="ButtonStyle.Primary" Click="EditTemplate" />
                     </div>
                 </RadzenTabsItem>
 
@@ -298,16 +198,113 @@
     }
     else
     {
-        <div style="padding: 10px 0;">
-            <RadzenButton Text="Generate Response Document" Icon="description" Style="background-color: #007bff;"
-                          ButtonStyle="ButtonStyle.Primary" Click="GenerateResponseDocument"
-                          Disabled="@(!CanGenerateResponse())" />
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span><b>Template:</b></span>
+            <RadzenDropDown @bind-Value="SelectedTemplate" Data="@templateOptions" TextProperty="Text" ValueProperty="Value"
+                            Placeholder="Select Template" Style="width: 200px;" Change="OnTemplateSelectionChanged" />
+            <RadzenButton Text="Edit Template" Icon="edit" Style="background-color: gray;"
+                          ButtonStyle="ButtonStyle.Primary" Click="EditTemplate" />
         </div>
-        @if (!CanGenerateResponse())
-        {
-            <div style="color: lightgray;">Complete previous steps to enable response generation</div>
-        }
     }
+</RadzenCard>
+
+<!-- Step 2: Enter or Upload Request for Proposal -->
+<RadzenCard Style="margin-bottom: 20px;">
+    <div style="display: flex; align-items: center;margin-bottom: 15px;">
+        @if ((string.IsNullOrEmpty(RFPText)) == false)
+        {
+            <RadzenIcon Icon="check_circle" Style="color: green; margin-right: 5px;" />
+        }
+        <RadzenText TextStyle="TextStyle.H5" Text="Step #2: Enter or Upload Request for Proposal" Style="margin-bottom: 0;" />
+    </div>
+    <RadzenTextArea @bind-Value="RFPText"
+                    Placeholder="Enter text from RFP (optional)"
+                    Rows="3"
+                    Style="width: 100%; margin-bottom: 10px;"
+                    id="rfp-text-area" />
+    <RadzenUpload @ref="uploader"
+                  ChooseText="Or upload RFP (.docx/.pdf/.png/.jpg/.jpeg)" Accept=".docx,.png,.jpg,.jpeg,.pdf"
+                  Change=@OnProposalUpload
+                  Multiple="false"
+                  Auto="true"
+                  Style="width: 100%"
+                  InputAttributes="@(new Dictionary<string,object>{ { "aria-label", "select file" }})">
+    </RadzenUpload>
+    <div style="margin-top: 10px;">
+        <RadzenButton Text="Process RFP" Icon="play_arrow" Style="background-color: #28a745;"
+                      ButtonStyle="ButtonStyle.Primary" Click="CreateProposal"
+                      Disabled="@(string.IsNullOrEmpty(RFPText))" />
+    </div>
+</RadzenCard>
+
+<!-- Step 3: Edit Answers to Detected Questions -->
+<RadzenCard Style="margin-bottom: 20px;">
+    <div style="display: flex; align-items: center;margin-bottom: 15px;">
+        @if (identifiedQuestions?.Any() == true)
+        {
+            <RadzenIcon Icon="check_circle" Style="color: green; margin-right: 5px;" />
+        }
+        <RadzenText TextStyle="TextStyle.H5" Text="Step #3: Edit Answers to Detected Questions" Style="margin-bottom: 0;" />
+    </div>
+    @if (identifiedQuestions?.Any() == true)
+    {
+        <div style="max-height:400px; overflow-y:auto;">
+            <RadzenDataGrid @ref="QuestionGrid" Data="@identifiedQuestions" TItem="QuestionResponse" AllowPaging="false">
+                <Columns>
+                    <RadzenDataGridColumn TItem="QuestionResponse" Property="Question" Title="Question" Width="40%">
+                        <Template Context="questionResponse">
+                            <div style="white-space:normal; overflow-wrap:break-word; line-height:1.4; padding:8px;">
+                                @questionResponse.Question
+                            </div>
+                        </Template>
+                    </RadzenDataGridColumn>
+
+                    <RadzenDataGridColumn TItem="QuestionResponse" Property="Response" Title="Answer" Width="45%">
+                        <Template Context="questionResponse">
+                            <RadzenTextArea @bind-Value="questionResponse.Response"
+                                            Style="width:100%; min-height:80px;"
+                                            Rows="4"
+                                            Placeholder="Enter your answer here..." />
+                        </Template>
+                    </RadzenDataGridColumn>
+
+                    <RadzenDataGridColumn TItem="QuestionResponse" Property="AddToDatabase" Title="Add to Knowledgebase" Width="15%">
+                        <Template Context="questionResponse">
+                            <div style="text-align:center; padding:8px;">
+                                <RadzenCheckBox @bind-Value="questionResponse.AddToDatabase" />
+                            </div>
+                        </Template>
+                    </RadzenDataGridColumn>
+                </Columns>
+            </RadzenDataGrid>
+        </div>
+    }
+    else
+    {
+        <div style="color: lightgray; font-style: italic;">
+            No questions detected yet. Please complete Step #2 first.
+        </div>
+    }
+</RadzenCard>
+
+<!-- Step 4: Create Response -->
+<RadzenCard Style="margin-bottom: 20px;">
+    <div style="display: flex; align-items: center;margin-bottom: 15px;">
+        @if (CanGenerateResponse())
+        {
+            <RadzenIcon Icon="check_circle" Style="color: green; margin-right: 5px;" />
+        }
+        <RadzenText TextStyle="TextStyle.H5" Text="Step #4: Create Response" Style="margin-bottom: 0;" />
+    </div>
+    <div style="padding: 10px 0;">
+        <RadzenButton Text="Generate Response Document" Icon="description" Style="background-color: #007bff;"
+                        ButtonStyle="ButtonStyle.Primary" Click="GenerateResponseDocument"
+                        Disabled="@(!CanGenerateResponse())" />
+    </div>
+    @if (!CanGenerateResponse())
+    {
+        <div style="color: lightgray;">Complete previous steps to enable response generation</div>
+    }    
 </RadzenCard>
 <br />
 <br />
