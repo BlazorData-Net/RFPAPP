@@ -322,7 +322,44 @@
             result = await objOrchestratorMethods.CallOpenAIAsync(settingsService, Capcityprompt);
 
             // Parse the JSON into objects for display
-            var TempCapacityData = JsonConvert.DeserializeObject<CapacityRoot>(result.Response);
+            CapacityRoot TempCapacityData;
+            try
+            {
+                // First try to deserialize as CapacityRoot (object with "rooms" property)
+                TempCapacityData = JsonConvert.DeserializeObject<CapacityRoot>(result.Response);
+                
+                // If successful but Rooms is null, it might be an array format
+                if (TempCapacityData?.Rooms == null)
+                {
+                    throw new JsonException("Rooms property is null, trying array format");
+                }
+            }
+            catch (JsonException)
+            {
+                // If that fails, try to deserialize as a direct array of Room objects
+                try
+                {
+                    var roomsArray = JsonConvert.DeserializeObject<List<Room>>(result.Response);
+                    TempCapacityData = new CapacityRoot { Rooms = roomsArray ?? new List<Room>() };
+                }
+                catch (JsonException ex)
+                {
+                    await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Failed to parse AI response as JSON - {ex.Message}");
+                    await LogService.WriteToLogAsync($"[{DateTime.Now}] AI Response: {result.Response}");
+                    
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Error,
+                        Summary = "JSON Parsing Error",
+                        Detail = "The AI response could not be parsed as valid room data. Please try again.",
+                        Duration = 8000
+                    });
+                    
+                    InProgress = false;
+                    StateHasChanged();
+                    return;
+                }
+            }
 
             // Remove from TempCapacityData any room that has the word "and" or an "&" or a "+" in the room name
             // and build capacityData
