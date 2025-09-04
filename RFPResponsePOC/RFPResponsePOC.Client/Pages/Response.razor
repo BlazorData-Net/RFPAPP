@@ -507,6 +507,8 @@
             // *********************************************
             // Replace Knowledgebase tokens
             // *********************************************
+            CurrentStatus = "Search Knowledgebase...";
+            StateHasChanged();
             var kbJson = await KnowledgebaseService.GetKnowledgebaseJsonAsync();
             if (!string.IsNullOrWhiteSpace(kbJson))
             {
