@@ -528,7 +528,12 @@
             // *********************************************
             if (VenueTypeSelected)
             {
+                CurrentStatus = "Detect Room Requests...";
+                StateHasChanged();
                 await DetectRoomRequests();
+
+                CurrentStatus = "Calculate Proposal...";
+                StateHasChanged();
                 await CalculateProposal();
             }
 
@@ -545,6 +550,9 @@
 
             if (remainingTokens.Any())
             {
+                CurrentStatus = "Replacing tokens...";
+                StateHasChanged();
+
                 var result = await DialogService.OpenAsync<TokenInputDialog>(
                     "Enter values for template [Tokens]",
                     new Dictionary<string, object> { { "Tokens", remainingTokens } });
@@ -559,6 +567,46 @@
                         }
                     }
                 }
+            }            
+
+            // *********************************************
+            // Update Knowledgebase with new Q&A
+            // *********************************************
+
+            var questionsToAdd = identifiedQuestions.Where(q => q.AddToDatabase && !string.IsNullOrWhiteSpace(q.Response));
+
+            if (questionsToAdd.Any())
+            {
+                CurrentStatus = "Updating Knowledgebase...";
+                StateHasChanged();
+
+                var entries = !string.IsNullOrWhiteSpace(kbJson)
+                    ? JsonConvert.DeserializeObject<List<KnowledgeChunk>>(kbJson) ?? new List<KnowledgeChunk>()
+                    : new List<KnowledgeChunk>();
+
+                foreach (var q in questionsToAdd)
+                {
+                    var embedding = await orchestrator.GetVectorEmbeddingAsync(q.Response, true);
+                    var existingIndex = entries.FindIndex(e => e.EntryTitle == q.Question);
+                    var newEntry = new KnowledgeChunk
+                    {
+                        Id = existingIndex >= 0 ? entries[existingIndex].Id : Guid.NewGuid().ToString(),
+                        EntryTitle = q.Question,
+                        Content = q.Response,
+                        Embedding = embedding
+                    };
+
+                    if (existingIndex >= 0)
+                    {
+                        entries[existingIndex] = newEntry;
+                    }
+                    else
+                    {
+                        entries.Add(newEntry);
+                    }
+                }
+
+                await KnowledgebaseService.SaveKnowledgebaseDataAsync(entries);
             }
 
             // *********************************************
@@ -606,43 +654,6 @@
                 {
                     throw new InvalidOperationException("Failed to download the Word document. Please try again.");
                 }
-            }
-
-            // *********************************************
-            // Update Knowledgebase with new Q&A
-            // *********************************************
-
-            var questionsToAdd = identifiedQuestions.Where(q => q.AddToDatabase && !string.IsNullOrWhiteSpace(q.Response));
-
-            if (questionsToAdd.Any())
-            {
-                var entries = !string.IsNullOrWhiteSpace(kbJson)
-                    ? JsonConvert.DeserializeObject<List<KnowledgeChunk>>(kbJson) ?? new List<KnowledgeChunk>()
-                    : new List<KnowledgeChunk>();
-
-                foreach (var q in questionsToAdd)
-                {
-                    var embedding = await orchestrator.GetVectorEmbeddingAsync(q.Response, true);
-                    var existingIndex = entries.FindIndex(e => e.EntryTitle == q.Question);
-                    var newEntry = new KnowledgeChunk
-                    {
-                        Id = existingIndex >= 0 ? entries[existingIndex].Id : Guid.NewGuid().ToString(),
-                        EntryTitle = q.Question,
-                        Content = q.Response,
-                        Embedding = embedding
-                    };
-
-                    if (existingIndex >= 0)
-                    {
-                        entries[existingIndex] = newEntry;
-                    }
-                    else
-                    {
-                        entries.Add(newEntry);
-                    }
-                }
-
-                await KnowledgebaseService.SaveKnowledgebaseDataAsync(entries);
             }
 
             NotificationService.Notify(new NotificationMessage
