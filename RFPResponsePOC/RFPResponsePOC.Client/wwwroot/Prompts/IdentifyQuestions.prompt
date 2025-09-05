@@ -1,6 +1,6 @@
-File: RFPResponseAPP\RFPResponseAPP.Client\wwwroot\Prompts\IdentifyQuestions.prompt
-````````
-Please review the following text and identify any questions it contains. Return only a JSON array of objects with a "Question" property. If no questions are found, return an empty JSON array.
+Please review the following RFP TEXT and identify any questions it contains. 
+Format all detected questions with proper sentence casing and spelling
+Return only a JSON array of objects with a "Question" property. If no questions are found, return an empty JSON array.
 
 ### RFP TEXT START
 {{RFPText}}
