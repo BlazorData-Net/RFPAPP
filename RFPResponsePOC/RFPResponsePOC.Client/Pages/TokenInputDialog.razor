@@ -1,14 +1,40 @@
 @using Radzen
+@using RFPResponseAPP.Client.Models
+@using RFPResponseAPP.Client.Services
+@using Newtonsoft.Json
 @inject DialogService DialogService
+@inject HttpClient Http
 
-<RadzenTemplateForm Data="@TokenValues" TItem="Dictionary<string, string>" Submit="OnSubmit">
+<RadzenTemplateForm Data="@TokenData" TItem="TokenInputData" Submit="OnSubmit">
     <ChildContent>
-        @foreach (var token in Tokens)
-        {
-            <RadzenLabel Text="@token" />
-            <RadzenTextBox @bind-Value="TokenValues[token]" Style="width:100%" Name="@token" />
-            <br />
-        }
+        <RadzenDataGrid Data="@TokenData.Items" TItem="TokenItem" AllowPaging="false" Style="margin-bottom: 20px;">
+            <Columns>
+                <RadzenDataGridColumn TItem="TokenItem" Property="Token" Title="Token" Width="40%">
+                    <Template Context="item">
+                        <RadzenLabel Text="@item.Token" Style="font-weight: bold;" />
+                    </Template>
+                </RadzenDataGridColumn>
+                
+                <RadzenDataGridColumn TItem="TokenItem" Property="Value" Title="Value" Width="45%">
+                    <Template Context="item">
+                        <RadzenTextArea @bind-Value="item.Value" 
+                                        Style="width:100%; min-height: 60px;" 
+                                        Rows="2"
+                                        Name="@item.Token" 
+                                        Placeholder="Enter value for this token..." />
+                    </Template>
+                </RadzenDataGridColumn>
+                
+                <RadzenDataGridColumn TItem="TokenItem" Property="AddToDatabase" Title="Save" Width="15%">
+                    <Template Context="item">
+                        <div style="text-align: center; padding: 8px;">
+                            <RadzenCheckBox @bind-Value="item.AddToDatabase" />
+                        </div>
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+        
         <div style="margin-top:10px">
             <RadzenButton Text="OK" ButtonType="ButtonType.Submit" Style="margin-right:5px" />
             <RadzenButton Text="Cancel" ButtonStyle="ButtonStyle.Secondary" Click="@(() => DialogService.Close(null))" />
@@ -18,18 +44,86 @@
 
 @code {
     [Parameter] public List<string> Tokens { get; set; } = new();
-    private Dictionary<string, string> TokenValues = new();
+    private TokenInputData TokenData = new();
 
-    protected override void OnInitialized()
+    public class TokenItem
     {
-        foreach (var token in Tokens)
-        {
-            TokenValues[token] = string.Empty;
-        }
+        public string Token { get; set; }
+        public string Value { get; set; } = string.Empty;
+        public bool AddToDatabase { get; set; } = false;
     }
 
-    void OnSubmit(Dictionary<string, string> values)
+    public class TokenInputData
     {
-        DialogService.Close(TokenValues);
+        public List<TokenItem> Items { get; set; } = new();
+    }
+
+    public class TokenInputResult
+    {
+        public Dictionary<string, string> Values { get; set; } = new();
+        public List<KnowledgeToken> TokensToAdd { get; set; } = new();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Load existing tokens from KnowledgebaseToken.json to pre-populate values
+        var existingTokens = await LoadExistingTokens();
+        
+        TokenData.Items = Tokens.Select(token => 
+        {
+            var existingToken = existingTokens.FirstOrDefault(t => t.Token == token);
+            return new TokenItem 
+            { 
+                Token = token,
+                Value = existingToken?.Value ?? string.Empty,
+                AddToDatabase = false // Always start unchecked
+            };
+        }).ToList();
+    }
+
+    private async Task<List<KnowledgeToken>> LoadExistingTokens()
+    {
+        try
+        {
+            var tokenService = new KnowledgebaseTokenService(Http);
+            var json = await tokenService.GetKnowledgebaseTokenJsonAsync();
+            
+            if (!string.IsNullOrEmpty(json))
+            {
+                return JsonConvert.DeserializeObject<List<KnowledgeToken>>(json) ?? new List<KnowledgeToken>();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading existing tokens: {ex.Message}");
+        }
+        
+        return new List<KnowledgeToken>();
+    }
+
+    async Task OnSubmit(TokenInputData data)
+    {
+        var result = new TokenInputResult();
+        
+        // Build the values dictionary for template replacement
+        foreach (var item in data.Items)
+        {
+            result.Values[item.Token] = item.Value ?? string.Empty;
+        }
+        
+        // Build the list of tokens to add to database
+        var tokensToAdd = data.Items
+            .Where(item => item.AddToDatabase && !string.IsNullOrWhiteSpace(item.Value))
+            .Select(item => new KnowledgeToken
+            {
+                Id = Guid.NewGuid().ToString(),
+                Token = item.Token,
+                Value = item.Value
+            })
+            .ToList();
+
+        result.TokensToAdd = tokensToAdd;
+        
+        DialogService.Close(result);
     }
 }

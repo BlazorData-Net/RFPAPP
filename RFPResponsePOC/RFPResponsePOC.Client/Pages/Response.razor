@@ -29,6 +29,7 @@
 @inject PdfToPngService PdfService
 @inject HttpClient Http
 @inject KnowledgebaseService KnowledgebaseService
+@inject KnowledgebaseTokenService KnowledgebaseTokenService
 
 @if (InProgress)
 {
@@ -509,6 +510,7 @@
             // *********************************************
             CurrentStatus = "Search Knowledgebase...";
             StateHasChanged();
+
             var kbJson = await KnowledgebaseService.GetKnowledgebaseJsonAsync();
             if (!string.IsNullOrWhiteSpace(kbJson))
             {
@@ -552,20 +554,59 @@
 
             if (remainingTokens.Any())
             {
-                CurrentStatus = "Replacing tokens...";
-                StateHasChanged();
-
                 var result = await DialogService.OpenAsync<TokenInputDialog>(
                     "Enter values for template [Tokens]",
-                    new Dictionary<string, object> { { "Tokens", remainingTokens } });
+                    new Dictionary<string, object> { { "Tokens", remainingTokens } },
+                    new DialogOptions { Width = "800px", Height = "600px" });
 
-                if (result is Dictionary<string, string> values)
+                if (result is TokenInputDialog.TokenInputResult tokenResult)
                 {
+                    // Replace tokens in template content
                     foreach (var token in remainingTokens)
                     {
-                        if (values.TryGetValue(token, out var value) && !string.IsNullOrWhiteSpace(value))
+                        if (tokenResult.Values.TryGetValue(token, out var value) && !string.IsNullOrWhiteSpace(value))
                         {
                             templateContent = templateContent.Replace(token, value);
+                        }
+                    }
+
+                    // Save tokens to KnowledgebaseToken.json if any are marked for database
+                    if (tokenResult.TokensToAdd?.Any() == true)
+                    {
+                        try
+                        {
+                            var tokenService = new KnowledgebaseTokenService(Http);
+                            
+                            // Load existing tokens
+                            var existingTokensJson = await tokenService.GetKnowledgebaseTokenJsonAsync();
+                            var existingTokens = !string.IsNullOrEmpty(existingTokensJson)
+                                ? JsonConvert.DeserializeObject<List<KnowledgeToken>>(existingTokensJson) ?? new List<KnowledgeToken>()
+                                : new List<KnowledgeToken>();
+
+                            // Add or update tokens
+                            foreach (var newToken in tokenResult.TokensToAdd)
+                            {
+                                var existingIndex = existingTokens.FindIndex(t => t.Token == newToken.Token);
+                                if (existingIndex >= 0)
+                                {
+                                    // Update existing token
+                                    existingTokens[existingIndex].Value = newToken.Value;
+                                }
+                                else
+                                {
+                                    // Add new token
+                                    existingTokens.Add(newToken);
+                                }
+                            }
+
+                            // Save updated tokens
+                            await tokenService.SaveKnowledgebaseTokensDataAsync(existingTokens);
+
+                            await LogService.WriteToLogAsync($"[{DateTime.Now}] Saved {tokenResult.TokensToAdd.Count} tokens to KnowledgebaseToken.json");
+                        }
+                        catch (Exception ex)
+                        {
+                            await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Failed to save tokens to KnowledgebaseToken.json - {ex.Message}");
                         }
                     }
                 }
