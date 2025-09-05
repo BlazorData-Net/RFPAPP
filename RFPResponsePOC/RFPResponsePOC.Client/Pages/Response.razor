@@ -86,20 +86,20 @@
         }
         <RadzenText TextStyle="TextStyle.H5" Text="Step #2: Enter or Upload Request for Proposal" Style="margin-bottom: 0;" />
     </div>
-    <RadzenTextArea @bind-Value="RFPText"
-                    Placeholder="Enter text from RFP (optional)"
-                    Rows="3"
-                    Style="width: 100%; margin-bottom: 10px;"
-                    id="rfp-text-area" />
     <RadzenUpload @ref="uploader"
-                  ChooseText="Or upload RFP (.docx/.pdf/.png/.jpg/.jpeg)" Accept=".docx,.png,.jpg,.jpeg,.pdf"
+                  ChooseText="Upload RFP (.docx/.pdf/.png/.jpg/.jpeg)" Accept=".docx,.png,.jpg,.jpeg,.pdf"
                   Change=@OnProposalUpload
                   Multiple="false"
                   Auto="true"
                   Style="width: 100%"
                   InputAttributes="@(new Dictionary<string,object>{ { "aria-label", "select file" }})">
     </RadzenUpload>
-    <div style="margin-top: 10px;">
+    <RadzenTextArea @bind-Value="RFPText"
+                    Placeholder="Or enter text from RFP (optional)"
+                    Rows="3"
+                    Style="width: 100%; margin-bottom: 10px; margin-top: 10px;"
+                    id="rfp-text-area" />
+    <div>
         <RadzenButton Text="Process RFP" Icon="play_arrow" Style="background-color: #28a745;"
                       ButtonStyle="ButtonStyle.Primary" Click="CreateProposal"
                       Disabled="@(string.IsNullOrEmpty(RFPText))" />
@@ -557,7 +557,7 @@
                 var result = await DialogService.OpenAsync<TokenInputDialog>(
                     "Enter values for template [Tokens]",
                     new Dictionary<string, object> { { "Tokens", remainingTokens } },
-                    new DialogOptions { Width = "800px", Height = "600px" });
+                    new DialogOptions { Width = "800px", Height = "800px" });
 
                 if (result is TokenInputDialog.TokenInputResult tokenResult)
                 {

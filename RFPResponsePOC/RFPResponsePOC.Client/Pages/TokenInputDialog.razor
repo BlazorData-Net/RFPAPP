@@ -9,13 +9,13 @@
     <ChildContent>
         <RadzenDataGrid Data="@TokenData.Items" TItem="TokenItem" AllowPaging="false" Style="margin-bottom: 20px;">
             <Columns>
-                <RadzenDataGridColumn TItem="TokenItem" Property="Token" Title="Token" Width="40%">
+                <RadzenDataGridColumn TItem="TokenItem" Property="Token" Title="Token" Width="40%" HeaderCssClass="text-center-header">
                     <Template Context="item">
                         <RadzenLabel Text="@item.Token" Style="font-weight: bold;" />
                     </Template>
                 </RadzenDataGridColumn>
                 
-                <RadzenDataGridColumn TItem="TokenItem" Property="Value" Title="Value" Width="45%">
+                <RadzenDataGridColumn TItem="TokenItem" Property="Value" Title="Value" Width="45%" HeaderCssClass="text-center-header">
                     <Template Context="item">
                         <RadzenTextArea @bind-Value="item.Value" 
                                         Style="width:100%; min-height: 60px;" 
@@ -25,7 +25,7 @@
                     </Template>
                 </RadzenDataGridColumn>
                 
-                <RadzenDataGridColumn TItem="TokenItem" Property="AddToDatabase" Title="Save" Width="15%">
+                <RadzenDataGridColumn TItem="TokenItem" Property="AddToDatabase" Title="Save" Width="15%" HeaderCssClass="text-center-header">
                     <Template Context="item">
                         <div style="text-align: center; padding: 8px;">
                             <RadzenCheckBox @bind-Value="item.AddToDatabase" />
@@ -41,6 +41,12 @@
         </div>
     </ChildContent>
 </RadzenTemplateForm>
+
+<style>
+    .text-center-header {
+        text-align: center !important;
+    }
+</style>
 
 @code {
     [Parameter] public List<string> Tokens { get; set; } = new();
@@ -101,7 +107,7 @@
         return new List<KnowledgeToken>();
     }
 
-    async Task OnSubmit(TokenInputData data)
+    void OnSubmit(TokenInputData data)
     {
         var result = new TokenInputResult();
         
