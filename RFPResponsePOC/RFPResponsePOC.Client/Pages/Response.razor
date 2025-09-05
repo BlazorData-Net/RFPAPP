@@ -620,9 +620,6 @@
 
             if (questionsToAdd.Any())
             {
-                CurrentStatus = "Updating Knowledgebase...";
-                StateHasChanged();
-
                 var entries = !string.IsNullOrWhiteSpace(kbJson)
                     ? JsonConvert.DeserializeObject<List<KnowledgeChunk>>(kbJson) ?? new List<KnowledgeChunk>()
                     : new List<KnowledgeChunk>();
