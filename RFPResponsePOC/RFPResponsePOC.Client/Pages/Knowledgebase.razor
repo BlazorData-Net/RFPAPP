@@ -21,65 +21,94 @@
 @inject HttpClient Http
 @inject IJSRuntime JsRuntime
 @inject KnowledgebaseService KnowledgebaseService
-<br />
-<RadzenUpload @ref="uploader"
-              ChooseText="Upload document (.txt/.pdf/.png/.jpg/.jpeg)" Accept=".txt,.pdf,.png,.jpg,.jpeg"
-              Change=@OnFileUpload
-              Multiple="false"
-              Auto="true"
-              Style="width: 100%"
-              InputAttributes="@(new Dictionary<string,object>{{"aria-label","select file"}})">
-</RadzenUpload>
-<br />
-@if (@InProgress)
-{
-    <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-                background-color: rgba(0,0,0,0.5); z-index: 1000;
-                display: flex; align-items: center; justify-content: center;">
-        <div class="rz-card" style="padding: 20px;">
-            <RadzenText Text="@CurrentStatus" class="rz-m-10" Style="text-align: center" />
-            <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
-        </div>
-    </div>
-}
-<br />
-<RadzenButton Text="Add Row" Icon="add" Style="margin-bottom:10px" ButtonStyle="ButtonStyle.Primary" Click="InsertRow" />
-@if (entries?.Any() == true)
-{
-    <RadzenButton Text="Save Knowledgebase" Icon="save" Style="margin-left:10px;margin-bottom:10px;background-color:green;" ButtonStyle="ButtonStyle.Primary" Click="@((async () => await KnowledgebaseService.SaveKnowledgebaseDataAsync(entries)))" />
-    <RadzenDataGrid @ref="grid"
-                    Data="@groupedEntries"
-                    TItem="KnowledgeEntry"
-                    AllowPaging="false"
-                    ExpandMode="DataGridExpandMode.Single">
-        <Columns>
-            <RadzenDataGridColumn TItem="KnowledgeEntry" Filterable="false" Sortable="false" Width="60px" TextAlign="TextAlign.Center" Title="DEL">
-                <Template Context="entry">
-                    <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.ExtraSmall" Click="@(() => ConfirmDeleteEntryGroup(entry.EntryTitle))" @onclick:stopPropagation="true" />
-                </Template>
-            </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="KnowledgeEntry" Property="EntryTitle" Title="Entry Title" />
-        </Columns>
-        <Template Context="entry">
-            <RadzenDataGrid Data="entry.Chunks" TItem="KnowledgeChunk" AllowPaging="false">
+<RadzenTabs>
+    <RadzenTabsItem Text="Knowledgebase">
+        <br />
+        <RadzenUpload @ref="uploader"
+                      ChooseText="Upload document (.txt/.pdf/.png/.jpg/.jpeg)" Accept=".txt,.pdf,.png,.jpg,.jpeg"
+                      Change=@OnFileUpload
+                      Multiple="false"
+                      Auto="true"
+                      Style="width: 100%"
+                      InputAttributes="@(new Dictionary<string,object>{{"aria-label","select file"}})">
+        </RadzenUpload>
+        <br />
+        @if (@InProgress)
+        {
+            <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                        background-color: rgba(0,0,0,0.5); z-index: 1000;
+                        display: flex; align-items: center; justify-content: center;">
+                <div class="rz-card" style="padding: 20px;">
+                    <RadzenText Text="@CurrentStatus" class="rz-m-10" Style="text-align: center" />
+                    <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+                </div>
+            </div>
+        }
+        <br />
+        <RadzenButton Text="Add Row" Icon="add" Style="margin-bottom:10px" ButtonStyle="ButtonStyle.Primary" Click="InsertRow" />
+        @if (entries?.Any() == true)
+        {
+            <RadzenButton Text="Save Knowledgebase" Icon="save" Style="margin-left:10px;margin-bottom:10px;background-color:green;" ButtonStyle="ButtonStyle.Primary" Click="@((async () => await KnowledgebaseService.SaveKnowledgebaseDataAsync(entries)))" />
+            <RadzenDataGrid @ref="grid"
+                            Data="@groupedEntries"
+                            TItem="KnowledgeEntry"
+                            AllowPaging="false"
+                            ExpandMode="DataGridExpandMode.Single">
                 <Columns>
-                    <RadzenDataGridColumn TItem="KnowledgeChunk" Filterable="false" Sortable="false" Width="110px" TextAlign="TextAlign.Center" Title="EDIT/DEL">
-                        <Template Context="chunk">
-                            <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.ExtraSmall" Click="@(() => EditRow(chunk))" @onclick:stopPropagation="true" />
-                            <span>&nbsp;</span>
-                            <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.ExtraSmall" Click="@(() => ConfirmDeleteRow(chunk))" @onclick:stopPropagation="true" />
+                    <RadzenDataGridColumn TItem="KnowledgeEntry" Filterable="false" Sortable="false" Width="60px" TextAlign="TextAlign.Center" Title="DEL">
+                        <Template Context="entry">
+                            <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.ExtraSmall" Click="@(() => ConfirmDeleteEntryGroup(entry.EntryTitle))" @onclick:stopPropagation="true" />
                         </Template>
                     </RadzenDataGridColumn>
-                    <RadzenDataGridColumn TItem="KnowledgeChunk" Property="Content" Title="Content">
-                        <Template Context="chunk">
-                            <div style="white-space:pre-wrap">@chunk.Content</div>
+                    <RadzenDataGridColumn TItem="KnowledgeEntry" Property="EntryTitle" Title="Entry Title" />
+                </Columns>
+                <Template Context="entry">
+                    <RadzenDataGrid Data="entry.Chunks" TItem="KnowledgeChunk" AllowPaging="false">
+                        <Columns>
+                            <RadzenDataGridColumn TItem="KnowledgeChunk" Filterable="false" Sortable="false" Width="110px" TextAlign="TextAlign.Center" Title="EDIT/DEL">
+                                <Template Context="chunk">
+                                    <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.ExtraSmall" Click="@(() => EditRow(chunk))" @onclick:stopPropagation="true" />
+                                    <span>&nbsp;</span>
+                                    <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.ExtraSmall" Click="@(() => ConfirmDeleteRow(chunk))" @onclick:stopPropagation="true" />
+                                </Template>
+                            </RadzenDataGridColumn>
+                            <RadzenDataGridColumn TItem="KnowledgeChunk" Property="Content" Title="Content">
+                                <Template Context="chunk">
+                                    <div style="white-space:pre-wrap">@chunk.Content</div>
+                                </Template>
+                            </RadzenDataGridColumn>
+                        </Columns>
+                    </RadzenDataGrid>
+                </Template>
+            </RadzenDataGrid>
+        }
+    </RadzenTabsItem>
+    <RadzenTabsItem Text="Tokens">
+        <br />
+        <RadzenButton Text="Add Token" Icon="add" Style="margin-bottom:10px" ButtonStyle="ButtonStyle.Primary" Click="InsertToken" />
+        @if (tokens?.Any() == true)
+        {
+            <RadzenButton Text="Save Tokens" Icon="save" Style="margin-left:10px;margin-bottom:10px;background-color:green;" ButtonStyle="ButtonStyle.Primary" Click="@((async () => await KnowledgebaseService.SaveKnowledgebaseTokensDataAsync(tokens)))" />
+            <RadzenDataGrid @ref="tokenGrid" Data="@tokens" TItem="KnowledgeToken" AllowPaging="false">
+                <Columns>
+                    <RadzenDataGridColumn TItem="KnowledgeToken" Filterable="false" Sortable="false" Width="110px" TextAlign="TextAlign.Center" Title="EDIT/DEL">
+                        <Template Context="token">
+                            <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.ExtraSmall" Click="@(() => EditToken(token))" @onclick:stopPropagation="true" />
+                            <span>&nbsp;</span>
+                            <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.ExtraSmall" Click="@(() => ConfirmDeleteToken(token))" @onclick:stopPropagation="true" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="KnowledgeToken" Property="Token" Title="Token" />
+                    <RadzenDataGridColumn TItem="KnowledgeToken" Property="Value" Title="Value">
+                        <Template Context="t">
+                            <div style="white-space:pre-wrap">@t.Value</div>
                         </Template>
                     </RadzenDataGridColumn>
                 </Columns>
             </RadzenDataGrid>
-        </Template>
-    </RadzenDataGrid>
-}
+        }
+    </RadzenTabsItem>
+</RadzenTabs>
 <br />
 <br />
 <br />
@@ -95,7 +124,9 @@
     ZipService objZipService = new ZipService();
     Radzen.Blazor.RadzenUpload uploader;
     Radzen.Blazor.RadzenDataGrid<KnowledgeEntry> grid;
+    Radzen.Blazor.RadzenDataGrid<KnowledgeToken> tokenGrid;
     List<KnowledgeChunk> entries = new();
+    List<KnowledgeToken> tokens = new();
     IEnumerable<KnowledgeEntry> groupedEntries => entries
         .GroupBy(e => e.EntryTitle)
         .Select(g => new KnowledgeEntry { EntryTitle = g.Key, Chunks = g.ToList() });
@@ -123,6 +154,13 @@
             if (!string.IsNullOrWhiteSpace(json))
             {
                 entries = JsonConvert.DeserializeObject<List<KnowledgeChunk>>(json) ?? new();
+                StateHasChanged();
+            }
+
+            var tokenJson = await KnowledgebaseService.GetKnowledgebaseTokenJsonAsync();
+            if (!string.IsNullOrWhiteSpace(tokenJson))
+            {
+                tokens = JsonConvert.DeserializeObject<List<KnowledgeToken>>(tokenJson) ?? new();
                 StateHasChanged();
             }
         }
@@ -373,6 +411,77 @@
             {
                 await grid.Reload();
             }
+        }
+    }
+
+    async Task InsertToken()
+    {
+        var newToken = new KnowledgeToken { Id = Guid.NewGuid().ToString() };
+        var dialogResult = await DialogService.OpenAsync<KnowledgeTokenDialog>("Add Token", new Dictionary<string, object>()
+        {
+            {"Token", newToken}
+        });
+        var result = dialogResult as KnowledgeToken;
+        if (result != null && !string.IsNullOrWhiteSpace(result.Token))
+        {
+            tokens.Insert(0, result);
+            await KnowledgebaseService.SaveKnowledgebaseTokensDataAsync(tokens);
+
+            if (tokenGrid != null)
+            {
+                await tokenGrid.Reload();
+            }
+        }
+    }
+
+    async Task EditToken(KnowledgeToken token)
+    {
+        var editModel = new KnowledgeToken { Id = token.Id, Token = token.Token, Value = token.Value };
+        var dialogResult = await DialogService.OpenAsync<KnowledgeTokenDialog>("Edit Token", new Dictionary<string, object>()
+        {
+            {"Token", editModel}
+        });
+        var result = dialogResult as KnowledgeToken;
+        if (result != null)
+        {
+            token.Token = result.Token;
+            token.Value = result.Value;
+            await KnowledgebaseService.SaveKnowledgebaseTokensDataAsync(tokens);
+            await tokenGrid.Reload();
+        }
+    }
+
+    private async Task ConfirmDeleteToken(KnowledgeToken token)
+    {
+        var confirmed = await DialogService.Confirm(
+            "Are you sure you want to delete this token?",
+            "Confirm Delete",
+            new ConfirmOptions
+            {
+                OkButtonText = "Delete",
+                CancelButtonText = "Cancel",
+            });
+
+        if (confirmed == true)
+        {
+            await DeleteToken(token);
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Info,
+                Summary = "Deleted",
+                Detail = "Token removed.",
+                Duration = 3000
+            });
+        }
+    }
+
+    async Task DeleteToken(KnowledgeToken token)
+    {
+        if (tokens.Contains(token))
+        {
+            tokens.Remove(token);
+            await tokenGrid.Reload();
+            await KnowledgebaseService.SaveKnowledgebaseTokensDataAsync(tokens);
         }
     }
 
