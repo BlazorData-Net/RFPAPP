@@ -123,14 +123,38 @@
                     @if (identifiedQuestions?.Any() == true)
                     {
                         <div style="max-height:400px; overflow-y:auto;">
-                            <RadzenDataGrid @ref="QuestionGrid" Data="@identifiedQuestions" TItem="QuestionResponse" AllowPaging="false">
+                            <RadzenDataGrid @ref="QuestionGrid" Data="@identifiedQuestions" TItem="QuestionResponse" AllowPaging="false" EditMode="DataGridEditMode.Single" Editable="true">
                                 <Columns>
+                                    <RadzenDataGridColumn TItem="QuestionResponse" Filterable="false" Sortable="false" Width="110px" TextAlign="TextAlign.Center" Title="EDIT/DEL">
+                                        <Template Context="questionResponse">
+                                            @if (QuestionGrid.IsRowInEditMode(questionResponse))
+                                            {
+                                                <RadzenButton Icon="save" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.ExtraSmall"
+                                                              Click="@((args) => SaveQuestion(questionResponse))" @onclick:stopPropagation="true" title="Save question" />
+                                                <span>&nbsp;</span>
+                                                <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.ExtraSmall"
+                                                              Click="@((args) => ConfirmDeleteQuestion(questionResponse))" @onclick:stopPropagation="true" title="Delete question" />
+                                            }
+                                            else
+                                            {
+                                                <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.ExtraSmall"
+                                                              Click="@((args) => EditQuestion(questionResponse))" @onclick:stopPropagation="true" title="Edit question" />
+                                                <span>&nbsp;</span>
+                                                <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.ExtraSmall"
+                                                              Click="@((args) => ConfirmDeleteQuestion(questionResponse))" @onclick:stopPropagation="true" title="Delete question" />
+                                            }
+                                        </Template>
+                                    </RadzenDataGridColumn>
+
                                     <RadzenDataGridColumn TItem="QuestionResponse" Property="Question" Title="Question" Width="40%">
                                         <Template Context="questionResponse">
                                             <div style="white-space:normal; overflow-wrap:break-word; line-height:1.4; padding:8px;">
                                                 @questionResponse.Question
                                             </div>
                                         </Template>
+                                        <EditTemplate Context="questionResponse">
+                                            <RadzenTextBox @bind-Value="questionResponse.Question" Style="width:100%" />
+                                        </EditTemplate>
                                     </RadzenDataGridColumn>
 
                                     <RadzenDataGridColumn TItem="QuestionResponse" Property="Response" Title="Answer" Width="45%">
@@ -299,14 +323,38 @@
         @if (identifiedQuestions?.Any() == true)
         {
             <div style="max-height:400px; overflow-y:auto;">
-                <RadzenDataGrid @ref="QuestionGrid" Data="@identifiedQuestions" TItem="QuestionResponse" AllowPaging="false">
+                <RadzenDataGrid @ref="QuestionGrid" Data="@identifiedQuestions" TItem="QuestionResponse" AllowPaging="false" EditMode="DataGridEditMode.Single" Editable="true">
                     <Columns>
+                        <RadzenDataGridColumn TItem="QuestionResponse" Filterable="false" Sortable="false" Width="110px" TextAlign="TextAlign.Center" Title="EDIT/DEL">
+                            <Template Context="questionResponse">
+                                @if (QuestionGrid.IsRowInEditMode(questionResponse))
+                                {
+                                    <RadzenButton Icon="save" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.ExtraSmall"
+                                                  Click="@((args) => SaveQuestion(questionResponse))" @onclick:stopPropagation="true" title="Save question" />
+                                    <span>&nbsp;</span>
+                                    <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.ExtraSmall"
+                                                  Click="@((args) => ConfirmDeleteQuestion(questionResponse))" @onclick:stopPropagation="true" title="Delete question" />
+                                }
+                                else
+                                {
+                                    <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.ExtraSmall"
+                                                  Click="@((args) => EditQuestion(questionResponse))" @onclick:stopPropagation="true" title="Edit question" />
+                                    <span>&nbsp;</span>
+                                    <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.ExtraSmall"
+                                                  Click="@((args) => ConfirmDeleteQuestion(questionResponse))" @onclick:stopPropagation="true" title="Delete question" />
+                                }
+                            </Template>
+                        </RadzenDataGridColumn>
+
                         <RadzenDataGridColumn TItem="QuestionResponse" Property="Question" Title="Question" Width="40%">
                             <Template Context="questionResponse">
                                 <div style="white-space:normal; overflow-wrap:break-word; line-height:1.4; padding:8px;">
                                     @questionResponse.Question
                                 </div>
                             </Template>
+                            <EditTemplate Context="questionResponse">
+                                <RadzenTextBox @bind-Value="questionResponse.Question" Style="width:100%" />
+                            </EditTemplate>
                         </RadzenDataGridColumn>
 
                         <RadzenDataGridColumn TItem="QuestionResponse" Property="Response" Title="Answer" Width="45%">
@@ -980,6 +1028,47 @@
         SortProposalRows();
         await SaveProposalRowsAsync();
         await grid.Reload();
+    }
+
+    async Task EditQuestion(QuestionResponse question) => await QuestionGrid.EditRow(question);
+
+    async Task SaveQuestion(QuestionResponse question)
+    {
+        await QuestionGrid.UpdateRow(question);
+    }
+
+    private async Task ConfirmDeleteQuestion(QuestionResponse question)
+    {
+        var name = string.IsNullOrWhiteSpace(question?.Question) ? "this question" : $"'{question.Question}'";
+        var confirmed = await DialogService.Confirm(
+            $"Are you sure you want to delete {name}?",
+            "Confirm Delete",
+            new ConfirmOptions
+            {
+                OkButtonText = "Delete",
+                CancelButtonText = "Cancel"
+            });
+
+        if (confirmed == true)
+        {
+            await DeleteQuestion(question);
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Info,
+                Summary = "Deleted",
+                Detail = $"{(question?.Question ?? "Question")} removed.",
+                Duration = 3000
+            });
+        }
+    }
+
+    async Task DeleteQuestion(QuestionResponse question)
+    {
+        if (identifiedQuestions.Contains(question))
+        {
+            identifiedQuestions.Remove(question);
+            await QuestionGrid.Reload();
+        }
     }
 
     private async Task OnTemplateSelectionChanged(object value)
