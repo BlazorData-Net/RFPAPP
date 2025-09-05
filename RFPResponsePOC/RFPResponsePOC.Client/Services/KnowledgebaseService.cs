@@ -70,6 +70,5 @@ namespace RFPResponseAPP.Client.Services
             }
             return null;
         }
-
     }
 }
