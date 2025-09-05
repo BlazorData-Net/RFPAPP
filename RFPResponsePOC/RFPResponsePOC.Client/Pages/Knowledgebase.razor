@@ -21,6 +21,7 @@
 @inject HttpClient Http
 @inject IJSRuntime JsRuntime
 @inject KnowledgebaseService KnowledgebaseService
+@inject KnowledgebaseTokenService KnowledgebaseTokenService
 <RadzenTabs>
     <RadzenTabsItem Text="Knowledgebase">
         <br />
@@ -88,7 +89,7 @@
         <RadzenButton Text="Add Token" Icon="add" Style="margin-bottom:10px" ButtonStyle="ButtonStyle.Primary" Click="InsertToken" />
         @if (tokens?.Any() == true)
         {
-            <RadzenButton Text="Save Tokens" Icon="save" Style="margin-left:10px;margin-bottom:10px;background-color:green;" ButtonStyle="ButtonStyle.Primary" Click="@((async () => await KnowledgebaseService.SaveKnowledgebaseTokensDataAsync(tokens)))" />
+            <RadzenButton Text="Save Tokens" Icon="save" Style="margin-left:10px;margin-bottom:10px;background-color:green;" ButtonStyle="ButtonStyle.Primary" Click="@((async () => await KnowledgebaseTokenService.SaveKnowledgebaseTokensDataAsync(tokens)))" />
             <RadzenDataGrid @ref="tokenGrid" Data="@tokens" TItem="KnowledgeToken" AllowPaging="false">
                 <Columns>
                     <RadzenDataGridColumn TItem="KnowledgeToken" Filterable="false" Sortable="false" Width="110px" TextAlign="TextAlign.Center" Title="EDIT/DEL">
@@ -157,7 +158,7 @@
                 StateHasChanged();
             }
 
-            var tokenJson = await KnowledgebaseService.GetKnowledgebaseTokenJsonAsync();
+            var tokenJson = await KnowledgebaseTokenService.GetKnowledgebaseTokenJsonAsync();
             if (!string.IsNullOrWhiteSpace(tokenJson))
             {
                 tokens = JsonConvert.DeserializeObject<List<KnowledgeToken>>(tokenJson) ?? new();
@@ -425,7 +426,7 @@
         if (result != null && !string.IsNullOrWhiteSpace(result.Token))
         {
             tokens.Insert(0, result);
-            await KnowledgebaseService.SaveKnowledgebaseTokensDataAsync(tokens);
+            await KnowledgebaseTokenService.SaveKnowledgebaseTokensDataAsync(tokens);
 
             if (tokenGrid != null)
             {
@@ -446,7 +447,7 @@
         {
             token.Token = result.Token;
             token.Value = result.Value;
-            await KnowledgebaseService.SaveKnowledgebaseTokensDataAsync(tokens);
+            await KnowledgebaseTokenService.SaveKnowledgebaseTokensDataAsync(tokens);
             await tokenGrid.Reload();
         }
     }
@@ -481,7 +482,7 @@
         {
             tokens.Remove(token);
             await tokenGrid.Reload();
-            await KnowledgebaseService.SaveKnowledgebaseTokensDataAsync(tokens);
+            await KnowledgebaseTokenService.SaveKnowledgebaseTokensDataAsync(tokens);
         }
     }
 

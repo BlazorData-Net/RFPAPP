@@ -29,6 +29,7 @@ class Program
         builder.Services.AddScoped<PdfToPngService>();
         builder.Services.AddScoped<DialogService>();
         builder.Services.AddScoped<KnowledgebaseService>();
+        builder.Services.AddScoped<KnowledgebaseTokenService>();
 
         // Set the base address for the application
         var http = new HttpClient()
