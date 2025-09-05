@@ -1,5 +1,6 @@
 @using RFPResponseAPP.Client.Services
 @using RFPResponseAPP.Model
+@using RFPResponseAPP.Models
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 @inherits LayoutComponentBase
 @implements IAsyncDisposable
@@ -9,6 +10,7 @@
 @inject DialogService DialogService
 @inject SettingsService SettingsService
 @inject LogService _LogService
+@inject AppMetadata _AppMetadata
 <RadzenDialog />
 <RadzenNotification />
 <RadzenTooltip />
@@ -41,7 +43,7 @@
 <RadzenFooter>
     <div class="row justify-content-start align-items-center px-2 pt-2 p-3 mb-2 bg-light text-dark">
         <div class="col-12 d-flex align-items-left">
-            <p>@@2025 by BlazorData.net</p>
+            <p>@@2025 by BlazorData.net | Version @_AppMetadata.Version</p>
         </div>
     </div>
 </RadzenFooter>
