@@ -1,0 +1,26 @@
+@using Radzen
+@using RFPResponseAPP.Client.Models
+@inject DialogService DialogService
+
+<RadzenTemplateForm Data="@Token" TItem="KnowledgeToken" Submit="OnSubmit">
+    <ChildContent>
+        <RadzenLabel Text="Token" />
+        <RadzenTextBox @bind-Value="Token.Token" Style="width:100%" Name="Token" />
+        <RadzenLabel Text="Value" Style="display:block;margin-top:10px;" />
+        <RadzenTextArea @bind-Value="Token.Value" Rows="4" Style="width:100%" Name="Value" />
+        <div style="margin-top:10px">
+            <RadzenButton Text="Save" ButtonType="ButtonType.Submit" Style="margin-right:5px" />
+            <RadzenButton Text="Cancel" ButtonStyle="ButtonStyle.Secondary" Click="@(() => DialogService.Close(null))" />
+        </div>
+    </ChildContent>
+</RadzenTemplateForm>
+
+@code {
+    [Parameter]
+    public KnowledgeToken Token { get; set; }
+
+    void OnSubmit()
+    {
+        DialogService.Close(Token);
+    }
+}

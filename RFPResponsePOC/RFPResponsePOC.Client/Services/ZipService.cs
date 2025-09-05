@@ -2,6 +2,7 @@
 using Microsoft.JSInterop;
 using Radzen;
 using RFPResponseAPP.Model;
+using System.IO;
 using System.IO.Compression;
 using RFPResponseAPP.Client.Pages; // for LoadingDialog component
 
@@ -41,10 +42,15 @@ namespace RFPResponseAPP.Client.Services
 
         private void EnsureDirectoryStructure()
         {
-            // Ensure the base directory exists
             if (!Directory.Exists(BasePath))
             {
                 Directory.CreateDirectory(BasePath);
+            }
+
+            var tokenFile = Path.Combine(BasePath, "KnowledgebaseToken.json");
+            if (!File.Exists(tokenFile))
+            {
+                File.WriteAllText(tokenFile, "[]");
             }
         }
 
@@ -52,6 +58,8 @@ namespace RFPResponseAPP.Client.Services
         {
             string zipPath = @"/Zip";
             string zipFilePath = @"/Zip/ZipFiles.zip";
+
+            EnsureDirectoryStructure();
 
             if (File.Exists(zipFilePath)) File.Delete(zipFilePath);
             if (!Directory.Exists(zipPath)) Directory.CreateDirectory(zipPath);
