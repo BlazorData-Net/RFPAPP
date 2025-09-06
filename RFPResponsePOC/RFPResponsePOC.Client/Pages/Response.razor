@@ -190,7 +190,7 @@
                     <span>&nbsp;</span>
                     @if (proposalRows?.Any() == true)
                     {
-                        <RadzenButton Text="Calculate/Re-Calculate" Icon="calculate" Style="margin-top: 4px; background-color: green;" ButtonStyle="ButtonStyle.Primary" Click="CalculateProposal" />
+                        <RadzenButton Text="Re-Calculate" Icon="calculate" Style="margin-top: 4px; background-color: green;" ButtonStyle="ButtonStyle.Primary" Click="ReCalculateProposal" />
                         <br />
                         <RadzenDataGrid @ref="grid" Data="@proposalRows" TItem="ProposalRow" EditMode="DataGridEditMode.Single" Editable="true" Style="margin-top:20px">
                             <Columns>
@@ -1637,14 +1637,6 @@
             await LogService.WriteToLogAsync($"[{DateTime.Now}] RFPText content length: {RFPText?.Length ?? 0}");
             await LogService.WriteToLogAsync($"[{DateTime.Now}] RFPText content (first 1000 chars): {RFPText?.Substring(0, Math.Min(1000, RFPText?.Length ?? 0))}");
 
-            // Handle case where processedText is null or empty - calculate rooms for existing rows
-            if (string.IsNullOrWhiteSpace(processedText))
-            {
-                await LogService.WriteToLogAsync($"[{DateTime.Now}] processedText is empty or null - calculating rooms for existing proposal rows");
-                await CalculateRoomsForExistingRows();
-                return;
-            }
-
             string processedJsonText = processedText;
 
             try
@@ -1773,6 +1765,34 @@
                 Severity = NotificationSeverity.Error,
                 Summary = "Error",
                 Detail = ex.Message,
+                Duration = 8000
+            });
+        }
+        finally
+        {
+            InProgress = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ReCalculateProposal()
+    {
+        try
+        {
+            InProgress = true;
+            StateHasChanged();
+
+            await CalculateRoomsForExistingRows();
+        }
+        catch (Exception ex)
+        {
+            await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Exception in ReCalculateProposal - {ex.Message}");
+            await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Stack trace - {ex.StackTrace}");
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Error",
+                Detail = $"Failed to calculate rooms: {ex.Message}",
                 Duration = 8000
             });
         }
