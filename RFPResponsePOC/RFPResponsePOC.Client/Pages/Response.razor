@@ -761,9 +761,14 @@
                         }
                         else if (VenueTypeSelected && line.Contains("[VENUE_UNABLE_TO_ACCOMMODATE_AGENDA_ITEMS]", StringComparison.OrdinalIgnoreCase))
                         {
-                            body.Append(new Paragraph(new Run(new Text("The venue is unable to accommodate the following agenda items:") { Space = SpaceProcessingModeValues.Preserve })));
-                            var table = BuildProposalTable(proposalRows.Where(r => string.IsNullOrEmpty(r.SelectedRoom) && string.IsNullOrEmpty(r.ManualRoom)));
-                            body.Append(table);
+                            var CountOfUnaccommodated = proposalRows.Count(r => string.IsNullOrEmpty(r.SelectedRoom) && string.IsNullOrEmpty(r.ManualRoom));
+                            
+                            if (CountOfUnaccommodated > 0)
+                            {
+                                body.Append(new Paragraph(new Run(new Text("The venue is unable to accommodate the following agenda items:") { Space = SpaceProcessingModeValues.Preserve })));
+                                var table = BuildProposalTable(proposalRows.Where(r => string.IsNullOrEmpty(r.SelectedRoom) && string.IsNullOrEmpty(r.ManualRoom)));
+                                body.Append(table);
+                            }
                         }
                         else
                         {
@@ -853,8 +858,8 @@
             var room = !string.IsNullOrEmpty(r.SelectedRoom) ? r.SelectedRoom : r.ManualRoom;
             
             // Format dates with weekday
-            var startDateFormatted = $"{r.StartDate.DayOfWeek:D}, {r.StartDate:MMMM dd, yyyy}";
-            var endDateFormatted = $"{r.EndDate.DayOfWeek:D}, {r.EndDate:MMMM dd, yyyy}";
+            var startDateFormatted = $"{r.StartDate.DayOfWeek}, {r.StartDate:MMMM dd, yyyy}";
+            var endDateFormatted = $"{r.EndDate.DayOfWeek}, {r.EndDate:MMMM dd, yyyy}";
             
             // Format times properly
             var startTimeFormatted = DateTime.Today.Add(r.StartTime).ToString("h:mm tt");
