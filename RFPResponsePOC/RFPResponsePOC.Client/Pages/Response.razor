@@ -280,7 +280,7 @@
                                     </EditTemplate>
                                 </RadzenDataGridColumn>
 
-                                <RadzenDataGridColumn TItem="ProposalRow" Property="RoomType" Title="Room Type" Width="120px">
+                                <RadzenDataGridColumn TItem="ProposalRow" Property="RoomType" Title="Set-up" Width="120px">
                                     <Template Context="row">@row.RoomType</Template>
                                     <EditTemplate Context="row">
                                         <RadzenDropDown Data="@roomTypeOptions" @bind-Value="row.RoomType" Style="width:100%" />
@@ -846,7 +846,7 @@
             CreateHeaderCell("Room"),
             CreateHeaderCell("Start Date & Time"),
             CreateHeaderCell("End Date & Time"),
-            CreateHeaderCell("Room Type"),
+            CreateHeaderCell("Room Set-up"),
             CreateHeaderCell("Attendance")
         );
         table.Append(header);
