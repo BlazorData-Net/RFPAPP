@@ -761,6 +761,7 @@
                         }
                         else if (VenueTypeSelected && line.Contains("[VENUE_UNABLE_TO_ACCOMMODATE_AGENDA_ITEMS]", StringComparison.OrdinalIgnoreCase))
                         {
+                            body.Append(new Paragraph(new Run(new Text("The venue is unable to accommodate the following agenda items:") { Space = SpaceProcessingModeValues.Preserve })));
                             var table = BuildProposalTable(proposalRows.Where(r => string.IsNullOrEmpty(r.SelectedRoom) && string.IsNullOrEmpty(r.ManualRoom)));
                             body.Append(table);
                         }
