@@ -818,52 +818,180 @@
     private Table BuildProposalTable(IEnumerable<ProposalRow> rows)
     {
         var table = new Table();
+        
+        // Enhanced table properties with better styling
         var props = new TableProperties(
             new TableBorders(
-                new TopBorder { Val = BorderValues.Single, Size = 4 },
-                new BottomBorder { Val = BorderValues.Single, Size = 4 },
-                new LeftBorder { Val = BorderValues.Single, Size = 4 },
-                new RightBorder { Val = BorderValues.Single, Size = 4 },
-                new InsideHorizontalBorder { Val = BorderValues.Single, Size = 4 },
-                new InsideVerticalBorder { Val = BorderValues.Single, Size = 4 }
-            )
+                new TopBorder { Val = BorderValues.Single, Size = 6, Color = "000000" },
+                new BottomBorder { Val = BorderValues.Single, Size = 6, Color = "000000" },
+                new LeftBorder { Val = BorderValues.Single, Size = 6, Color = "000000" },
+                new RightBorder { Val = BorderValues.Single, Size = 6, Color = "000000" },
+                new InsideHorizontalBorder { Val = BorderValues.Single, Size = 4, Color = "CCCCCC" },
+                new InsideVerticalBorder { Val = BorderValues.Single, Size = 4, Color = "CCCCCC" }
+            ),
+            new TableWidth() { Width = "5000", Type = TableWidthUnitValues.Pct },
+            new TableJustification() { Val = TableRowAlignmentValues.Center }
         );
         table.AppendChild(props);
 
+        // Create header row
         var header = new TableRow();
         header.Append(
-            CreateCell("Name"),
-            CreateCell("Room"),
-            CreateCell("Start"),
-            CreateCell("End"),
-            CreateCell("Room Type"),
-            CreateCell("Attendance"),
-            CreateCell("Notes")
+            CreateHeaderCell("Event Name"),
+            CreateHeaderCell("Room"),
+            CreateHeaderCell("Start Date & Time"),
+            CreateHeaderCell("End Date & Time"),
+            CreateHeaderCell("Room Type"),
+            CreateHeaderCell("Attendance")
         );
         table.Append(header);
 
         foreach (var r in rows)
         {
+            // Main data row
             var row = new TableRow();
             var room = !string.IsNullOrEmpty(r.SelectedRoom) ? r.SelectedRoom : r.ManualRoom;
+            
+            // Format dates with weekday
+            var startDateFormatted = $"{r.StartDate.DayOfWeek:D}, {r.StartDate:MMMM dd, yyyy}";
+            var endDateFormatted = $"{r.EndDate.DayOfWeek:D}, {r.EndDate:MMMM dd, yyyy}";
+            
+            // Format times properly
+            var startTimeFormatted = DateTime.Today.Add(r.StartTime).ToString("h:mm tt");
+            var endTimeFormatted = DateTime.Today.Add(r.EndTime).ToString("h:mm tt");
+            
+            // Combine date and time
+            var startDateTime = $"{startDateFormatted}\n{startTimeFormatted}";
+            var endDateTime = $"{endDateFormatted}\n{endTimeFormatted}";
+
             row.Append(
-                CreateCell(r.Name),
-                CreateCell(room),
-                CreateCell($"{r.StartDate:MM/dd/yyyy} {r.StartTime}"),
-                CreateCell($"{r.EndDate:MM/dd/yyyy} {r.EndTime}"),
-                CreateCell(r.RoomType),
-                CreateCell(r.Attendance.ToString()),
-                CreateCell(r.Notes)
+                CreateDataCell(r.Name ?? ""),
+                CreateDataCell(room ?? ""),
+                CreateDataCell(startDateTime),
+                CreateDataCell(endDateTime),
+                CreateDataCell(r.RoomType ?? ""),
+                CreateDataCell(r.Attendance.ToString())
             );
             table.Append(row);
+
+            // Add notes row if notes exist
+            if (!string.IsNullOrWhiteSpace(r.Notes))
+            {
+                var notesRow = new TableRow();
+                var notesCell = new TableCell();
+                
+                // Cell properties to span all 6 columns
+                var notesCellProps = new TableCellProperties(
+                    new GridSpan() { Val = 6 },
+                    new TableCellMargin(
+                        new TopMargin() { Width = "100", Type = TableWidthUnitValues.Dxa },
+                        new BottomMargin() { Width = "100", Type = TableWidthUnitValues.Dxa },
+                        new LeftMargin() { Width = "100", Type = TableWidthUnitValues.Dxa },
+                        new RightMargin() { Width = "100", Type = TableWidthUnitValues.Dxa }
+                    ),
+                    new Shading() { Val = ShadingPatternValues.Clear, Color = "auto", Fill = "F5F5F5" }
+                );
+                notesCell.AppendChild(notesCellProps);
+                
+                // Create paragraph for notes
+                var notesParagraph = new Paragraph();
+                
+                // Add "Notes:" label in bold
+                var notesLabelRun = new Run();
+                var notesLabelRunProps = new RunProperties(new Bold());
+                notesLabelRun.AppendChild(notesLabelRunProps);
+                notesLabelRun.AppendChild(new Text("Notes: ") { Space = SpaceProcessingModeValues.Preserve });
+                notesParagraph.AppendChild(notesLabelRun);
+                
+                // Add the actual notes text
+                var notesTextRun = new Run();
+                notesTextRun.AppendChild(new Text(r.Notes) { Space = SpaceProcessingModeValues.Preserve });
+                notesParagraph.AppendChild(notesTextRun);
+                
+                notesCell.AppendChild(notesParagraph);
+                notesRow.AppendChild(notesCell);
+                table.Append(notesRow);
+            }
         }
 
         return table;
     }
 
-    private TableCell CreateCell(string text)
+    private TableCell CreateHeaderCell(string text)
     {
-        return new TableCell(new Paragraph(new Run(new Text(text ?? string.Empty))));
+        var cell = new TableCell();
+        
+        // Header cell properties with styling
+        var cellProps = new TableCellProperties(
+            new TableCellWidth() { Type = TableWidthUnitValues.Auto },
+            new TableCellMargin(
+                new TopMargin() { Width = "100", Type = TableWidthUnitValues.Dxa },
+                new BottomMargin() { Width = "100", Type = TableWidthUnitValues.Dxa },
+                new LeftMargin() { Width = "100", Type = TableWidthUnitValues.Dxa },
+                new RightMargin() { Width = "100", Type = TableWidthUnitValues.Dxa }
+            ),
+            new Shading() { Val = ShadingPatternValues.Clear, Color = "auto", Fill = "4472C4" },
+            new TableCellVerticalAlignment() { Val = TableVerticalAlignmentValues.Center }
+        );
+        cell.AppendChild(cellProps);
+
+        // Create paragraph with center alignment
+        var paragraph = new Paragraph();
+        var paraProps = new ParagraphProperties(
+            new Justification() { Val = JustificationValues.Center }
+        );
+        paragraph.AppendChild(paraProps);
+
+        // Create run with bold white text
+        var run = new Run();
+        var runProps = new RunProperties(
+            new Bold(),
+            new Color() { Val = "FFFFFF" }
+        );
+        run.AppendChild(runProps);
+        run.AppendChild(new Text(text ?? string.Empty) { Space = SpaceProcessingModeValues.Preserve });
+        
+        paragraph.AppendChild(run);
+        cell.AppendChild(paragraph);
+        
+        return cell;
+    }
+
+    private TableCell CreateDataCell(string text)
+    {
+        var cell = new TableCell();
+        
+        // Data cell properties
+        var cellProps = new TableCellProperties(
+            new TableCellWidth() { Type = TableWidthUnitValues.Auto },
+            new TableCellMargin(
+                new TopMargin() { Width = "100", Type = TableWidthUnitValues.Dxa },
+                new BottomMargin() { Width = "100", Type = TableWidthUnitValues.Dxa },
+                new LeftMargin() { Width = "100", Type = TableWidthUnitValues.Dxa },
+                new RightMargin() { Width = "100", Type = TableWidthUnitValues.Dxa }
+            ),
+            new TableCellVerticalAlignment() { Val = TableVerticalAlignmentValues.Center }
+        );
+        cell.AppendChild(cellProps);
+
+        // Handle multi-line text (for date/time formatting)
+        var lines = (text ?? string.Empty).Split('\n');
+        
+        foreach (var line in lines)
+        {
+            var paragraph = new Paragraph();
+            var paraProps = new ParagraphProperties(
+                new Justification() { Val = JustificationValues.Center }
+            );
+            paragraph.AppendChild(paraProps);
+            
+            var run = new Run();
+            run.AppendChild(new Text(line.Trim()) { Space = SpaceProcessingModeValues.Preserve });
+            paragraph.AppendChild(run);
+            cell.AppendChild(paragraph);
+        }
+        
+        return cell;
     }
 
     private void SortProposalRows()
