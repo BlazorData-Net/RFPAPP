@@ -415,7 +415,7 @@
 <canvas id="pdfCanvas" style="display:none; border:1px solid #ccc;"></canvas>
 
 @code {
-#nullable disable
+    #nullable disable
     private IDisposable registration;
     Radzen.Blazor.RadzenUpload uploader;
     RadzenDataGrid<ProposalRow> grid;
@@ -427,6 +427,7 @@
 
     private bool InProgress = false;
     private string CurrentStatus = "";
+    private string processedText = "";
 
     AIResponse result = new AIResponse();
     ZipService objZipService = new ZipService();
@@ -475,12 +476,67 @@
         public DateTime EndTimeBinding { get => DateTime.Today.Add(EndTime); set => EndTime = value.TimeOfDay; }
     }
 
+    // ***************************************************************
+    // Run on page load
+    // ***************************************************************
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                objRef = DotNetObjectReference.Create(this);
+
+                if (JsRuntime != null)
+                {
+                    await JsRuntime.InvokeVoidAsync("setupBeforeUnload", objRef);
+
+                    // Setup real-time text monitoring for RFP text area
+                    await JsRuntime.InvokeVoidAsync("pdfInterop.setupTextAreaMonitoring",
+                        "#rfp-text-area", objRef, "OnRFPTextChanged", 500);
+                }
+
+                if (Navigation != null)
+                {
+                    registration = Navigation.RegisterLocationChangingHandler(OnLocationChanging);
+                }
+
+                if (JsRuntime != null && localStorage != null && _SettingsService != null && LogService != null)
+                {
+                    objZipService = new ZipService(JsRuntime, localStorage, _SettingsService, LogService);
+                }
+
+                await LoadTemplateOptionsAsync();
+
+                // Check initial template for [VENUE_PROPOSAL]
+                await CheckTemplateForVenueProposal();
+
+                // Only reload grid if it's not null
+                if (grid != null)
+                {
+                    await grid.Reload();
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log the error or handle it appropriately
+                if (LogService != null)
+                {
+                    await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Exception in OnAfterRenderAsync - {ex.Message}");
+                }
+            }
+        }
+    }
+
     private bool CanGenerateResponse()
     {
         return !string.IsNullOrEmpty(SelectedTemplate) && ProcessedRFP &&
                (!string.IsNullOrEmpty(RFPText) || identifiedQuestions?.Any() == true);
     }
 
+    // ***************************************************************
+    // Step 4: Generate Response Document
+    // ***************************************************************
     private async Task GenerateResponseDocument()
     {
         try
@@ -576,20 +632,6 @@
             }
 
             // *********************************************
-            // Process VENUE Template Type
-            // *********************************************
-            if (VenueTypeSelected)
-            {
-                CurrentStatus = "Detect Room Requests...";
-                StateHasChanged();
-                await DetectRoomRequests();
-
-                CurrentStatus = "Calculate Proposal...";
-                StateHasChanged();
-                await CalculateProposal();
-            }
-
-            // *********************************************
             // Prompt for any remaining tokens
             // *********************************************
             var remainingTokens = Regex.Matches(templateContent, @"\[(.*?)\]")
@@ -624,7 +666,7 @@
                         try
                         {
                             var tokenService = new KnowledgebaseTokenService(Http);
-                            
+
                             // Load existing tokens
                             var existingTokensJson = await tokenService.GetKnowledgebaseTokenJsonAsync();
                             var existingTokens = !string.IsNullOrEmpty(existingTokensJson)
@@ -844,27 +886,6 @@
         catch (Exception ex)
         {
             await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Failed to save ProposalRows - {ex.Message}");
-        }
-    }
-
-    private async Task LoadProposalRowsAsync()
-    {
-        try
-        {
-            var filePath = $"{BasePath}//ProposalRows.json";
-
-            if (File.Exists(filePath))
-            {
-                var json = await File.ReadAllTextAsync(filePath);
-                var rows = JsonConvert.DeserializeObject<List<ProposalRow>>(json);
-                proposalRows = rows ?? new List<ProposalRow>();
-                SortProposalRows();
-                StateHasChanged();
-            }
-        }
-        catch (Exception ex)
-        {
-            await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Failed to load ProposalRows - {ex.Message}");
         }
     }
 
@@ -1147,58 +1168,7 @@
     private string GetTemplateUrl(string templateName)
     {
         return $"Templates/{templateName}.txt";
-    }
-
-    // Run on page load
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            try
-            {
-                objRef = DotNetObjectReference.Create(this);
-
-                if (JsRuntime != null)
-                {
-                    await JsRuntime.InvokeVoidAsync("setupBeforeUnload", objRef);
-
-                    // Setup real-time text monitoring for RFP text area
-                    await JsRuntime.InvokeVoidAsync("pdfInterop.setupTextAreaMonitoring",
-                        "#rfp-text-area", objRef, "OnRFPTextChanged", 500);
-                }
-
-                if (Navigation != null)
-                {
-                    registration = Navigation.RegisterLocationChangingHandler(OnLocationChanging);
-                }
-
-                if (JsRuntime != null && localStorage != null && _SettingsService != null && LogService != null)
-                {
-                    objZipService = new ZipService(JsRuntime, localStorage, _SettingsService, LogService);
-                }
-
-                await LoadProposalRowsAsync();
-                await LoadTemplateOptionsAsync();
-
-                // Check initial template for [VENUE_PROPOSAL]
-                await CheckTemplateForVenueProposal();
-
-                // Only reload grid if it's not null
-                if (grid != null)
-                {
-                    await grid.Reload();
-                }
-            }
-            catch (Exception ex)
-            {
-                // Log the error or handle it appropriately
-                if (LogService != null)
-                {
-                    await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Exception in OnAfterRenderAsync - {ex.Message}");
-                }
-            }
-        }
-    }
+    }   
 
     async Task EditTemplate(MouseEventArgs args)
     {
@@ -1447,7 +1417,14 @@
         {
             ProcessedRFP = true;
             InProgress = true;
-            CurrentStatus = "Detecting any questions...";
+            if (VenueTypeSelected)
+            {
+                CurrentStatus = "Detecting any questions and calculating venue response...";
+            }
+            else
+            {
+                CurrentStatus = "Detecting questions...";
+            }
             StateHasChanged();
 
             var questionsFromAI = await IdentifyQuestions();
@@ -1486,11 +1463,21 @@
             // Force UI update
             StateHasChanged();
 
+            // *********************************************
+            // Process VENUE Template Type
+            // *********************************************
+            if (VenueTypeSelected)
+            {
+                CurrentStatus = "Detect Room Requests...";
+                StateHasChanged();
+                await DetectRoomRequests();
+            }
+
             NotificationService.Notify(new NotificationMessage
             {
                 Severity = NotificationSeverity.Success,
                 Summary = "Success",
-                Detail = "RFP processed and questions detected.",
+                Detail = "RFP processed.",
                 Duration = 4000
             });
         }
@@ -1650,19 +1637,19 @@
             await LogService.WriteToLogAsync($"[{DateTime.Now}] RFPText content length: {RFPText?.Length ?? 0}");
             await LogService.WriteToLogAsync($"[{DateTime.Now}] RFPText content (first 1000 chars): {RFPText?.Substring(0, Math.Min(1000, RFPText?.Length ?? 0))}");
 
-            // Handle case where RFPText is null or empty - calculate rooms for existing rows
-            if (string.IsNullOrWhiteSpace(RFPText))
+            // Handle case where processedText is null or empty - calculate rooms for existing rows
+            if (string.IsNullOrWhiteSpace(processedText))
             {
-                await LogService.WriteToLogAsync($"[{DateTime.Now}] RFPText is empty or null - calculating rooms for existing proposal rows");
+                await LogService.WriteToLogAsync($"[{DateTime.Now}] processedText is empty or null - calculating rooms for existing proposal rows");
                 await CalculateRoomsForExistingRows();
                 return;
             }
 
-            string processedJsonText = RFPText;
+            string processedJsonText = processedText;
 
             try
             {
-                var testParse = JsonConvert.DeserializeObject(RFPText);
+                var testParse = JsonConvert.DeserializeObject(processedText);
                 await LogService.WriteToLogAsync($"[{DateTime.Now}] JSON parsing test successful. Object type: {testParse?.GetType().Name}");
                 if (testParse is Newtonsoft.Json.Linq.JObject jObject)
                 {
@@ -1671,7 +1658,7 @@
                     if (arrayProperty != null)
                         processedJsonText = arrayProperty.Value.ToString();
                     else
-                        processedJsonText = $"[{RFPText}]";
+                        processedJsonText = $"[{processedText}]";
                 }
             }
             catch (JsonReaderException jsonReadEx)
@@ -1754,8 +1741,6 @@
                 throw;
             }
 
-            RFPText = JsonConvert.SerializeObject(assigned, Formatting.Indented);
-
             await LogService.WriteToLogAsync($"[{DateTime.Now}] CalculateProposal completed successfully with {assigned.Count} assignments");
 
             NotificationService.Notify(new NotificationMessage
@@ -1816,10 +1801,13 @@
 
             result = await objOrchestratorMethods.CallOpenAIAsync(settingsService, Proposalprompt);
 
-            RFPText = $"[{result.Response}]";
+            processedText = $"[{result.Response}]";
 
             if (result.Error == "")
             {
+                CurrentStatus = "Calculate Proposal...";
+                StateHasChanged();
+
                 await CalculateProposal();
             }
             else

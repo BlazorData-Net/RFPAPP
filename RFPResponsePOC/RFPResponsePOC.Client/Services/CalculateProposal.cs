@@ -78,6 +78,9 @@ namespace RFPResponseAPP.Client.Services
                     return assignments;
                 }
 
+                // Log the incoming JSON for debugging
+                await _logService.WriteToLogAsync($"[{DateTime.Now}] Incoming RFP JSON: {rfpText}");
+
                 // Construct path to capacity configuration file
                 var capacityFilePath = $"{_basePath}//Capacity.json";
                 if (!File.Exists(capacityFilePath))
@@ -93,11 +96,46 @@ namespace RFPResponseAPP.Client.Services
                 // Deserialize JSON data with comprehensive error handling
                 try
                 {
-                    // Parse the RFP text into a list of room requests
-                    requests = JsonConvert.DeserializeObject<List<RoomsRequest>>(rfpText);
-                    if (requests == null)
+                    // First, let's check if the JSON starts with an array bracket
+                    var trimmedJson = rfpText.Trim();
+                    if (!trimmedJson.StartsWith("["))
                     {
-                        await _logService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Failed to deserialize RFP text - result was null");
+                        await _logService.WriteToLogAsync($"[{DateTime.Now}] ERROR: RFP text does not appear to be a JSON array. Expected format: [{{...}}]. Actual start: {trimmedJson.Substring(0, Math.Min(50, trimmedJson.Length))}");
+                        return assignments;
+                    }
+
+                    // Check if we have a nested array structure (double brackets)
+                    if (trimmedJson.StartsWith("[["))
+                    {
+                        await _logService.WriteToLogAsync($"[{DateTime.Now}] Detected nested array structure - attempting to deserialize outer array first");
+                        
+                        // Deserialize as array of arrays first
+                        var nestedArrays = JsonConvert.DeserializeObject<List<RoomsRequest>[]>(rfpText);
+                        if (nestedArrays == null || nestedArrays.Length == 0)
+                        {
+                            await _logService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Failed to deserialize nested array structure - result was null or empty");
+                            return assignments;
+                        }
+                        
+                        // Take the first (and presumably only) inner array
+                        requests = nestedArrays[0]?.ToList() ?? new List<RoomsRequest>();
+                        await _logService.WriteToLogAsync($"[{DateTime.Now}] Successfully extracted {requests.Count} requests from nested array structure");
+                    }
+                    else
+                    {
+                        // Parse the RFP text as a normal array of room requests
+                        requests = JsonConvert.DeserializeObject<List<RoomsRequest>>(rfpText);
+                        if (requests == null)
+                        {
+                            await _logService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Failed to deserialize RFP text - result was null");
+                            return assignments;
+                        }
+                    }
+
+                    // Validate that we have actual requests
+                    if (requests.Count == 0)
+                    {
+                        await _logService.WriteToLogAsync($"[{DateTime.Now}] WARNING: No room requests found in the JSON array");
                         return assignments;
                     }
 
@@ -115,6 +153,7 @@ namespace RFPResponseAPP.Client.Services
                 catch (JsonException jsonEx)
                 {
                     await _logService.WriteToLogAsync($"[{DateTime.Now}] ERROR: JSON deserialization failed - {jsonEx.Message}");
+                    await _logService.WriteToLogAsync($"[{DateTime.Now}] JSON content causing error: {rfpText}");
                     return assignments;
                 }
                 catch (FileNotFoundException fileEx)
@@ -130,6 +169,7 @@ namespace RFPResponseAPP.Client.Services
                 catch (Exception ex)
                 {
                     await _logService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Unexpected error during file operations - {ex.Message}");
+                    await _logService.WriteToLogAsync($"[{DateTime.Now}] JSON content: {rfpText}");
                     return assignments;
                 }
 
