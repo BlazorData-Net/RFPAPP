@@ -190,7 +190,7 @@
                     <span>&nbsp;</span>
                     @if (proposalRows?.Any() == true)
                     {
-                        <RadzenButton Text="Re-Calculate" Icon="calculate" Style="margin-top: 4px; background-color: green;" ButtonStyle="ButtonStyle.Primary" Click="ReCalculateProposal" />
+                        <RadzenButton Text="Re-Calculate" Icon="calculate" Style="margin-top: 4px; background-color: green;" ButtonStyle="ButtonStyle.Primary" Click="OnReCalculateProposal" />
                         <br />
                         <RadzenDataGrid @ref="grid" Data="@proposalRows" TItem="ProposalRow" EditMode="DataGridEditMode.Single" Editable="true" Style="margin-top:20px">
                             <Columns>
@@ -796,6 +796,21 @@
         }
     }
 
+    private async Task OnReCalculateProposal()
+    {
+        try
+        {
+            InProgress = true;
+            StateHasChanged();
+            roomOptions = await Calculations.ReCalculateProposal(proposalRows, LogService, NotificationService);
+        }
+        finally
+        {
+            InProgress = false;
+            StateHasChanged();
+        }
+    }
+
     async Task EditRow(ProposalRow row) => await grid.EditRow(row);
 
     private Table BuildProposalTable(IEnumerable<ProposalRow> rows)
@@ -1335,43 +1350,6 @@
     }
     #endregion
 
-    private async Task<List<QuestionResponse>> IdentifyQuestions()
-    {
-        List<QuestionResponse> _IdentifiedQuestions = new List<QuestionResponse>();
-
-        try
-        {
-            var prompt = await Http.GetStringAsync("Prompts/IdentifyQuestions.prompt");
-            prompt = prompt.Replace("{{RFPText}}", RFPText ?? string.Empty);
-
-            await LogService.WriteToLogAsync($"[{DateTime.Now}] IdentifyQuestions: Sending prompt to AI...");
-
-            var objOrchestratorMethods = new OrchestratorMethods(_SettingsService, LogService);
-            var settingsService = new SettingsService();
-
-            var response = await objOrchestratorMethods.CallOpenAIAsync(settingsService, prompt);
-
-            // Log response length
-            await LogService.WriteToLogAsync($"[{DateTime.Now}] IdentifyQuestions: AI response length: {response.Response?.Length ?? 0}");
-
-            if (string.IsNullOrWhiteSpace(response.Error))
-            {
-                await LogService.WriteToLogAsync($"[{DateTime.Now}] IdentifyQuestions: Attempting to deserialize JSON response");
-                _IdentifiedQuestions = JsonConvert.DeserializeObject<List<QuestionResponse>>(response.Response) ?? new List<QuestionResponse>();
-                await LogService.WriteToLogAsync($"[{DateTime.Now}] IdentifyQuestions: Deserialized {_IdentifiedQuestions.Count} questions");
-            }
-            else
-            {
-                await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: IdentifyQuestions failed - {response.Error}");
-            }
-        }
-        catch (Exception ex)
-        {
-            await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Exception in IdentifyQuestions - {ex.Message}");
-        }
-
-        return _IdentifiedQuestions;
-    }
 
     private async Task OnProposalUpload(UploadChangeEventArgs e)
     {
@@ -1539,7 +1517,8 @@
             }
             StateHasChanged();
 
-            var questionsFromAI = await IdentifyQuestions();
+            var questionProcessor = new QuestionProcessing(Http, _SettingsService, LogService);
+            var questionsFromAI = await questionProcessor.IdentifyQuestions(RFPText);
 
             // No need to convert since IdentifyQuestions now returns List<QuestionResponse>
             identifiedQuestions = questionsFromAI ?? new List<QuestionResponse>();
@@ -1582,7 +1561,11 @@
             {
                 CurrentStatus = "Detect Room Requests...";
                 StateHasChanged();
-                await DetectRoomRequests();
+                var detectResult = await Calculations.DetectRoomRequests(RFPText, Http, _SettingsService, LogService, NotificationService, SaveProposalRowsAsync, SortProposalRows);
+                result = detectResult.result;
+                processedText = detectResult.processedText;
+                proposalRows = detectResult.proposalRows;
+                roomOptions = detectResult.roomOptions;
             }
 
             NotificationService.Notify(new NotificationMessage
@@ -1611,367 +1594,9 @@
         }
     }
 
-    private async Task CalculateRoomsForExistingRows()
-    {
-        try
-        {
-            await LogService.WriteToLogAsync($"[{DateTime.Now}] CalculateRoomsForExistingRows started with {proposalRows?.Count ?? 0} rows");
 
-            if (proposalRows == null || !proposalRows.Any())
-            {
-                await LogService.WriteToLogAsync($"[{DateTime.Now}] No existing proposal rows found");
-                NotificationService.Notify(new NotificationMessage
-                {
-                    Severity = NotificationSeverity.Warning,
-                    Summary = "Warning",
-                    Detail = "No proposal rows found. Please add some rows or upload a proposal first.",
-                    Duration = 4000
-                });
-                return;
-            }
 
-            // Filter rows that need room assignments
-            // #2: Ignore any ProposalRow that has ManualRoom set to any value other than null or empty string
-            var rowsNeedingRooms = proposalRows.Where(row =>
-                string.IsNullOrWhiteSpace(row.ManualRoom) &&
-                string.IsNullOrWhiteSpace(row.SelectedRoom)).ToList();
 
-            await LogService.WriteToLogAsync($"[{DateTime.Now}] Found {rowsNeedingRooms.Count} rows needing room assignments");
-
-            if (!rowsNeedingRooms.Any())
-            {
-                await LogService.WriteToLogAsync($"[{DateTime.Now}] No rows require room assignments");
-                NotificationService.Notify(new NotificationMessage
-                {
-                    Severity = NotificationSeverity.Info,
-                    Summary = "Info",
-                    Detail = "All rows already have room assignments or manual room overrides.",
-                    Duration = 4000
-                });
-                return;
-            }
-
-            // Convert ProposalRows to RoomsRequests
-            var requests = rowsNeedingRooms.Select(row => new RoomsRequest
-            {
-                Name = row.Name ?? "Unknown",
-                StartDate = row.StartDate,
-                StartTime = row.StartTime,
-                EndDate = row.EndDate,
-                EndTime = row.EndTime,
-                RoomType = row.RoomType ?? "",
-                Attendance = row.Attendance,
-                Notes = row.Notes ?? ""
-            }).ToList();
-
-            // Create JSON for the calculator
-            var requestsJson = JsonConvert.SerializeObject(requests);
-            await LogService.WriteToLogAsync($"[{DateTime.Now}] Created requests JSON for calculation: {requestsJson.Substring(0, Math.Min(500, requestsJson.Length))}");
-
-            // Calculate room assignments
-            var calculator = new CalculateProposal("/RFPResponseAPP", LogService);
-            var assignments = await calculator.CalculateAsync(requestsJson);
-            await LogService.WriteToLogAsync($"[{DateTime.Now}] Calculator returned {assignments?.Count ?? 0} assignments");
-
-            // Update the proposal rows with calculated room assignments
-            var assignmentDict = assignments.ToDictionary(a => a.Request?.Name ?? "", a => a.AssignedRoom);
-
-            foreach (var row in rowsNeedingRooms)
-            {
-                if (assignmentDict.TryGetValue(row.Name ?? "", out var assignedRoom) && !string.IsNullOrWhiteSpace(assignedRoom))
-                {
-                    row.SelectedRoom = assignedRoom;
-                    await LogService.WriteToLogAsync($"[{DateTime.Now}] Assigned room '{assignedRoom}' to row '{row.Name}'");
-                }
-                else
-                {
-                    await LogService.WriteToLogAsync($"[{DateTime.Now}] No room assigned for row '{row.Name}'");
-                }
-            }
-
-            // Load room options for dropdown
-            try
-            {
-                var capacityJson = await File.ReadAllTextAsync("/RFPResponseAPP/Capacity.json");
-                var capacity = JsonConvert.DeserializeObject<CapacityRoot>(capacityJson);
-                roomOptions = capacity?.Rooms?.Select(r => r.Name).OrderBy(n => n).ToList() ?? new List<string>();
-            }
-            catch (Exception ex)
-            {
-                await LogService.WriteToLogAsync($"[{DateTime.Now}] WARNING: Unable to load Capacity.json - {ex.Message}");
-                roomOptions = new List<string>();
-            }
-
-            // Save the updated proposal rows and refresh UI
-            SortProposalRows();
-            await SaveProposalRowsAsync();
-            StateHasChanged();
-
-            var assignedCount = rowsNeedingRooms.Count(row => !string.IsNullOrWhiteSpace(row.SelectedRoom));
-            await LogService.WriteToLogAsync($"[{DateTime.Now}] CalculateRoomsForExistingRows completed - assigned {assignedCount} of {rowsNeedingRooms.Count} rooms");
-
-            NotificationService.Notify(new NotificationMessage
-            {
-                Severity = NotificationSeverity.Success,
-                Summary = "Success",
-                Detail = $"Room calculation completed. Assigned {assignedCount} of {rowsNeedingRooms.Count} rooms.",
-                Duration = 4000
-            });
-        }
-        catch (Exception ex)
-        {
-            await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Exception in CalculateRoomsForExistingRows - {ex.Message}");
-            await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Stack trace - {ex.StackTrace}");
-            NotificationService.Notify(new NotificationMessage
-            {
-                Severity = NotificationSeverity.Error,
-                Summary = "Error",
-                Detail = $"Failed to calculate rooms: {ex.Message}",
-                Duration = 8000
-            });
-        }
-        finally
-        {
-            InProgress = false;
-            StateHasChanged();
-        }
-    }
-
-    private async Task CalculateProposal()
-    {
-        try
-        {
-            InProgress = true;
-            CurrentStatus = "Calculating...";
-            StateHasChanged();
-
-            await LogService.WriteToLogAsync($"[{DateTime.Now}] CalculateProposal method started");
-            await LogService.WriteToLogAsync($"[{DateTime.Now}] RFPText content length: {RFPText?.Length ?? 0}");
-            await LogService.WriteToLogAsync($"[{DateTime.Now}] RFPText content (first 1000 chars): {RFPText?.Substring(0, Math.Min(1000, RFPText?.Length ?? 0))}");
-
-            string processedJsonText = processedText;
-
-            try
-            {
-                var testParse = JsonConvert.DeserializeObject(processedText);
-                await LogService.WriteToLogAsync($"[{DateTime.Now}] JSON parsing test successful. Object type: {testParse?.GetType().Name}");
-                if (testParse is Newtonsoft.Json.Linq.JObject jObject)
-                {
-                    await LogService.WriteToLogAsync($"[{DateTime.Now}] Detected JSON object. Properties: {string.Join(", ", jObject.Properties().Select(p => p.Name))}");
-                    var arrayProperty = jObject.Properties().FirstOrDefault(p => p.Value is Newtonsoft.Json.Linq.JArray);
-                    if (arrayProperty != null)
-                        processedJsonText = arrayProperty.Value.ToString();
-                    else
-                        processedJsonText = $"[{processedText}]";
-                }
-            }
-            catch (JsonReaderException jsonReadEx)
-            {
-                await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: JSON format is invalid - {jsonReadEx.Message}");
-                NotificationService.Notify(new NotificationMessage
-                {
-                    Severity = NotificationSeverity.Error,
-                    Summary = "JSON Format Error",
-                    Detail = "The text does not contain valid JSON.",
-                    Duration = 8000
-                });
-                return;
-            }
-
-            await LogService.WriteToLogAsync($"[{DateTime.Now}] Processed JSON text (first 1000 chars): {processedJsonText?.Substring(0, Math.Min(1000, processedJsonText?.Length ?? 0))}");
-
-            var calculator = new CalculateProposal("/RFPResponseAPP", LogService);
-
-            List<RoomAssignment> assigned;
-            try
-            {
-                assigned = await calculator.CalculateAsync(processedJsonText);
-                await LogService.WriteToLogAsync($"[{DateTime.Now}] Calculator.CalculateAsync completed successfully with {assigned?.Count ?? 0} results");
-            }
-            catch (FormatException formatEx)
-            {
-                await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Format exception in CalculateAsync - {formatEx.Message}");
-                await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Stack trace - {formatEx.StackTrace}");
-                NotificationService.Notify(new NotificationMessage
-                {
-                    Severity = NotificationSeverity.Error,
-                    Summary = "Data Format Error",
-                    Detail = $"Invalid data format detected: {formatEx.Message}. Please check the date/time or numeric values in your proposal.",
-                    Duration = 8000
-                });
-                return;
-            }
-            catch (Exception calcEx)
-            {
-                await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Exception in CalculateAsync - {calcEx.Message}");
-                await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Stack trace - {calcEx.StackTrace}");
-                throw;
-            }
-
-            try
-            {
-                var capacityJson = await File.ReadAllTextAsync("/RFPResponseAPP/Capacity.json");
-                var capacity = JsonConvert.DeserializeObject<CapacityRoot>(capacityJson);
-                roomOptions = capacity?.Rooms?.Select(r => r.Name).OrderBy(n => n).ToList() ?? new List<string>();
-            }
-            catch (Exception ex)
-            {
-                await LogService.WriteToLogAsync($"[{DateTime.Now}] WARNING: Unable to load Capacity.json - {ex.Message}");
-                roomOptions = new List<string>();
-            }
-
-            try
-            {
-                proposalRows = assigned.Select(a => new ProposalRow
-                {
-                    Name = a.Request?.Name ?? "Unknown",
-                    SelectedRoom = a.AssignedRoom ?? "",
-                    ManualRoom = string.Empty,
-                    StartDate = a.Request?.StartDate ?? DateTime.Today,
-                    StartTime = a.Request?.StartTime ?? TimeSpan.Zero,
-                    EndDate = a.Request?.EndDate ?? DateTime.Today,
-                    EndTime = a.Request?.EndTime ?? TimeSpan.Zero,
-                    RoomType = a.Request?.RoomType ?? "",
-                    Attendance = a.Request?.Attendance ?? 0,
-                    Notes = a.Request?.Notes ?? ""
-                }).ToList();
-                SortProposalRows();
-                await SaveProposalRowsAsync();
-            }
-            catch (Exception rowEx)
-            {
-                await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Exception creating ProposalRow objects - {rowEx.Message}");
-                await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Stack trace - {rowEx.StackTrace}");
-                throw;
-            }
-
-            await LogService.WriteToLogAsync($"[{DateTime.Now}] CalculateProposal completed successfully with {assigned.Count} assignments");
-
-            NotificationService.Notify(new NotificationMessage
-            {
-                Severity = NotificationSeverity.Success,
-                Summary = "Success",
-                Detail = "Calculation completed.",
-                Duration = 4000
-            });
-        }
-        catch (JsonException jsonEx)
-        {
-            await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: JSON deserialization error in CalculateProposal - {jsonEx.Message}");
-            await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: JSON error stack trace - {jsonEx.StackTrace}");
-            NotificationService.Notify(new NotificationMessage
-            {
-                Severity = NotificationSeverity.Error,
-                Summary = "JSON Error",
-                Detail = $"Failed to parse JSON data: {jsonEx.Message}. Please ensure the proposal has been processed correctly.",
-                Duration = 8000
-            });
-        }
-        catch (Exception ex)
-        {
-            await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Exception in CalculateProposal - {ex.Message}");
-            await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Exception type: {ex.GetType().Name}");
-            await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Stack trace - {ex.StackTrace}");
-            NotificationService.Notify(new NotificationMessage
-            {
-                Severity = NotificationSeverity.Error,
-                Summary = "Error",
-                Detail = ex.Message,
-                Duration = 8000
-            });
-        }
-        finally
-        {
-            InProgress = false;
-            StateHasChanged();
-        }
-    }
-
-    private async Task ReCalculateProposal()
-    {
-        try
-        {
-            InProgress = true;
-            StateHasChanged();
-
-            await CalculateRoomsForExistingRows();
-        }
-        catch (Exception ex)
-        {
-            await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Exception in ReCalculateProposal - {ex.Message}");
-            await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Stack trace - {ex.StackTrace}");
-            NotificationService.Notify(new NotificationMessage
-            {
-                Severity = NotificationSeverity.Error,
-                Summary = "Error",
-                Detail = $"Failed to calculate rooms: {ex.Message}",
-                Duration = 8000
-            });
-        }
-        finally
-        {
-            InProgress = false;
-            StateHasChanged();
-        }
-    }
-
-    private async Task DetectRoomRequests()
-    {
-        try
-        {
-            InProgress = true;
-            CurrentStatus = "Detect Rooms Requests (2-3 minutes)...";
-            StateHasChanged();
-
-            await LogService.WriteToLogAsync($"[{DateTime.Now}] ProcessOCRText method started");
-
-            var objOrchestratorMethods = new OrchestratorMethods(_SettingsService, LogService);
-            var settingsService = new SettingsService();
-
-            var Proposalprompt = await Http.GetStringAsync("Prompts/Proposal.prompt");
-            Proposalprompt = Proposalprompt.Replace("{{OCRResult}}", RFPText);
-
-            result = await objOrchestratorMethods.CallOpenAIAsync(settingsService, Proposalprompt);
-
-            processedText = $"[{result.Response}]";
-
-            if (result.Error == "")
-            {
-                CurrentStatus = "Calculate Proposal...";
-                StateHasChanged();
-
-                await CalculateProposal();
-            }
-            else
-            {
-                InProgress = false;
-                StateHasChanged();
-
-                await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: ProcessOCRText failed - {result.Error}");
-                NotificationService.Notify(new NotificationMessage
-                {
-                    Severity = NotificationSeverity.Error,
-                    Summary = "Error",
-                    Detail = $"Failed to process... {result.Error}",
-                    Duration = 4000
-                });
-            }
-        }
-        catch (Exception ex)
-        {
-            InProgress = false;
-            StateHasChanged();
-
-            await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Exception in ProcessOCRText - {ex.Message}");
-            NotificationService.Notify(new NotificationMessage
-            {
-                Severity = NotificationSeverity.Error,
-                Summary = "Error",
-                Detail = ex.Message,
-                Duration = 8000
-            });
-        }
-    }
 
     public void Dispose()
     {
