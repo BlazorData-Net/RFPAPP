@@ -113,8 +113,3 @@ Save time and win more proposals by automating RFP responses:
 <img width="957" height="474" alt="image" src="https://github.com/user-attachments/assets/3d10e5ad-2075-48a5-9f00-1623907a4fe9" />
 
 ---
-
-## 📜 License
-This project is licensed under the [MIT License](LICENSE).  
-
----
