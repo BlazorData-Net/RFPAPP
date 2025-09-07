@@ -72,21 +72,11 @@ else
             <!-- HERO -->
             <RadzenCard Style="background: linear-gradient(180deg, #0d47a1 0%, #1565c0 100%); color: white;">
                 <div class="rz-grid rz-align-center rz-justify-between">
-                    <div class="rz-col-12 rz-sm-7 rz-py-4">
                         <h1 class="rz-my-1">RFP Response Creator</h1>
                         <p class="rz-mt-0 rz-mb-3 rz-text-lg">
                             Automate professional RFP responses with AI—extract questions, generate answers, and produce polished proposals.
                             Includes intelligent venue assignment with conflict-free scheduling.
-                        </p>
-                        <div class="rz-mb-2">
-                            <RadzenButton Icon="play_circle" Text="Watch Demo" Style="margin-right: 8px;" ButtonStyle="ButtonStyle.Light" />
-                            <RadzenButton Icon="rocket_launch" Text="Start Free Trial" ButtonStyle="ButtonStyle.Primary" />
-                        </div>
-                        <div class="rz-mt-2 rz-opacity-80 rz-text-sm">
-                            <RadzenIcon Icon="verified" Style="vertical-align: middle; margin-right:6px;" />
-                            Works with GPT-4o, GPT-5, and more via secure API keys.
-                        </div>
-                    </div>
+                        </p>                        
                     <div class="rz-col-12 rz-sm-5 rz-text-center rz-py-4">
                         <RadzenCard Style="background: rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2);">
                             <h3 class="rz-my-1">Two Powerful Modes</h3>
@@ -114,27 +104,67 @@ else
                 </div>
             </RadzenCard>
 
-            <!-- VALUE STRIP -->
-            <div class="rz-mt-4 rz-grid">
-                <div class="rz-col-12 rz-sm-4">
-                    <RadzenCard>
-                        <h3 class="rz-flex rz-align-center rz-gap-2"><RadzenIcon Icon="auto_awesome" /> AI-Powered Answers</h3>
-                        <p>Extracts questions and drafts responses using your private knowledge base.</p>
-                    </RadzenCard>
-                </div>
-                <div class="rz-col-12 rz-sm-4">
-                    <RadzenCard>
-                        <h3 class="rz-flex rz-align-center rz-gap-2"><RadzenIcon Icon="meeting_room" /> Smart Venue Scheduling</h3>
-                        <p>Assigns rooms by capacity, setup, time, and availability—with conflict prevention.</p>
-                    </RadzenCard>
-                </div>
-                <div class="rz-col-12 rz-sm-4">
-                    <RadzenCard>
-                        <h3 class="rz-flex rz-align-center rz-gap-2"><RadzenIcon Icon="description" /> Professional Docs</h3>
-                        <p>Generates formatted Word files plus PDF/CSV exports and detailed venue tables.</p>
-                    </RadzenCard>
-                </div>
-            </div>
+            <!-- WORKFLOW (TABS) -->
+            <h2 class="rz-mt-5">How It Works</h2>
+            <RadzenTabs @bind-SelectedIndex="selectedWorkflowTabIndex" Style="max-width: 1100px;">
+                <Tabs>
+                    <RadzenTabsItem Text="Template">
+                        <Template>
+                            <RadzenIcon Icon="article" Style="margin-right: 0.5rem;" />
+                            1. Template
+                        </Template>
+                        <ChildContent>
+                            <div class="rz-p-4">
+                                <p>Select a built-in template (Default or DefaultVenue) or create your own with tokens.</p>
+                            </div>
+                        </ChildContent>
+                    </RadzenTabsItem>
+                    <RadzenTabsItem Text="Upload RFP">
+                        <Template>
+                            <RadzenIcon Icon="upload" Style="margin-right: 0.5rem;" />
+                            2. Upload RFP
+                        </Template>
+                        <ChildContent>
+                            <div class="rz-p-4">
+                                <p>Upload .docx/.pdf/images; OCR extracts text for analysis.</p>
+                            </div>
+                        </ChildContent>
+                    </RadzenTabsItem>
+                    <RadzenTabsItem Text="Review Q&A">
+                        <Template>
+                            <RadzenIcon Icon="question_answer" Style="margin-right: 0.5rem;" />
+                            3. Review Q&A
+                        </Template>
+                        <ChildContent>
+                            <div class="rz-p-4">
+                                <p>AI detects questions and drafts answers from your knowledge base—edit as needed.</p>
+                            </div>
+                        </ChildContent>
+                    </RadzenTabsItem>
+                    <RadzenTabsItem Text="Venue Assignment">
+                        <Template>
+                            <RadzenIcon Icon="event" Style="margin-right: 0.5rem;" />
+                            4. Venue Assignment
+                        </Template>
+                        <ChildContent>
+                            <div class="rz-p-4">
+                                <p>(Venue mode) Auto-assign rooms by capacity, setup, and schedule with conflict checks.</p>
+                            </div>
+                        </ChildContent>
+                    </RadzenTabsItem>
+                    <RadzenTabsItem Text="Generate">
+                        <Template>
+                            <RadzenIcon Icon="download" Style="margin-right: 0.5rem;" />
+                            5. Generate
+                        </Template>
+                        <ChildContent>
+                            <div class="rz-p-4">
+                                <p>Export professional Word documents, plus PDF/CSV tables for venues.</p>
+                            </div>
+                        </ChildContent>
+                    </RadzenTabsItem>
+                </Tabs>
+            </RadzenTabs>
 
             <!-- FEATURES (TABS) -->
             <RadzenTabs Class="rz-mt-4" @bind-SelectedIndex="selectedTabIndex">
@@ -272,69 +302,7 @@ else
                         </ChildContent>
                     </RadzenTabsItem>
                 </Tabs>
-            </RadzenTabs>
-
-            <!-- WORKFLOW (TABS) -->
-            <h2 class="rz-mt-5">How It Works</h2>
-            <RadzenTabs @bind-SelectedIndex="selectedWorkflowTabIndex" Style="max-width: 1100px;">
-                <Tabs>
-                    <RadzenTabsItem Text="Template">
-                        <Template>
-                            <RadzenIcon Icon="article" Style="margin-right: 0.5rem;" />
-                            1. Template
-                        </Template>
-                        <ChildContent>
-                            <div class="rz-p-4">
-                                <p>Select a built-in template (Default or DefaultVenue) or create your own with tokens.</p>
-                            </div>
-                        </ChildContent>
-                    </RadzenTabsItem>
-                    <RadzenTabsItem Text="Upload RFP">
-                        <Template>
-                            <RadzenIcon Icon="upload" Style="margin-right: 0.5rem;" />
-                            2. Upload RFP
-                        </Template>
-                        <ChildContent>
-                            <div class="rz-p-4">
-                                <p>Upload .docx/.pdf/images; OCR extracts text for analysis.</p>
-                            </div>
-                        </ChildContent>
-                    </RadzenTabsItem>
-                    <RadzenTabsItem Text="Review Q&A">
-                        <Template>
-                            <RadzenIcon Icon="question_answer" Style="margin-right: 0.5rem;" />
-                            3. Review Q&A
-                        </Template>
-                        <ChildContent>
-                            <div class="rz-p-4">
-                                <p>AI detects questions and drafts answers from your knowledge base—edit as needed.</p>
-                            </div>
-                        </ChildContent>
-                    </RadzenTabsItem>
-                    <RadzenTabsItem Text="Venue Assignment">
-                        <Template>
-                            <RadzenIcon Icon="event" Style="margin-right: 0.5rem;" />
-                            4. Venue Assignment
-                        </Template>
-                        <ChildContent>
-                            <div class="rz-p-4">
-                                <p>(Venue mode) Auto-assign rooms by capacity, setup, and schedule with conflict checks.</p>
-                            </div>
-                        </ChildContent>
-                    </RadzenTabsItem>
-                    <RadzenTabsItem Text="Generate">
-                        <Template>
-                            <RadzenIcon Icon="download" Style="margin-right: 0.5rem;" />
-                            5. Generate
-                        </Template>
-                        <ChildContent>
-                            <div class="rz-p-4">
-                                <p>Export professional Word documents, plus PDF/CSV tables for venues.</p>
-                            </div>
-                        </ChildContent>
-                    </RadzenTabsItem>
-                </Tabs>
-            </RadzenTabs>
+            </RadzenTabs>          
 
             <!-- TARGET USERS -->
             <div class="rz-mt-5 rz-grid rz-gap-2">
@@ -366,31 +334,65 @@ else
 
             <!-- FAQ (ACCORDION) -->
             <h2 class="rz-mt-5">FAQ</h2>
-            <RadzenAccordion>
-                <RadzenAccordionItem Text="How does the AI find answers in my documents?" Icon="travel_explore">
-                    <p>Your uploads are chunked and embedded (vector embeddings). The system semantically matches RFP questions to your stored content.</p>
-                </RadzenAccordionItem>
-                <RadzenAccordionItem Text="Can I override AI answers?" Icon="edit">
-                    <p>Yes. Review and edit any response before exporting. Your edits can be saved into templates or tokens for reuse.</p>
-                </RadzenAccordionItem>
-                <RadzenAccordionItem Text="How do venue assignments work?" Icon="event_seat">
-                    <p>We use a first-fit algorithm to assign the smallest suitable rooms based on capacity, setup, and availability, with conflict detection and re-calculation that preserves existing assignments.</p>
-                </RadzenAccordionItem>
-                <RadzenAccordionItem Text="What file formats are supported?" Icon="attach_file">
-                    <p>Uploads: .docx, .pdf, .png, .jpg, .jpeg. Exports: Word (.docx), PDF, and CSV.</p>
-                </RadzenAccordionItem>
-                <RadzenAccordionItem Text="Which models are supported?" Icon="hub">
-                    <p>Works with GPT-4o, GPT-5, and other OpenAI-compatible models via API keys.</p>
-                </RadzenAccordionItem>
+            <RadzenAccordion @bind-SelectedIndex="selectedAccordionIndex" Multiple="true">
+                <Items>
+                    <RadzenAccordionItem Text="How does the AI find answers in my documents?">
+                        <Template>
+                            <RadzenIcon Icon="travel_explore" Style="margin-right: 0.5rem;" />
+                            How does the AI find answers in my documents?
+                        </Template>
+                        <ChildContent>
+                            <div class="rz-p-4">
+                                <p>Your uploads are chunked and embedded (vector embeddings). The system semantically matches RFP questions to your stored content.</p>
+                            </div>
+                        </ChildContent>
+                    </RadzenAccordionItem>
+                    <RadzenAccordionItem Text="Can I override AI answers?">
+                        <Template>
+                            <RadzenIcon Icon="edit" Style="margin-right: 0.5rem;" />
+                            Can I override AI answers?
+                        </Template>
+                        <ChildContent>
+                            <div class="rz-p-4">
+                                <p>Yes. Review and edit any response before exporting. Your edits can be saved into templates or tokens for reuse.</p>
+                            </div>
+                        </ChildContent>
+                    </RadzenAccordionItem>
+                    <RadzenAccordionItem Text="How do venue assignments work?">
+                        <Template>
+                            <RadzenIcon Icon="event_seat" Style="margin-right: 0.5rem;" />
+                            How do venue assignments work?
+                        </Template>
+                        <ChildContent>
+                            <div class="rz-p-4">
+                                <p>We use a first-fit algorithm to assign the smallest suitable rooms based on capacity, setup, and availability, with conflict detection and re-calculation that preserves existing assignments.</p>
+                            </div>
+                        </ChildContent>
+                    </RadzenAccordionItem>
+                    <RadzenAccordionItem Text="What file formats are supported?">
+                        <Template>
+                            <RadzenIcon Icon="attach_file" Style="margin-right: 0.5rem;" />
+                            What file formats are supported?
+                        </Template>
+                        <ChildContent>
+                            <div class="rz-p-4">
+                                <p>Uploads: .docx, .pdf, .png, .jpg, .jpeg. Exports: Word (.docx), PDF, and CSV.</p>
+                            </div>
+                        </ChildContent>
+                    </RadzenAccordionItem>
+                    <RadzenAccordionItem Text="Which models are supported?">
+                        <Template>
+                            <RadzenIcon Icon="hub" Style="margin-right: 0.5rem;" />
+                            Which models are supported?
+                        </Template>
+                        <ChildContent>
+                            <div class="rz-p-4">
+                                <p>Works with GPT-4o, GPT-5, and other OpenAI-compatible models via API keys.</p>
+                            </div>
+                        </ChildContent>
+                    </RadzenAccordionItem>
+                </Items>
             </RadzenAccordion>
-
-            <!-- CTA FOOTER -->
-            <RadzenCard class="rz-mt-5 rz-text-center">
-                <h2 class="rz-my-1">Create Better RFP Responses—Faster</h2>
-                <p class="rz-mb-3">Try RFP Response Creator to automate Q&amp;A, streamline venue scheduling, and export professional documents.</p>
-                <RadzenButton Icon="rocket_launch" Text="Start Free Trial" ButtonStyle="ButtonStyle.Primary" Style="margin-right:8px;" />
-                <RadzenButton Icon="chat" Text="Talk to Sales" ButtonStyle="ButtonStyle.Light" />
-            </RadzenCard>
 
         </div>
         <br />
@@ -442,6 +444,7 @@ else
     int selectedTabIndex = 0;
     int selectedStepIndex = 0;
     int selectedWorkflowTabIndex = 0;
+    int selectedAccordionIndex = -1; // -1 means no item is expanded by default
 
     // Track active menu item for highlighting
     string ActiveMenuItem = "Home";
