@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using RFPResponseAPP.Client.Models;
 using RFPResponseAPP.Models;
 using RFPResponseAPP.Model;
@@ -104,36 +105,41 @@ namespace RFPResponseAPP.Client.Services
                         return assignments;
                     }
 
-                    // Check if we have a nested array structure (double brackets)
-                    if (trimmedJson.StartsWith("[["))
+                    // Parse the JSON into a JToken so we can inspect and clean it before materializing
+                    var token = JToken.Parse(rfpText);
+
+                    // If the outer array contains another array, unwrap it
+                    if (token.Type == JTokenType.Array && token.First?.Type == JTokenType.Array)
                     {
                         await _logService.WriteToLogAsync($"[{DateTime.Now}] Detected nested array structure - attempting to deserialize outer array first");
-                        
-                        // Deserialize as array of arrays first
-                        var nestedArrays = JsonConvert.DeserializeObject<List<RoomsRequest>[]>(rfpText);
-                        if (nestedArrays == null || nestedArrays.Length == 0)
-                        {
-                            await _logService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Failed to deserialize nested array structure - result was null or empty");
-                            return assignments;
-                        }
-                        
-                        // Take the first (and presumably only) inner array
-                        requests = nestedArrays[0]?.ToList() ?? new List<RoomsRequest>();
-                        await _logService.WriteToLogAsync($"[{DateTime.Now}] Successfully extracted {requests.Count} requests from nested array structure");
+                        token = token.First;
                     }
-                    else
+
+                    // Ensure we are working with an array of objects
+                    if (token.Type != JTokenType.Array)
                     {
-                        // Parse the RFP text as a normal array of room requests
-                        requests = JsonConvert.DeserializeObject<List<RoomsRequest>>(rfpText);
-                        if (requests == null)
+                        await _logService.WriteToLogAsync($"[{DateTime.Now}] ERROR: JSON root element is not an array. Detected type: {token.Type}");
+                        return assignments;
+                    }
+
+                    // Fix any blank or missing time fields before deserialization
+                    foreach (var obj in token.Children<JObject>())
+                    {
+                        var name = (string)(obj["name"] ?? "unknown");
+                        foreach (var propName in new[] { "start_time", "end_time" })
                         {
-                            await _logService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Failed to deserialize RFP text - result was null");
-                            return assignments;
+                            var prop = obj.Property(propName);
+                            if (prop == null || (prop.Value.Type == JTokenType.String && string.IsNullOrWhiteSpace((string)prop.Value)))
+                            {
+                                await _logService.WriteToLogAsync($"[{DateTime.Now}] WARNING: Missing or empty {propName} for request '{name}' - defaulting to 00:00:00");
+                                obj[propName] = "00:00:00";
+                            }
                         }
                     }
 
-                    // Validate that we have actual requests
-                    if (requests.Count == 0)
+                    // Deserialize the cleaned JSON into room requests
+                    requests = token.ToObject<List<RoomsRequest>>();
+                    if (requests == null || requests.Count == 0)
                     {
                         await _logService.WriteToLogAsync($"[{DateTime.Now}] WARNING: No room requests found in the JSON array");
                         return assignments;
