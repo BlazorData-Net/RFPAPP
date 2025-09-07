@@ -18,6 +18,29 @@
 @inject HttpClient Http
 @inject NavigationManager Navigation
 @inject IJSRuntime JsRuntime
+<style>
+    /* Minimal helpers to keep things tidy with the default theme */
+    .rz-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .rz-text-lg {
+        font-size: 1.125rem;
+    }
+
+    .rz-gap-2 {
+        gap: 1rem;
+    }
+
+    .rz-opacity-80 {
+        opacity: .8;
+    }
+
+    .rz-opacity-90 {
+        opacity: .9;
+    }
+</style>
 <PageTitle>Home</PageTitle>
 <RadzenMenu>
     @if (ShowMainMenu)
@@ -44,21 +67,338 @@ else
 {
     @if (HomeVisible)
     {
-        <div class="rz-card step-card">
-            <h3 class="text-center">Welcome to RFP Response APP</h3>
-            <div class="step-message">
-                @if (!KnowledgebaseFileExists)
-                {
-                    <RadzenButton class="step-button" Text="Build Knowledgebase" Click="@KnowledgebaseClicked" Style="background-color: green;" ButtonStyle="ButtonStyle.Primary" />
-                    <br />
-                    <br />
-                }
-                else
-                {
-                    <RadzenButton class="step-button" Text="Create Response" Click="@ResponseClicked" Style="background-color: green;" ButtonStyle="ButtonStyle.Primary" />
-                }
+        <div class="rz-p-4 rz-container">
+
+            <!-- HERO -->
+            <RadzenCard Style="background: linear-gradient(180deg, #0d47a1 0%, #1565c0 100%); color: white;">
+                <div class="rz-grid rz-align-center rz-justify-between">
+                    <div class="rz-col-12 rz-sm-7 rz-py-4">
+                        <h1 class="rz-my-1">RFP Response Creator</h1>
+                        <p class="rz-mt-0 rz-mb-3 rz-text-lg">
+                            Automate professional RFP responses with AI—extract questions, generate answers, and produce polished proposals.
+                            Includes intelligent venue assignment with conflict-free scheduling.
+                        </p>
+                        <div class="rz-mb-2">
+                            <RadzenButton Icon="play_circle" Text="Watch Demo" Style="margin-right: 8px;" ButtonStyle="ButtonStyle.Light" />
+                            <RadzenButton Icon="rocket_launch" Text="Start Free Trial" ButtonStyle="ButtonStyle.Primary" />
+                        </div>
+                        <div class="rz-mt-2 rz-opacity-80 rz-text-sm">
+                            <RadzenIcon Icon="verified" Style="vertical-align: middle; margin-right:6px;" />
+                            Works with GPT-4o, GPT-5, and more via secure API keys.
+                        </div>
+                    </div>
+                    <div class="rz-col-12 rz-sm-5 rz-text-center rz-py-4">
+                        <RadzenCard Style="background: rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2);">
+                            <h3 class="rz-my-1">Two Powerful Modes</h3>
+                            <div class="rz-mt-2">
+                                <RadzenBadge Text="General RFPs" Style="margin-right:8px;" />
+                                <RadzenBadge Text="Venue RFPs" Style="background:#ffb300; color:#000;" />
+                            </div>
+                            <p class="rz-mt-3 rz-opacity-90">
+                                Choose a template, upload the RFP, review AI answers, assign rooms (venue mode), and export a polished document.
+                            </p>
+                        </RadzenCard>
+                    </div>
+                    <div>
+                        @if (!KnowledgebaseFileExists)
+                        {
+                            <RadzenButton class="step-button" Text="Build Knowledgebase" Click="@KnowledgebaseClicked" Style="background-color: green;" ButtonStyle="ButtonStyle.Primary" />
+                            <br />
+                            <br />
+                        }
+                        else
+                        {
+                            <RadzenButton class="step-button" Text="Create Response" Click="@ResponseClicked" Style="background-color: green;" ButtonStyle="ButtonStyle.Primary" />
+                        }
+                    </div>
+                </div>
+            </RadzenCard>
+
+            <!-- VALUE STRIP -->
+            <div class="rz-mt-4 rz-grid">
+                <div class="rz-col-12 rz-sm-4">
+                    <RadzenCard>
+                        <h3 class="rz-flex rz-align-center rz-gap-2"><RadzenIcon Icon="auto_awesome" /> AI-Powered Answers</h3>
+                        <p>Extracts questions and drafts responses using your private knowledge base.</p>
+                    </RadzenCard>
+                </div>
+                <div class="rz-col-12 rz-sm-4">
+                    <RadzenCard>
+                        <h3 class="rz-flex rz-align-center rz-gap-2"><RadzenIcon Icon="meeting_room" /> Smart Venue Scheduling</h3>
+                        <p>Assigns rooms by capacity, setup, time, and availability—with conflict prevention.</p>
+                    </RadzenCard>
+                </div>
+                <div class="rz-col-12 rz-sm-4">
+                    <RadzenCard>
+                        <h3 class="rz-flex rz-align-center rz-gap-2"><RadzenIcon Icon="description" /> Professional Docs</h3>
+                        <p>Generates formatted Word files plus PDF/CSV exports and detailed venue tables.</p>
+                    </RadzenCard>
+                </div>
             </div>
+
+            <!-- FEATURES (TABS) -->
+            <RadzenTabs Class="rz-mt-4" @bind-SelectedIndex="selectedTabIndex">
+                <Tabs>
+                    <RadzenTabsItem Text="General RFP Features">
+                        <Template>
+                            <RadzenIcon Icon="task" Style="margin-right: 0.5rem;" />
+                            General RFP Features
+                        </Template>
+                        <ChildContent>
+                            <div class="rz-grid rz-gap-2">
+                                <div class="rz-col-12 rz-md-6">
+                                    <RadzenCard>
+                                        <h4><RadzenIcon Icon="upload_file" /> Document Processing</h4>
+                                        <ul class="rz-ml-2">
+                                            <li>OCR for PDFs, Word, and images using OpenAI vision</li>
+                                            <li>Supports .docx, .pdf, .png, .jpg, .jpeg</li>
+                                            <li>Automatic text extraction for analysis</li>
+                                        </ul>
+                                    </RadzenCard>
+                                </div>
+                                <div class="rz-col-12 rz-md-6">
+                                    <RadzenCard>
+                                        <h4><RadzenIcon Icon="help_center" /> Question Detection & Answers</h4>
+                                        <ul class="rz-ml-2">
+                                            <li>Detects and organizes questions in RFPs</li>
+                                            <li>Embeddings-based matching to your knowledge base</li>
+                                            <li>AI-generated drafts with manual editing</li>
+                                        </ul>
+                                    </RadzenCard>
+                                </div>
+                                <div class="rz-col-12 rz-md-6">
+                                    <RadzenCard>
+                                        <h4><RadzenIcon Icon="integration_instructions" /> Templates & Tokens</h4>
+                                        <ul class="rz-ml-2">
+                                            <li>Built-in "Default" template + custom templates</li>
+                                            <li>Dynamic tokens like [BUSINESS_NAME], [EVENT_NAME]</li>
+                                            <li>Organize and reuse content blocks</li>
+                                        </ul>
+                                    </RadzenCard>
+                                </div>
+                                <div class="rz-col-12 rz-md-6">
+                                    <RadzenCard>
+                                        <h4><RadzenIcon Icon="picture_as_pdf" /> Document Generation</h4>
+                                        <ul class="rz-ml-2">
+                                            <li>Formatted .docx with professional styling</li>
+                                            <li>Export to PDF and CSV</li>
+                                            <li>Consistent branding and layout</li>
+                                        </ul>
+                                    </RadzenCard>
+                                </div>
+                            </div>
+                        </ChildContent>
+                    </RadzenTabsItem>
+
+                    <RadzenTabsItem Text="Venue RFP Features">
+                        <Template>
+                            <RadzenIcon Icon="event_seat" Style="margin-right: 0.5rem;" />
+                            Venue RFP Features
+                        </Template>
+                        <ChildContent>
+                            <div class="rz-grid rz-gap-2">
+                                <div class="rz-col-12 rz-md-6">
+                                    <RadzenCard>
+                                        <h4><RadzenIcon Icon="table_rows" /> Capacity & Setup</h4>
+                                        <ul class="rz-ml-2">
+                                            <li>Upload capacity charts; AI extracts room data</li>
+                                            <li>Supports 10 setups: Banquet, Conference, Theatre, Classroom, U-Shape, Boardroom, Hollow Square, Crescent Rounds, Reception, Square</li>
+                                            <li>First-fit engine uses smallest suitable rooms</li>
+                                        </ul>
+                                    </RadzenCard>
+                                </div>
+                                <div class="rz-col-12 rz-md-6">
+                                    <RadzenCard>
+                                        <h4><RadzenIcon Icon="event_available" /> Scheduling Intelligence</h4>
+                                        <ul class="rz-ml-2">
+                                            <li>Time conflict detection to avoid overlaps</li>
+                                            <li>Parent-child room grouping</li>
+                                            <li>Re-calculation that preserves existing assignments</li>
+                                        </ul>
+                                    </RadzenCard>
+                                </div>
+                                <div class="rz-col-12 rz-md-6">
+                                    <RadzenCard>
+                                        <h4><RadzenIcon Icon="grid_on" /> Interactive Editing</h4>
+                                        <ul class="rz-ml-2">
+                                            <li>Edit room assignments in grids</li>
+                                            <li>Live status during AI operations</li>
+                                            <li>Step-by-step 4-stage workflow</li>
+                                        </ul>
+                                    </RadzenCard>
+                                </div>
+                                <div class="rz-col-12 rz-md-6">
+                                    <RadzenCard>
+                                        <h4><RadzenIcon Icon="format_list_bulleted" /> Venue Tables & Exports</h4>
+                                        <ul class="rz-ml-2">
+                                            <li>Auto-generated venue proposal tables</li>
+                                            <li>Export venue details to Word/PDF/CSV</li>
+                                            <li>Consistent formatting and branding</li>
+                                        </ul>
+                                    </RadzenCard>
+                                </div>
+                            </div>
+                        </ChildContent>
+                    </RadzenTabsItem>
+
+                    <RadzenTabsItem Text="Data & Integrations">
+                        <Template>
+                            <RadzenIcon Icon="hub" Style="margin-right: 0.5rem;" />
+                            Data & Integrations
+                        </Template>
+                        <ChildContent>
+                            <div class="rz-grid rz-gap-2">
+                                <div class="rz-col-12 rz-md-6">
+                                    <RadzenCard>
+                                        <h4><RadzenIcon Icon="storage" /> Data Management</h4>
+                                        <ul class="rz-ml-2">
+                                            <li>Save/load settings; local storage with backup/restore</li>
+                                            <li>Zip packaging for portability</li>
+                                            <li>Import/export full settings bundles</li>
+                                        </ul>
+                                    </RadzenCard>
+                                </div>
+                                <div class="rz-col-12 rz-md-6">
+                                    <RadzenCard>
+                                        <h4><RadzenIcon Icon="key" /> OpenAI Integration</h4>
+                                        <ul class="rz-ml-2">
+                                            <li>Supports GPT-4o, GPT-5, and compatible models</li>
+                                            <li>Secure API key storage and validation</li>
+                                            <li>Comprehensive logging and error tracking</li>
+                                        </ul>
+                                    </RadzenCard>
+                                </div>
+                            </div>
+                        </ChildContent>
+                    </RadzenTabsItem>
+                </Tabs>
+            </RadzenTabs>
+
+            <!-- WORKFLOW (TABS) -->
+            <h2 class="rz-mt-5">How It Works</h2>
+            <RadzenTabs @bind-SelectedIndex="selectedWorkflowTabIndex" Style="max-width: 1100px;">
+                <Tabs>
+                    <RadzenTabsItem Text="Template">
+                        <Template>
+                            <RadzenIcon Icon="article" Style="margin-right: 0.5rem;" />
+                            1. Template
+                        </Template>
+                        <ChildContent>
+                            <div class="rz-p-4">
+                                <p>Select a built-in template (Default or DefaultVenue) or create your own with tokens.</p>
+                            </div>
+                        </ChildContent>
+                    </RadzenTabsItem>
+                    <RadzenTabsItem Text="Upload RFP">
+                        <Template>
+                            <RadzenIcon Icon="upload" Style="margin-right: 0.5rem;" />
+                            2. Upload RFP
+                        </Template>
+                        <ChildContent>
+                            <div class="rz-p-4">
+                                <p>Upload .docx/.pdf/images; OCR extracts text for analysis.</p>
+                            </div>
+                        </ChildContent>
+                    </RadzenTabsItem>
+                    <RadzenTabsItem Text="Review Q&A">
+                        <Template>
+                            <RadzenIcon Icon="question_answer" Style="margin-right: 0.5rem;" />
+                            3. Review Q&A
+                        </Template>
+                        <ChildContent>
+                            <div class="rz-p-4">
+                                <p>AI detects questions and drafts answers from your knowledge base—edit as needed.</p>
+                            </div>
+                        </ChildContent>
+                    </RadzenTabsItem>
+                    <RadzenTabsItem Text="Venue Assignment">
+                        <Template>
+                            <RadzenIcon Icon="event" Style="margin-right: 0.5rem;" />
+                            4. Venue Assignment
+                        </Template>
+                        <ChildContent>
+                            <div class="rz-p-4">
+                                <p>(Venue mode) Auto-assign rooms by capacity, setup, and schedule with conflict checks.</p>
+                            </div>
+                        </ChildContent>
+                    </RadzenTabsItem>
+                    <RadzenTabsItem Text="Generate">
+                        <Template>
+                            <RadzenIcon Icon="download" Style="margin-right: 0.5rem;" />
+                            5. Generate
+                        </Template>
+                        <ChildContent>
+                            <div class="rz-p-4">
+                                <p>Export professional Word documents, plus PDF/CSV tables for venues.</p>
+                            </div>
+                        </ChildContent>
+                    </RadzenTabsItem>
+                </Tabs>
+            </RadzenTabs>
+
+            <!-- TARGET USERS -->
+            <div class="rz-mt-5 rz-grid rz-gap-2">
+                <div class="rz-col-12 rz-md-3">
+                    <RadzenCard>
+                        <h4><RadzenIcon Icon="hotel" /> Venue Managers</h4>
+                        <p>Hotels, conference centers, and event spaces streamline proposals and room scheduling.</p>
+                    </RadzenCard>
+                </div>
+                <div class="rz-col-12 rz-md-3">
+                    <RadzenCard>
+                        <h4><RadzenIcon Icon="sell" /> Sales Teams</h4>
+                        <p>Respond faster with accurate, consistent answers pulled from your own content.</p>
+                    </RadzenCard>
+                </div>
+                <div class="rz-col-12 rz-md-3">
+                    <RadzenCard>
+                        <h4><RadzenIcon Icon="event" /> Event Planners</h4>
+                        <p>Manage multi-track requirements with automated room assignments and conflict checks.</p>
+                    </RadzenCard>
+                </div>
+                <div class="rz-col-12 rz-md-3">
+                    <RadzenCard>
+                        <h4><RadzenIcon Icon="insights" /> Business Development</h4>
+                        <p>Standardize responses and win more bids with professional output every time.</p>
+                    </RadzenCard>
+                </div>
+            </div>
+
+            <!-- FAQ (ACCORDION) -->
+            <h2 class="rz-mt-5">FAQ</h2>
+            <RadzenAccordion>
+                <RadzenAccordionItem Text="How does the AI find answers in my documents?" Icon="travel_explore">
+                    <p>Your uploads are chunked and embedded (vector embeddings). The system semantically matches RFP questions to your stored content.</p>
+                </RadzenAccordionItem>
+                <RadzenAccordionItem Text="Can I override AI answers?" Icon="edit">
+                    <p>Yes. Review and edit any response before exporting. Your edits can be saved into templates or tokens for reuse.</p>
+                </RadzenAccordionItem>
+                <RadzenAccordionItem Text="How do venue assignments work?" Icon="event_seat">
+                    <p>We use a first-fit algorithm to assign the smallest suitable rooms based on capacity, setup, and availability, with conflict detection and re-calculation that preserves existing assignments.</p>
+                </RadzenAccordionItem>
+                <RadzenAccordionItem Text="What file formats are supported?" Icon="attach_file">
+                    <p>Uploads: .docx, .pdf, .png, .jpg, .jpeg. Exports: Word (.docx), PDF, and CSV.</p>
+                </RadzenAccordionItem>
+                <RadzenAccordionItem Text="Which models are supported?" Icon="hub">
+                    <p>Works with GPT-4o, GPT-5, and other OpenAI-compatible models via API keys.</p>
+                </RadzenAccordionItem>
+            </RadzenAccordion>
+
+            <!-- CTA FOOTER -->
+            <RadzenCard class="rz-mt-5 rz-text-center">
+                <h2 class="rz-my-1">Create Better RFP Responses—Faster</h2>
+                <p class="rz-mb-3">Try RFP Response Creator to automate Q&amp;A, streamline venue scheduling, and export professional documents.</p>
+                <RadzenButton Icon="rocket_launch" Text="Start Free Trial" ButtonStyle="ButtonStyle.Primary" Style="margin-right:8px;" />
+                <RadzenButton Icon="chat" Text="Talk to Sales" ButtonStyle="ButtonStyle.Light" />
+            </RadzenCard>
+
         </div>
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
     }
     @if (ResponseVisible)
     {
@@ -98,6 +438,10 @@ else
     bool ResponseVisible = false;
     bool KnowledgebaseVisible = false;
     bool KnowledgebaseFileExists = false;
+
+    int selectedTabIndex = 0;
+    int selectedStepIndex = 0;
+    int selectedWorkflowTabIndex = 0;
 
     // Track active menu item for highlighting
     string ActiveMenuItem = "Home";
