@@ -272,9 +272,13 @@ namespace RFPResponseAPP.Client.Services
                     return new List<string>();
                 }
 
+                // Find rows that need room assignments (no manual room and no selected room)
                 var rowsNeedingRooms = proposalRows.Where(row => string.IsNullOrWhiteSpace(row.ManualRoom) && string.IsNullOrWhiteSpace(row.SelectedRoom)).ToList();
 
-                await logService.WriteToLogAsync($"[{DateTime.Now}] Found {rowsNeedingRooms.Count} rows needing room assignments");
+                // Find rows that already have room assignments (either manual or selected)
+                var rowsWithAssignments = proposalRows.Where(row => !string.IsNullOrWhiteSpace(row.ManualRoom) || !string.IsNullOrWhiteSpace(row.SelectedRoom)).ToList();
+
+                await logService.WriteToLogAsync($"[{DateTime.Now}] Found {rowsNeedingRooms.Count} rows needing room assignments and {rowsWithAssignments.Count} rows with existing assignments");
 
                 if (!rowsNeedingRooms.Any())
                 {
@@ -286,9 +290,22 @@ namespace RFPResponseAPP.Client.Services
                         Detail = "All rows already have room assignments or manual room overrides.",
                         Duration = 4000
                     });
-                    return new List<string>();
+                    
+                    // Still return room options even if no calculations are needed
+                    try
+                    {
+                        var capacityJson = await File.ReadAllTextAsync("/RFPResponseAPP/Capacity.json");
+                        var capacity = JsonConvert.DeserializeObject<CapacityRoot>(capacityJson);
+                        return capacity?.Rooms?.Select(r => r.Name).OrderBy(n => n).ToList() ?? new List<string>();
+                    }
+                    catch (Exception ex)
+                    {
+                        await logService.WriteToLogAsync($"[{DateTime.Now}] WARNING: Unable to load Capacity.json - {ex.Message}");
+                        return new List<string>();
+                    }
                 }
 
+                // Convert rows needing rooms to RoomRequest objects
                 var requests = rowsNeedingRooms.Select(row => new RoomsRequest
                 {
                     Name = row.Name ?? "Unknown",
@@ -301,11 +318,31 @@ namespace RFPResponseAPP.Client.Services
                     Notes = row.Notes ?? ""
                 }).ToList();
 
+                // Convert rows with existing assignments to RoomAssignment objects
+                var existingAssignments = rowsWithAssignments.Select(row => new RoomAssignment
+                {
+                    Request = new RoomsRequest
+                    {
+                        Name = row.Name ?? "Unknown",
+                        StartDate = row.StartDate,
+                        StartTime = row.StartTime,
+                        EndDate = row.EndDate,
+                        EndTime = row.EndTime,
+                        RoomType = row.RoomType ?? "",
+                        Attendance = row.Attendance,
+                        Notes = row.Notes ?? ""
+                    },
+                    AssignedRoom = !string.IsNullOrWhiteSpace(row.ManualRoom) ? row.ManualRoom : row.SelectedRoom
+                }).ToList();
+
                 var requestsJson = JsonConvert.SerializeObject(requests);
                 await logService.WriteToLogAsync($"[{DateTime.Now}] Created requests JSON for calculation: {requestsJson.Substring(0, Math.Min(500, requestsJson.Length))}");
+                await logService.WriteToLogAsync($"[{DateTime.Now}] Existing assignments to consider: {string.Join(", ", existingAssignments.Select(ea => $"{ea.Request?.Name}:{ea.AssignedRoom}"))}");
 
                 var calculator = new CalculateProposal("/RFPResponseAPP", logService);
-                var assignments = await calculator.CalculateAsync(requestsJson);
+                
+                // Use the new overloaded method that considers existing assignments
+                var assignments = await calculator.CalculateAsync(requestsJson, existingAssignments);
                 await logService.WriteToLogAsync($"[{DateTime.Now}] Calculator returned {assignments?.Count ?? 0} assignments");
 
                 var assignmentDict = assignments.ToDictionary(a => a.Request?.Name ?? "", a => a.AssignedRoom);

@@ -65,12 +65,26 @@ namespace RFPResponseAPP.Client.Services
         /// <returns>List of room assignments with original requests and assigned room names</returns>
         public async Task<List<RoomAssignment>> CalculateAsync(string rfpText)
         {
+            return await CalculateAsync(rfpText, null);
+        }
+
+        /// <summary>
+        /// Main calculation method that processes RFP text and assigns rooms to requests.
+        /// This overload considers existing room assignments to prevent double-booking during recalculation.
+        /// Implements a first-fit algorithm where rooms are assigned to requests in order.
+        /// Rooms are sorted by capacity (lowest to highest) to optimize space usage.
+        /// </summary>
+        /// <param name="rfpText">JSON string containing an array of room requests</param>
+        /// <param name="existingAssignments">Optional list of existing room assignments to consider during scheduling</param>
+        /// <returns>List of room assignments with original requests and assigned room names</returns>
+        public async Task<List<RoomAssignment>> CalculateAsync(string rfpText, List<RoomAssignment> existingAssignments)
+        {
             // Initialize the result list to ensure we always return a valid collection
             var assignments = new List<RoomAssignment>();
 
             try
             {
-                await _logService.WriteToLogAsync($"[{DateTime.Now}] CalculateProposale.CalculateAsync started");
+                await _logService.WriteToLogAsync($"[{DateTime.Now}] CalculateProposale.CalculateAsync started with {existingAssignments?.Count ?? 0} existing assignments");
 
                 // Validate input - early return if RFP text is empty or null
                 if (string.IsNullOrWhiteSpace(rfpText))
@@ -183,6 +197,42 @@ namespace RFPResponseAPP.Client.Services
                 // Key: Room name or room group name
                 // Value: List of time intervals when the room is booked
                 var schedule = new Dictionary<string, List<(DateTime start, DateTime end)>>();
+
+                // Pre-populate schedule with existing assignments if provided
+                if (existingAssignments?.Any() == true)
+                {
+                    await _logService.WriteToLogAsync($"[{DateTime.Now}] Pre-populating schedule with {existingAssignments.Count} existing assignments");
+                    
+                    foreach (var existingAssignment in existingAssignments)
+                    {
+                        if (existingAssignment?.Request != null && !string.IsNullOrWhiteSpace(existingAssignment.AssignedRoom))
+                        {
+                            try
+                            {
+                                // Calculate actual start and end times for existing assignment
+                                var existingStart = existingAssignment.Request.StartDate.Date.Add(existingAssignment.Request.StartTime);
+                                var existingEnd = existingAssignment.Request.EndDate.Date.Add(existingAssignment.Request.EndTime);
+                                
+                                // Find the room object for this assignment
+                                var existingRoom = capacity.Rooms.FirstOrDefault(r => r.Name == existingAssignment.AssignedRoom);
+                                if (existingRoom != null)
+                                {
+                                    // Block the room in the schedule
+                                    BlockRoom(existingRoom, existingStart, existingEnd, schedule, capacity.Rooms);
+                                    await _logService.WriteToLogAsync($"[{DateTime.Now}] Pre-blocked room '{existingAssignment.AssignedRoom}' for existing assignment '{existingAssignment.Request.Name}' from {existingStart} to {existingEnd}");
+                                }
+                                else
+                                {
+                                    await _logService.WriteToLogAsync($"[{DateTime.Now}] WARNING: Could not find room '{existingAssignment.AssignedRoom}' in capacity data for existing assignment '{existingAssignment.Request.Name}'");
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                await _logService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Failed to pre-block existing assignment for room '{existingAssignment.AssignedRoom}' - {ex.Message}");
+                            }
+                        }
+                    }
+                }
 
                 // Put requests in order based on start date and time
                 requests = requests.OrderBy(req => req.StartDate.Date.Add(req.StartTime)).ToList();
