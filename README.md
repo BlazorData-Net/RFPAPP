@@ -14,7 +14,7 @@ For venues, it includes a **smart scheduling engine** to assign rooms without co
 Save time and win more proposals by automating RFP responses:
 - Detects questions in RFPs  
 - Drafts answers using your uploaded materials  
-- Assigns rooms intelligently (venue mode)  
+- Assigns rooms intelligently (if using the optional venue mode)  
 - Exports professional, ready-to-send documents  
 
 ---
