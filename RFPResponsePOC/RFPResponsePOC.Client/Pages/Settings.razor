@@ -31,10 +31,6 @@
                 <RadzenDropDown @bind-Value="@AIModel" Data="@availableModels" Style="width: 450px;" TValue="string" />
             </RadzenFormField>
 
-            <RadzenFormField Text="Installation GUID:" Variant="@variant">
-                <RadzenTextBox Value="@GUID" Style="width:450px;" ReadOnly="true" />
-            </RadzenFormField>
-
             <div style="display: flex; justify-content: center; align-items: center; gap:10px;">
             @if (!IsOpenAISettingsEntered)
             {
@@ -91,7 +87,9 @@
                     <RadzenButton Disabled="@(IsDownloading || IsUploading)" Text="Delete Saved Settings" ButtonStyle="ButtonStyle.Danger" Click="@(() => DeleteSettings())" />
                 </div>
             }
-
+            <div style="display: flex; justify-content: center; align-items: center; gap:8px;">
+            <p style="font-size: 0.75rem; color: #6c757d; margin: 0;">Installation GUID: @GUID</p>
+            </div>
             @if (IsUploading)
             {
                 <div style="display: flex; justify-content: center; align-items: center; margin-top: 10px;">
