@@ -2,6 +2,7 @@ using Blazored.LocalStorage;
 using Newtonsoft.Json;
 using OpenAI.Files;
 using System.Text.Json.Serialization;
+using System;
 
 namespace RFPResponseAPP.Model
 {
@@ -13,6 +14,7 @@ namespace RFPResponseAPP.Model
             public string AIModel { get; set; }
             public string ApiKey { get; set; }
             public string AIEmbeddingModel { get; set; }
+            public string GUID { get; set; }
         }
 
         public enum ConnectionType
@@ -105,6 +107,13 @@ namespace RFPResponseAPP.Model
                 {
                     Settings.ConnectionSettings = new List<ConnectionSettings>();
                 }
+
+                // Ensure a GUID exists
+                if (string.IsNullOrEmpty(Settings.ApplicationSettings.GUID))
+                {
+                    Settings.ApplicationSettings.GUID = Guid.NewGuid().ToString();
+                    await SaveSettingsAsync();
+                }
             }
             catch (Exception ex)
             {
@@ -186,7 +195,8 @@ namespace RFPResponseAPP.Model
                     {
                         ApiKey = "",
                         AIModel = "gpt-5-mini",
-                        AIEmbeddingModel = "text-embedding-ada-002"
+                        AIEmbeddingModel = "text-embedding-ada-002",
+                        GUID = Guid.NewGuid().ToString()
                     },
                     ConnectionSettings = new List<ConnectionSettings>()
                 };
