@@ -1,6 +1,7 @@
 @using RFPResponseAPP.Client.Services
 @using RFPResponseAPP.Model
 @using RFPResponseAPP.Models
+@using System.Collections.Generic
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 @inherits LayoutComponentBase
 @implements IAsyncDisposable
@@ -11,6 +12,7 @@
 @inject SettingsService SettingsService
 @inject LogService _LogService
 @inject AppMetadata _AppMetadata
+@inject HttpClient Http
 <RadzenDialog />
 <RadzenNotification />
 <RadzenTooltip />
@@ -21,7 +23,14 @@
             <img src="images\\RFPResponseCreatorLogo_small.png" alt="RFP Response Creator Logo" class="logo me-3" style="height:40px; width: auto;" />
         </div>
         <div class="d-flex align-items-center">
-            <a href="https://BlazorData.net/" target="_blank" class="me-2">BlazorData.net</a>
+            @if (UpdateAvailable)
+            {
+                <a href="https://BlazorData.net/" target="_blank" class="me-2">* Update Available - Close web browser and reload *</a>
+            }
+            else
+            {
+                <a href="https://BlazorData.net/" target="_blank" class="me-2">BlazorData.net</a>
+            }
             <RadzenButton Click="@(async () => await SaveSettingsaaAndCloseBrowserTab())" Disabled="@isSaving" Size="ButtonSize.ExtraSmall">
                 @if (isSaving)
                 {
@@ -60,6 +69,36 @@
     ZipService objZipService = new ZipService();
     private IJSObjectReference _browserModule;
     private bool isSaving;
+    bool UpdateAvailable = false;
+    private string versionLocal = string.Empty;
+    private string versionPublished = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var guid = SettingsService.Settings?.ApplicationSettings?.GUID;
+            versionLocal = _AppMetadata.Version;
+
+            if (!string.IsNullOrEmpty(guid) && !string.IsNullOrEmpty(versionLocal))
+            {
+                var response = await Http.GetAsync($"https://blazordata.net/api/VersionOnline/GetRFPResponseCreatorVersionOnline?paramGUID={guid}&paramCurrentVersion={versionLocal}");
+                response.EnsureSuccessStatusCode();
+                versionPublished = await response.Content.ReadAsStringAsync();
+
+                if (ConvertToInteger(versionPublished) > ConvertToInteger(versionLocal))
+                {
+                    UpdateAvailable = true;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await _LogService.WriteToLogAsync(ex.Message);
+        }
+
+        await base.OnInitializedAsync();
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -112,5 +151,20 @@
             await _browserModule.DisposeAsync();
         }
         objRef?.Dispose();
+    }
+
+    private int ConvertToInteger(string strParamVersion)
+    {
+        int intVersionNumber = 0;
+        var strSegments = strParamVersion.Split('.');
+        int i = 0;
+        List<int> colMultiplyers = new List<int> { 10000, 100, 1 };
+        foreach (var strSegment in strSegments)
+        {
+            int intSegmentNumber = Convert.ToInt32(strSegment);
+            intVersionNumber += intSegmentNumber * colMultiplyers[i];
+            i++;
+        }
+        return intVersionNumber;
     }
 }
