@@ -5,6 +5,7 @@
 @using RFPResponseAPP.AI
 @using RFPResponseAPP.Client.Services
 @using RFPResponseAPP.Model
+@using RFPResponseAPP.Models
 @using Radzen
 @using RFPResponseAPP.Client.Pages
 @using Microsoft.AspNetCore.Components.Forms
@@ -14,6 +15,8 @@
 @inject SettingsService SettingsService
 @inject LogService _LogService
 @inject NavigationManager Navigation
+@inject HttpClient Http
+@inject AppMetadata _AppMetadata
 @inject IJSRuntime JSRuntime
 <RadzenRow AlignItems="AlignItems.Start" Wrap="FlexWrap.Wrap" Gap="1rem" Class="rz-p-sm-12">
     <RadzenColumn Size="12" SizeSM="6">

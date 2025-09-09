@@ -440,7 +440,8 @@ else
     bool ResponseVisible = false;
     bool KnowledgebaseVisible = false;
     bool KnowledgebaseFileExists = false;
-
+    private string versionLocal = string.Empty;
+    private string versionPublished = string.Empty;
     int selectedTabIndex = 0;
     int selectedWorkflowTabIndex = 0;
     int selectedAccordionIndex = -1; // -1 means no item is expanded by default
@@ -556,6 +557,33 @@ else
 
             StateHasChanged();
         }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var guid = _SettingsService.Settings?.ApplicationSettings?.GUID;
+            versionLocal = _AppMetadata.Version;
+
+            if (!string.IsNullOrEmpty(guid) && !string.IsNullOrEmpty(versionLocal))
+            {
+                var response = await Http.GetAsync($"https://blazordata.net/api/VersionOnline/GetRFPResponseCreatorVersionOnline?paramGUID={guid}&paramCurrentVersion={versionLocal}");
+                response.EnsureSuccessStatusCode();
+                versionPublished = await response.Content.ReadAsStringAsync();
+
+                if (ConvertToInteger(versionPublished) > ConvertToInteger(versionLocal))
+                {
+                    await LogService.WriteToLogAsync($"Update available. Local version: {versionLocal}, Published version: {versionPublished}.");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await LogService.WriteToLogAsync(ex.Message);
+        }
+
+        await base.OnInitializedAsync();
     }
 
     // Events
