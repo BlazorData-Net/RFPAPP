@@ -31,6 +31,10 @@
                 <RadzenDropDown @bind-Value="@AIModel" Data="@availableModels" Style="width: 450px;" TValue="string" />
             </RadzenFormField>
 
+            <RadzenFormField Text="Installation GUID:" Variant="@variant">
+                <RadzenTextBox Value="@GUID" Style="width:450px;" ReadOnly="true" />
+            </RadzenFormField>
+
             <div style="display: flex; justify-content: center; align-items: center; gap:10px;">
             @if (!IsOpenAISettingsEntered)
             {
@@ -124,6 +128,7 @@
     private string ApiKey = "";
     private string AIModel = "";
     private string AIEmbeddingModel = "";
+    private string GUID = "";
     private List<string> availableModels = new List<string> { "o4-mini", "gpt-4o", "gpt-5", "gpt-5-mini" };
 
     bool ZipFileExists = false;
@@ -150,6 +155,7 @@
 
             ApiKey = SettingsService.Settings.ApplicationSettings.ApiKey ?? "";
             AIModel = SettingsService.Settings.ApplicationSettings.AIModel;
+            GUID = SettingsService.Settings.ApplicationSettings.GUID;
 
             IsOpenAISettingsEntered = ApiKey.Length > 1;
 
