@@ -1,12 +1,13 @@
 # RFP Response Creator  
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)  
-![Tech](https://img.shields.io/badge/Blazor-.NET%209-blueviolet)  
-![AI Powered](https://img.shields.io/badge/AI-OpenAI-success)  
+![License](https://img.shields.io/badge/license-MIT-blue.svg)  ![Tech](https://img.shields.io/badge/Blazor-.NET%209-blueviolet) ![AI Powered](https://img.shields.io/badge/AI-OpenAI-success)  
 
 🚀 **RFP Response Creator** is a SaaS application that automates professional Request for Proposal (RFP) responses.  
 Using AI, it extracts questions, generates answers from your knowledge base, and produces polished Word/PDF documents.  
 For venues, it includes a **smart scheduling engine** to assign rooms without conflicts.  
+
+### Online Live version:
+[https://RFP.BlazorData.net](https://RFP.BlazorData.net)
 
 ---
 
