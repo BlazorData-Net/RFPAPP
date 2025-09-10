@@ -67,7 +67,23 @@ else
     @if (HomeVisible)
     {
         <div class="rz-p-4 rz-container">
-
+            <div class="rz-col-12 rz-text-center rz-py-4" style="display: flex; justify-content: center; align-items: center;">
+                @if (ApiKey.Length < 2)
+                {
+                    <RadzenButton class="step-button" Text="To get started enter your AI key on the Settings page" Click="@SettingsClicked" Style="background-color: green;" ButtonStyle="ButtonStyle.Primary" />
+                }
+                else
+                {
+                    @if (!KnowledgebaseFileExists)
+                    {
+                        <RadzenButton class="step-button" Text="Build your Knowledgebase" Click="@KnowledgebaseClicked" Style="background-color: green;" ButtonStyle="ButtonStyle.Primary" />
+                    }
+                    else
+                    {
+                        <RadzenButton class="step-button" Text="Click here to create an RFP Response" Click="@ResponseClicked" Style="background-color: green;" ButtonStyle="ButtonStyle.Primary" />
+                    }
+                }
+            </div>
             <!-- HERO -->
             <RadzenCard Style="background: linear-gradient(180deg, #0d47a1 0%, #1565c0 100%); color: white;">
                 <div class="rz-grid rz-align-center rz-justify-between">
@@ -87,18 +103,6 @@ else
                                 Choose a template, upload the RFP, review AI answers, assign rooms (venue mode), and export a polished document.
                             </p>
                         </RadzenCard>
-                    </div>
-                    <div>
-                        @if (!KnowledgebaseFileExists)
-                        {
-                            <RadzenButton class="step-button" Text="Build Knowledgebase" Click="@KnowledgebaseClicked" Style="background-color: green;" ButtonStyle="ButtonStyle.Primary" />
-                            <br />
-                            <br />
-                        }
-                        else
-                        {
-                            <RadzenButton class="step-button" Text="Create a RFP Response" Click="@ResponseClicked" Style="background-color: green;" ButtonStyle="ButtonStyle.Primary" />
-                        }
                     </div>
                 </div>
             </RadzenCard>
@@ -567,6 +571,16 @@ else
     }
 
     void OnSettingsClicked(MenuItemEventArgs args)
+    {
+        ActiveMenuItem = "Settings";
+        HomeVisible = false;
+        SettingsVisible = true;
+        ResponseVisible = false;
+        LogsVisible = false;
+        KnowledgebaseVisible = false;
+    }
+
+    void SettingsClicked(MouseEventArgs args)
     {
         ActiveMenuItem = "Settings";
         HomeVisible = false;
