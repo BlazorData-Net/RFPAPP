@@ -70,17 +70,17 @@ else
             <div class="rz-col-12 rz-text-center rz-py-4" style="display: flex; justify-content: center; align-items: center;">
                 @if (ApiKey.Length < 2)
                 {
-                    <RadzenButton class="step-button" Text="To get started enter your AI key on the Settings page" Click="@SettingsClicked" Style="background-color: green;" ButtonStyle="ButtonStyle.Primary" />
+                    <RadzenButton class="step-button" Text="To get started enter your AI key on the Settings page" Click="@SettingsClicked" Style="background-color: green;" Size="ButtonSize.Large" ButtonStyle="ButtonStyle.Primary" />
                 }
                 else
                 {
                     @if (!KnowledgebaseFileExists)
                     {
-                        <RadzenButton class="step-button" Text="Build your Knowledgebase" Click="@KnowledgebaseClicked" Style="background-color: green;" ButtonStyle="ButtonStyle.Primary" />
+                        <RadzenButton class="step-button" Text="Build your Knowledgebase" Click="@KnowledgebaseClicked" Style="background-color: green;" Size="ButtonSize.Large" ButtonStyle="ButtonStyle.Primary" />
                     }
                     else
                     {
-                        <RadzenButton class="step-button" Text="Click here to create an RFP Response" Click="@ResponseClicked" Style="background-color: green;" ButtonStyle="ButtonStyle.Primary" />
+                        <RadzenButton class="step-button" Text="Click here to create an RFP Response" Click="@ResponseClicked" Style="background-color: green;" Size="ButtonSize.Large" ButtonStyle="ButtonStyle.Primary" />
                     }
                 }
             </div>
