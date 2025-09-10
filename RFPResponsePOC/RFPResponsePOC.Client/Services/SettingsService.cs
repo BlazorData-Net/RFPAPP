@@ -107,13 +107,6 @@ namespace RFPResponseAPP.Model
                 {
                     Settings.ConnectionSettings = new List<ConnectionSettings>();
                 }
-
-                // Ensure a GUID exists
-                if (string.IsNullOrEmpty(Settings.ApplicationSettings.GUID))
-                {
-                    Settings.ApplicationSettings.GUID = Guid.NewGuid().ToString();
-                    await SaveSettingsAsync();
-                }
             }
             catch (Exception ex)
             {

@@ -14,8 +14,6 @@
 @inject DialogService DialogService
 @inject Blazored.LocalStorage.ILocalStorageService localStorage
 @inject SettingsService _SettingsService
-@inject AppMetadata _AppMetadata
-@inject HttpClient Http
 @inject NavigationManager Navigation
 @inject IJSRuntime JsRuntime
 <style>
@@ -53,6 +51,7 @@
     }
     else
     {
+        <RadzenMenuItem Click="OnHomeClicked" Text="Home" Icon="home" Style="@GetMenuItemStyle("Home")"></RadzenMenuItem>
         <RadzenMenuItem Click="OnSettingsClicked" Text="Settings" Icon="line_style" Style="@GetMenuItemStyle("Settings")"></RadzenMenuItem>
     }
 </RadzenMenu>
@@ -440,8 +439,6 @@ else
     bool ResponseVisible = false;
     bool KnowledgebaseVisible = false;
     bool KnowledgebaseFileExists = false;
-    private string versionLocal = string.Empty;
-    private string versionPublished = string.Empty;
     int selectedTabIndex = 0;
     int selectedWorkflowTabIndex = 0;
     int selectedAccordionIndex = -1; // -1 means no item is expanded by default
@@ -494,10 +491,9 @@ else
                         }
                     }
 
-                    // Switch to the Settings page
-                    ActiveMenuItem = "Settings";
-                    HomeVisible = false;
-                    SettingsVisible = true;
+                    ActiveMenuItem = "Home";
+                    HomeVisible = true;
+                    SettingsVisible = false;
                     LogsVisible = false;
                     ResponseVisible = false;
                     KnowledgebaseVisible = false;
@@ -525,10 +521,9 @@ else
             {
                 ShowMainMenu = false;
 
-                // Switch to the Settings page
-                ActiveMenuItem = "Settings";
-                HomeVisible = false;
-                SettingsVisible = true;
+                ActiveMenuItem = "Home";
+                HomeVisible = true;
+                SettingsVisible = false;
                 LogsVisible = false;
                 ResponseVisible = false;
                 KnowledgebaseVisible = false;
@@ -557,33 +552,6 @@ else
 
             StateHasChanged();
         }
-    }
-
-    protected override async Task OnInitializedAsync()
-    {
-        try
-        {
-            var guid = _SettingsService.Settings?.ApplicationSettings?.GUID;
-            versionLocal = _AppMetadata.Version;
-
-            if (!string.IsNullOrEmpty(guid) && !string.IsNullOrEmpty(versionLocal))
-            {
-                var response = await Http.GetAsync($"https://blazordata.net/api/VersionOnline/GetRFPResponseCreatorVersionOnline?paramGUID={guid}&paramCurrentVersion={versionLocal}");
-                response.EnsureSuccessStatusCode();
-                versionPublished = await response.Content.ReadAsStringAsync();
-
-                if (ConvertToInteger(versionPublished) > ConvertToInteger(versionLocal))
-                {
-                    await LogService.WriteToLogAsync($"Update available. Local version: {versionLocal}, Published version: {versionPublished}.");
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            await LogService.WriteToLogAsync(ex.Message);
-        }
-
-        await base.OnInitializedAsync();
     }
 
     // Events
@@ -712,30 +680,6 @@ else
         // User is navigating away from the page - Zip any files
         // Zip up any files and store in LocalStorage
         await objZipService.ZipTheFiles();
-    }
-    #endregion
-
-    #region private int ConvertToInteger(string strParamVersion)
-    private int ConvertToInteger(string strParamVersion)
-    {
-        int intVersionNumber = 0;
-        string strVersion = strParamVersion;
-
-        // Split into parts separated by periods
-        char[] splitchar = { '.' };
-        var strSegments = strVersion.Split(splitchar);
-
-        // Process the segments
-        int i = 0;
-        List<int> colMultipliers = new List<int> { 10000, 100, 1 };
-        foreach (var strSegment in strSegments)
-        {
-            int intSegmentNumber = Convert.ToInt32(strSegment);
-            intVersionNumber = intVersionNumber + (intSegmentNumber * colMultipliers[i]);
-            i++;
-        }
-
-        return intVersionNumber;
     }
     #endregion
 

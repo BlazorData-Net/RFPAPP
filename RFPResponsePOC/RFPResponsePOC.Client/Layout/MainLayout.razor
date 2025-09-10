@@ -12,6 +12,7 @@
 @inject SettingsService SettingsService
 @inject LogService _LogService
 @inject AppMetadata _AppMetadata
+@inject HttpClient Http
 <RadzenDialog />
 <RadzenNotification />
 <RadzenTooltip />
@@ -61,6 +62,8 @@
     ZipService objZipService = new ZipService();
     private IJSObjectReference _browserModule;
     private bool isSaving;
+    private string versionLocal = string.Empty;
+    private string versionPublished = string.Empty;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -71,6 +74,31 @@
 
             objZipService = new ZipService(JSRuntime, localStorage, SettingsService, _LogService, DialogService);
             _browserModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./js/browserInterop.js");
+
+            try
+            {
+                var guid = SettingsService.Settings?.ApplicationSettings?.GUID;
+                versionLocal = _AppMetadata.Version;
+
+                if (!string.IsNullOrEmpty(guid) && !string.IsNullOrEmpty(versionLocal))
+                {
+                    var response = await Http.GetAsync($"https://blazordata.net/api/VersionOnline/GetRFPResponseCreatorVersionOnline?paramGUID={guid}&paramCurrentVersion={versionLocal}");
+                    response.EnsureSuccessStatusCode();
+
+                    versionPublished = await response.Content.ReadAsStringAsync();
+
+                    await _LogService.WriteToLogAsync($"[{DateTime.Now}] Local version: {versionLocal}, Detected BlazorData.net Published version: {versionPublished}. Current GUID: {guid}");
+
+                    if (ConvertToInteger(versionPublished) > ConvertToInteger(versionLocal))
+                    {
+                        await _LogService.WriteToLogAsync($"[{DateTime.Now}] Update available. Local version: {versionLocal}, Published version: {versionPublished}.");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                await _LogService.WriteToLogAsync(ex.Message);
+            }
         }
     }
 
@@ -92,6 +120,30 @@
             await _browserModule.InvokeVoidAsync("closeBrowserTab");
         }
     }
+
+    #region private int ConvertToInteger(string strParamVersion)
+    private int ConvertToInteger(string strParamVersion)
+    {
+        int intVersionNumber = 0;
+        string strVersion = strParamVersion;
+
+        // Split into parts separated by periods
+        char[] splitchar = { '.' };
+        var strSegments = strVersion.Split(splitchar);
+
+        // Process the segments
+        int i = 0;
+        List<int> colMultipliers = new List<int> { 10000, 100, 1 };
+        foreach (var strSegment in strSegments)
+        {
+            int intSegmentNumber = Convert.ToInt32(strSegment);
+            intVersionNumber = intVersionNumber + (intSegmentNumber * colMultipliers[i]);
+            i++;
+        }
+
+        return intVersionNumber;
+    }
+    #endregion
 
     public async ValueTask DisposeAsync()
     {
