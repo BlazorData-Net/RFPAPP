@@ -104,6 +104,8 @@ Save time and win more proposals by automating RFP responses:
 - **OpenAI Integration** (GPT-4o, GPT-5, etc.)  
 - **Local + Cloud Data Management**  
 
+<img width="741" height="594" alt="image" src="https://github.com/user-attachments/assets/fa67b2cc-0eb5-43f4-863a-654651508eed" />
+
 ---
 
 ## 📸 Screenshots  
