@@ -100,8 +100,21 @@ namespace RFPResponseAPP.Client.Services
                 var capacityFilePath = $"{_basePath}//Capacity.json";
                 if (!File.Exists(capacityFilePath))
                 {
-                    await _logService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Capacity.json file not found at path: {capacityFilePath}");
-                    return assignments;
+                    await _logService.WriteToLogAsync($"[{DateTime.Now}] WARNING: Capacity.json file not found at path: {capacityFilePath}. Creating default empty file.");
+                    
+                    // Create a default empty capacity file
+                    var defaultCapacity = new CapacityRoot { Rooms = new List<Room>() };
+                    var defaultJson = JsonConvert.SerializeObject(defaultCapacity, Formatting.Indented);
+                    
+                    // Ensure the directory exists
+                    var directory = Path.GetDirectoryName(capacityFilePath);
+                    if (!Directory.Exists(directory))
+                    {
+                        Directory.CreateDirectory(directory);
+                    }
+                    
+                    await File.WriteAllTextAsync(capacityFilePath, defaultJson);
+                    await _logService.WriteToLogAsync($"[{DateTime.Now}] Created default empty Capacity.json file at {capacityFilePath}");
                 }
 
                 // Declare variables for deserialized data

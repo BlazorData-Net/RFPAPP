@@ -173,7 +173,30 @@ namespace RFPResponseAPP.Client.Services
                 List<string> roomOptions;
                 try
                 {
-                    var capacityJson = await File.ReadAllTextAsync("/RFPResponseAPP/Capacity.json");
+                    var capacityFilePath = "/RFPResponseAPP/Capacity.json";
+                    string capacityJson;
+                    
+                    if (File.Exists(capacityFilePath))
+                    {
+                        capacityJson = await File.ReadAllTextAsync(capacityFilePath);
+                    }
+                    else
+                    {
+                        // Create a default empty capacity file
+                        await logService.WriteToLogAsync($"[{DateTime.Now}] WARNING: Capacity.json not found. Creating default empty file.");
+                        var defaultCapacity = new CapacityRoot { Rooms = new List<Room>() };
+                        capacityJson = JsonConvert.SerializeObject(defaultCapacity, Formatting.Indented);
+                        
+                        // Ensure the directory exists
+                        var directory = Path.GetDirectoryName(capacityFilePath);
+                        if (!Directory.Exists(directory))
+                        {
+                            Directory.CreateDirectory(directory);
+                        }
+                        
+                        await File.WriteAllTextAsync(capacityFilePath, capacityJson);
+                    }
+                    
                     var capacity = JsonConvert.DeserializeObject<CapacityRoot>(capacityJson);
                     roomOptions = capacity?.Rooms?.Select(r => r.Name).OrderBy(n => n).ToList() ?? new List<string>();
                 }
@@ -294,7 +317,30 @@ namespace RFPResponseAPP.Client.Services
                     // Still return room options even if no calculations are needed
                     try
                     {
-                        var capacityJson = await File.ReadAllTextAsync("/RFPResponseAPP/Capacity.json");
+                        var capacityFilePath = "/RFPResponseAPP/Capacity.json";
+                        string capacityJson;
+                        
+                        if (File.Exists(capacityFilePath))
+                        {
+                            capacityJson = await File.ReadAllTextAsync(capacityFilePath);
+                        }
+                        else
+                        {
+                            // Create a default empty capacity file
+                            await logService.WriteToLogAsync($"[{DateTime.Now}] WARNING: Capacity.json not found. Creating default empty file.");
+                            var defaultCapacity = new CapacityRoot { Rooms = new List<Room>() };
+                            capacityJson = JsonConvert.SerializeObject(defaultCapacity, Formatting.Indented);
+                            
+                            // Ensure the directory exists
+                            var directory = Path.GetDirectoryName(capacityFilePath);
+                            if (!Directory.Exists(directory))
+                            {
+                                Directory.CreateDirectory(directory);
+                            }
+                            
+                            await File.WriteAllTextAsync(capacityFilePath, capacityJson);
+                        }
+                        
                         var capacity = JsonConvert.DeserializeObject<CapacityRoot>(capacityJson);
                         return capacity?.Rooms?.Select(r => r.Name).OrderBy(n => n).ToList() ?? new List<string>();
                     }
@@ -363,7 +409,30 @@ namespace RFPResponseAPP.Client.Services
                 List<string> roomOptions;
                 try
                 {
-                    var capacityJson = await File.ReadAllTextAsync("/RFPResponseAPP/Capacity.json");
+                    var capacityFilePath = "/RFPResponseAPP/Capacity.json";
+                    string capacityJson;
+                    
+                    if (File.Exists(capacityFilePath))
+                    {
+                        capacityJson = await File.ReadAllTextAsync(capacityFilePath);
+                    }
+                    else
+                    {
+                        // Create a default empty capacity file
+                        await logService.WriteToLogAsync($"[{DateTime.Now}] WARNING: Capacity.json not found. Creating default empty file.");
+                        var defaultCapacity = new CapacityRoot { Rooms = new List<Room>() };
+                        capacityJson = JsonConvert.SerializeObject(defaultCapacity, Formatting.Indented);
+                        
+                        // Ensure the directory exists
+                        var directory = Path.GetDirectoryName(capacityFilePath);
+                        if (!Directory.Exists(directory))
+                        {
+                            Directory.CreateDirectory(directory);
+                        }
+                        
+                        await File.WriteAllTextAsync(capacityFilePath, capacityJson);
+                    }
+                    
                     var capacity = JsonConvert.DeserializeObject<CapacityRoot>(capacityJson);
                     roomOptions = capacity?.Rooms?.Select(r => r.Name).OrderBy(n => n).ToList() ?? new List<string>();
                 }

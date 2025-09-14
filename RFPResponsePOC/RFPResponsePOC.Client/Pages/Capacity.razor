@@ -602,13 +602,35 @@
             {
                 return await File.ReadAllTextAsync($"{BasePath}//Capacity.json");
             }
+            else
+            {
+                // Create a default empty capacity file if it doesn't exist
+                var defaultCapacity = new CapacityRoot { Rooms = new List<Room>() };
+                var defaultJson = JsonConvert.SerializeObject(defaultCapacity, Formatting.Indented);
+                
+                // Ensure the directory exists
+                var directory = Path.GetDirectoryName($"{BasePath}//Capacity.json");
+                if (!Directory.Exists(directory))
+                {
+                    Directory.CreateDirectory(directory);
+                }
+                
+                await File.WriteAllTextAsync($"{BasePath}//Capacity.json", defaultJson);
+                await LogService.WriteToLogAsync($"[{DateTime.Now}] Created default empty Capacity.json file");
+                
+                return defaultJson;
+            }
         }
         catch (Exception ex)
         {
-            // Log the exception if necessary
-            Console.WriteLine($"Error reading Capacity.json: {ex.Message}");
+            // Log the exception and create a fallback in-memory capacity data
+            await LogService.WriteToLogAsync($"[{DateTime.Now}] ERROR: Failed to read/create Capacity.json - {ex.Message}");
+            Console.WriteLine($"Error reading/creating Capacity.json: {ex.Message}");
+            
+            // Return empty capacity as fallback
+            var fallbackCapacity = new CapacityRoot { Rooms = new List<Room>() };
+            return JsonConvert.SerializeObject(fallbackCapacity, Formatting.Indented);
         }
-        return null;
     }
 
     public void Dispose()
