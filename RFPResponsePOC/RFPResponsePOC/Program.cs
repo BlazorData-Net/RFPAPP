@@ -24,7 +24,7 @@ public class Program
         builder.Services.AddBlazoredLocalStorage();
 
         // Add services to the container.
-        AppMetadata appMetadata = new AppMetadata() { Version = "01.00.00" };
+        AppMetadata appMetadata = new AppMetadata() { Version = "01.10.00" };
         builder.Services.AddSingleton(appMetadata);
 
         builder.Services.AddScoped<LogService>();
