@@ -9,7 +9,12 @@ For venues, it includes a **smart scheduling engine** to assign rooms without co
 ### Online Live version:
 [https://RFP.BlazorData.net](https://RFP.BlazorData.net)
 
+---
 ### [[Click here for Documentation](https://github.com/BlazorData-Net/RFPAPP/wiki)]
+
+[<img width="312" height="178" alt="image" src="https://github.com/user-attachments/assets/f173f071-0c30-452a-aa75-372d614c8188" />](https://www.youtube.com/watch?v=Xe1gCscQSfY)
+[<img width="312" height="178" alt="image" src="https://github.com/user-attachments/assets/f1cb2952-2b93-4a62-a45e-8997b1b19475" />](https://www.youtube.com/watch?v=vx_AhYfwk6g)
+[<img width="312" height="178" alt="image" src="https://github.com/user-attachments/assets/618d503b-a114-4dc5-90c1-ec190d138249" />](https://www.youtube.com/watch?v=pijOaBzpMjY)
 
 ---
 
