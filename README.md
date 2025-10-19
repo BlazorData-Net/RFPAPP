@@ -9,6 +9,8 @@ For venues, it includes a **smart scheduling engine** to assign rooms without co
 ### Online Live version:
 [https://RFP.BlazorData.net](https://RFP.BlazorData.net)
 
+### [[Click here for Documentation](https://github.com/BlazorData-Net/RFPAPP/wiki)]
+
 ---
 
 ## ✨ Core Purpose
