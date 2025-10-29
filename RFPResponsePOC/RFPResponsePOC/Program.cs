@@ -18,10 +18,6 @@ public class Program
         builder.Services.AddRazorComponents()
             .AddInteractiveWebAssemblyComponents();
 
-        // Add MVC support
-        builder.Services.AddControllersWithViews();
-        builder.Services.AddRazorPages();
-
         builder.Services.AddRadzenComponents();
 
         // Local Storage
@@ -60,15 +56,6 @@ public class Program
         app.UseAntiforgery();
 
         app.MapStaticAssets();
-
-        // Map MVC controller routes
-        app.MapControllerRoute(
-            name: "default",
-            pattern: "{controller=Home}/{action=Index}/{id?}");
-
-        // Map Razor Pages
-        app.MapRazorPages();
-
         app.MapRazorComponents<App>()
             .AddInteractiveWebAssemblyRenderMode()
             .AddAdditionalAssemblies(typeof(Client._Imports).Assembly);
