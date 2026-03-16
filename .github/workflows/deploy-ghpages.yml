@@ -1,0 +1,50 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.x'
+
+      - name: Publish Blazor WASM client
+        run: |
+          dotnet publish RFPResponsePOC/RFPResponsePOC.Client/RFPResponseAPP.Client.csproj \
+            --configuration Release \
+            --output ./release-output
+
+      - name: Prepare gh-pages directory
+        run: |
+          mkdir -p ./release
+          cp -r ./release-output/wwwroot/. ./release/
+
+          # Disable Jekyll so _framework assets are served correctly
+          touch ./release/.nojekyll
+
+          # Fix base href for GitHub Pages sub-path /RFPAPP/
+          sed -i 's|<base href="/" />|<base href="/RFPAPP/" />|g' ./release/index.html
+
+          # Copy index.html as 404.html for SPA client-side routing fallback
+          cp ./release/index.html ./release/404.html
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./release
+          publish_branch: gh-pages
