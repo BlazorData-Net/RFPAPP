@@ -6,9 +6,6 @@
 Using AI, it extracts questions, generates answers from your knowledge base, and produces polished Word/PDF documents.  
 For venues, it includes a **smart scheduling engine** to assign rooms without conflicts.  
 
-### 🌐 Live Demo (GitHub Pages)
-[https://blazordata-net.github.io/RFPAPP/](https://blazordata-net.github.io/RFPAPP/)
-
 ### Online Live version:
 [https://RFP.BlazorData.net](https://RFP.BlazorData.net)
 
