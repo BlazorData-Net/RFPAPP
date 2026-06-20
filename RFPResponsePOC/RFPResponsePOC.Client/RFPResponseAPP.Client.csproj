@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>disable</Nullable>
     <NoDefaultLaunchSettingsFile>true</NoDefaultLaunchSettingsFile>
@@ -13,18 +13,36 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.8" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.9" />
 	  <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />	
 	  <PackageReference Include="DocX" Version="4.0.25105.5786" />	 
-	  <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />	 
+	  <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />	 
 	  <PackageReference Include="DocumentFormat.OpenXml" Version="3.3.0" />
-	  <PackageReference Include="Radzen.Blazor" Version="7.3.3" />
+	  <PackageReference Include="Radzen.Blazor" Version="10.4.9" />
 	  <PackageReference Include="Azure.AI.OpenAI" Version="2.1.0" />
-	  <PackageReference Include="Azure.Identity" Version="1.15.0" />
+	  <PackageReference Include="Azure.Identity" Version="1.21.0" />
   </ItemGroup>
 
   <ItemGroup>
     <Content Update="wwwroot\DefaultContent\DefaultKnowledgebase.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Update="wwwroot\images\AnswerQuestions.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Update="wwwroot\images\Response.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Update="wwwroot\images\RFPResponseCreatorLogo_small.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Update="wwwroot\images\Templates.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Update="wwwroot\images\UploadProposal.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Update="wwwroot\images\VenueProposal.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Update="wwwroot\Prompts\SumarizeQuestions.prompt">
