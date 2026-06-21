@@ -1,5 +1,6 @@
 using Blazored.LocalStorage;
 using BlazorWebAssemblyPDF.Services;
+using GuideFlow.Services;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Radzen;
 using RFPResponseAPP.Model;
@@ -18,6 +19,10 @@ class Program
 
         // Local Storage
         builder.Services.AddBlazoredLocalStorage();
+
+        // GuideFlow animated tour
+        builder.Services.AddGuideFlow();
+        builder.Services.AddScoped<TourService>();
 
         // Add services to the container.
         AppMetadata appMetadata = new AppMetadata() { Version = "01.10.00" };

@@ -16,6 +16,7 @@
 @inject SettingsService _SettingsService
 @inject NavigationManager Navigation
 @inject IJSRuntime JsRuntime
+@inject TourService Tour
 <style>
     /* Minimal helpers to keep things tidy with the default theme */
     .rz-container {
@@ -43,16 +44,16 @@
 <RadzenMenu>
     @if (ShowMainMenu)
     {
-        <RadzenMenuItem Click="OnHomeClicked" Text="Home" Icon="home" Style="@GetMenuItemStyle("Home")"></RadzenMenuItem>
-        <RadzenMenuItem Click="OnKnowledgebaseClicked" Text="Knowledgebase" Icon="library_books" Style="@GetMenuItemStyle("Knowledgebase")"></RadzenMenuItem>
-        <RadzenMenuItem Click="OnResponseClicked" Text="Response" Icon="aspect_ratio" Style="@GetMenuItemStyle("Response")"></RadzenMenuItem>
-        <RadzenMenuItem Click="OnLogsClicked" Text="Logs" Icon="assignment" Style="@GetMenuItemStyle("Logs")"></RadzenMenuItem>
-        <RadzenMenuItem Click="OnSettingsClicked" Text="Settings" Icon="line_style" Style="@GetMenuItemStyle("Settings")"></RadzenMenuItem>
+        <RadzenMenuItem Click="OnHomeClicked" Text="Home" Icon="home" Style="@GetMenuItemStyle("Home")" id="menu-home"></RadzenMenuItem>
+        <RadzenMenuItem Click="OnKnowledgebaseClicked" Text="Knowledgebase" Icon="library_books" Style="@GetMenuItemStyle("Knowledgebase")" id="menu-knowledgebase"></RadzenMenuItem>
+        <RadzenMenuItem Click="OnResponseClicked" Text="Response" Icon="aspect_ratio" Style="@GetMenuItemStyle("Response")" id="menu-response"></RadzenMenuItem>
+        <RadzenMenuItem Click="OnLogsClicked" Text="Logs" Icon="assignment" Style="@GetMenuItemStyle("Logs")" id="menu-logs"></RadzenMenuItem>
+        <RadzenMenuItem Click="OnSettingsClicked" Text="Settings" Icon="line_style" Style="@GetMenuItemStyle("Settings")" id="menu-settings"></RadzenMenuItem>
     }
     else
     {
-        <RadzenMenuItem Click="OnHomeClicked" Text="Home" Icon="home" Style="@GetMenuItemStyle("Home")"></RadzenMenuItem>
-        <RadzenMenuItem Click="OnSettingsClicked" Text="Settings" Icon="line_style" Style="@GetMenuItemStyle("Settings")"></RadzenMenuItem>
+        <RadzenMenuItem Click="OnHomeClicked" Text="Home" Icon="home" Style="@GetMenuItemStyle("Home")" id="menu-home"></RadzenMenuItem>
+        <RadzenMenuItem Click="OnSettingsClicked" Text="Settings" Icon="line_style" Style="@GetMenuItemStyle("Settings")" id="menu-settings"></RadzenMenuItem>
     }
 </RadzenMenu>
 <br />
@@ -67,7 +68,7 @@ else
     @if (HomeVisible)
     {
         <div class="rz-p-4 rz-container">
-            <div class="rz-col-12 rz-text-center rz-py-4" style="display: flex; justify-content: center; align-items: center;">
+            <div class="rz-col-12 rz-text-center rz-py-4" id="tour-cta" style="display: flex; justify-content: center; align-items: center;">
                 @if (ApiKey.Length < 2)
                 {
                     <RadzenButton class="step-button" Text="To get started enter your AI key on the Settings page" Click="@SettingsClicked" Style="background-color: green;" Size="ButtonSize.Large" ButtonStyle="ButtonStyle.Primary" />
@@ -108,7 +109,7 @@ else
             </RadzenCard>
 
             <!-- WORKFLOW (TABS) -->
-            <h2 class="rz-mt-5">How It Works</h2>
+            <h2 class="rz-mt-5" id="tour-workflow">How It Works</h2>
             <RadzenTabs @bind-SelectedIndex="selectedWorkflowTabIndex" Style="max-width: 1100px;">
                 <Tabs>
                     <RadzenTabsItem Text="Template">
@@ -175,7 +176,7 @@ else
             </RadzenTabs>
 
             <!-- FEATURES (TABS) -->
-            <RadzenTabs Class="rz-mt-4" @bind-SelectedIndex="selectedTabIndex">
+            <RadzenTabs Class="rz-mt-4" @bind-SelectedIndex="selectedTabIndex" id="tour-features">
                 <Tabs>
                     <RadzenTabsItem Text="General RFP Features">
                         <Template>
@@ -341,7 +342,7 @@ else
             </div>
 
             <!-- FAQ (ACCORDION) -->
-            <h2 class="rz-mt-5">FAQ</h2>
+            <h2 class="rz-mt-5" id="tour-faq">FAQ</h2>
             <RadzenAccordion @bind-SelectedIndex="selectedAccordionIndex" Multiple="true">
                 <Items>
                     <RadzenAccordionItem Text="How does the AI find answers in my documents?">
@@ -560,6 +561,9 @@ else
             }
 
             StateHasChanged();
+
+            // The Home menu and content are now rendered; let the tour auto-start for first-time visitors.
+            await Tour.NotifyHomeReadyAsync();
         }
     }
 

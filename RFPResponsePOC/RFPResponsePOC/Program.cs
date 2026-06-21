@@ -1,6 +1,8 @@
 using Blazored.LocalStorage;
+using GuideFlow.Services;
 using Radzen;
 using RFPResponseAPP.Client.Pages;
+using RFPResponseAPP.Client.Services;
 using RFPResponseAPP.Components;
 using RFPResponseAPP.Model;
 using RFPResponseAPP.Models;
@@ -22,6 +24,10 @@ public class Program
 
         // Local Storage
         builder.Services.AddBlazoredLocalStorage();
+
+        // GuideFlow animated tour
+        builder.Services.AddGuideFlow();
+        builder.Services.AddScoped<TourService>();
 
         // Add services to the container.
         AppMetadata appMetadata = new AppMetadata() { Version = "01.10.00" };

@@ -1,0 +1,160 @@
+- generic [ref=e1]:
+  - dialog "Welcome to RFP Response Creator" [active] [ref=e35]:
+    - generic [ref=e37]:
+      - generic [ref=e38]:
+        - heading "Welcome to RFP Response Creator" [level=3] [ref=e39]
+        - button "Close tour" [ref=e40] [cursor=pointer]: ×
+      - paragraph [ref=e42]: This quick tour shows how to turn an RFP into a polished, AI-generated proposal. Use Next to continue or Skip to exit.
+      - generic [ref=e43]:
+        - generic [ref=e44]: 1 of 7
+        - button "Next" [ref=e46] [cursor=pointer]
+  - main [ref=e47]:
+    - generic [ref=e48]:
+      - img "RFP Response Creator Logo" [ref=e50]
+      - generic [ref=e51]:
+        - link "BlazorData.net" [ref=e52] [cursor=pointer]:
+          - /url: https://BlazorData.net/
+        - button "help_outline Tour" [ref=e53] [cursor=pointer]:
+          - generic [ref=e54]:
+            - generic [ref=e55]: help_outline
+            - generic [ref=e56]: Tour
+        - button "save Save and Close" [ref=e57] [cursor=pointer]:
+          - generic [ref=e58]:
+            - generic [ref=e59]: save
+            - generic [ref=e60]: Save and Close
+    - article [ref=e61]:
+      - menubar "Menu" [ref=e62]:
+        - menuitem "home Home" [ref=e63]:
+          - generic [ref=e65] [cursor=pointer]:
+            - generic [ref=e66]: home
+            - generic [ref=e67]: Home
+        - menuitem "line_style Settings" [ref=e68]:
+          - generic [ref=e70] [cursor=pointer]:
+            - generic [ref=e71]: line_style
+            - generic [ref=e72]: Settings
+      - generic [ref=e73]:
+        - button "To get started enter your AI key on the Settings page" [ref=e75] [cursor=pointer]:
+          - generic [ref=e77]: To get started enter your AI key on the Settings page
+        - generic [ref=e79]:
+          - heading "RFP Response Creator" [level=1] [ref=e80]
+          - paragraph [ref=e81]: Automate professional RFP responses with AI—extract questions, generate answers, and produce polished proposals. Includes intelligent venue assignment with conflict-free scheduling.
+          - generic [ref=e83]:
+            - heading "Two Powerful Modes" [level=3] [ref=e84]
+            - generic [ref=e85]:
+              - generic [ref=e86]: General RFPs
+              - generic [ref=e87]: Venue RFPs
+            - paragraph [ref=e88]: Choose a template, upload the RFP, review AI answers, assign rooms (venue mode), and export a polished document.
+        - heading "How It Works" [level=2] [ref=e89]
+        - tablist [ref=e90]:
+          - tab "article 1. Template" [selected] [ref=e91] [cursor=pointer]:
+            - generic [ref=e92]: article
+            - text: 1. Template
+          - tab "upload 2. Upload RFP" [ref=e93] [cursor=pointer]:
+            - generic [ref=e94]: upload
+            - text: 2. Upload RFP
+          - tab "question_answer 3. Review Q&A" [ref=e95] [cursor=pointer]:
+            - generic [ref=e96]: question_answer
+            - text: 3. Review Q&A
+          - tab "event 4. Venue Assignment (optional)" [ref=e97] [cursor=pointer]:
+            - generic [ref=e98]: event
+            - text: 4. Venue Assignment (optional)
+          - tab "download 5. Generate" [ref=e99] [cursor=pointer]:
+            - generic [ref=e100]: download
+            - text: 5. Generate
+          - tabpanel "article 1. Template" [ref=e102]:
+            - paragraph [ref=e104]: Select a built-in template (Default or DefaultVenue) or create your own with tokens.
+            - img [ref=e105]
+        - tablist [ref=e106]:
+          - tab "task General RFP Features" [selected] [ref=e107] [cursor=pointer]:
+            - generic [ref=e108]: task
+            - text: General RFP Features
+          - tab "event_seat Venue RFP Features" [ref=e109] [cursor=pointer]:
+            - generic [ref=e110]: event_seat
+            - text: Venue RFP Features
+          - tab "hub Data & Integrations" [ref=e111] [cursor=pointer]:
+            - generic [ref=e112]: hub
+            - text: Data & Integrations
+          - tabpanel "task General RFP Features" [ref=e114]:
+            - generic [ref=e115]:
+              - generic [ref=e117]:
+                - heading "upload_file Document Processing" [level=4] [ref=e118]:
+                  - generic [ref=e119]: upload_file
+                  - text: Document Processing
+                - list [ref=e120]:
+                  - listitem [ref=e121]: OCR for PDFs, Word, and images using OpenAI vision
+                  - listitem [ref=e122]: Supports .docx, .pdf, .png, .jpg, .jpeg
+                  - listitem [ref=e123]: Automatic text extraction for analysis
+              - generic [ref=e125]:
+                - heading "help_center Question Detection & Answers" [level=4] [ref=e126]:
+                  - generic [ref=e127]: help_center
+                  - text: Question Detection & Answers
+                - list [ref=e128]:
+                  - listitem [ref=e129]: Detects and organizes questions in RFPs
+                  - listitem [ref=e130]: Embeddings-based matching to your knowledge base
+                  - listitem [ref=e131]: AI-generated drafts with manual editing
+              - generic [ref=e133]:
+                - heading "integration_instructions Templates & Tokens" [level=4] [ref=e134]:
+                  - generic [ref=e135]: integration_instructions
+                  - text: Templates & Tokens
+                - list [ref=e136]:
+                  - listitem [ref=e137]: Built-in "Default" template + custom templates
+                  - listitem [ref=e138]: Dynamic tokens like [BUSINESS_NAME], [EVENT_NAME]
+                  - listitem [ref=e139]: Organize and reuse content blocks
+              - generic [ref=e141]:
+                - heading "picture_as_pdf Document Generation" [level=4] [ref=e142]:
+                  - generic [ref=e143]: picture_as_pdf
+                  - text: Document Generation
+                - list [ref=e144]:
+                  - listitem [ref=e145]: Formatted .docx with professional styling
+                  - listitem [ref=e146]: Export to PDF and CSV
+                  - listitem [ref=e147]: Consistent branding and layout
+        - generic [ref=e148]:
+          - generic [ref=e150]:
+            - heading "hotel Venue Managers" [level=4] [ref=e151]:
+              - generic [ref=e152]: hotel
+              - text: Venue Managers
+            - paragraph [ref=e153]: Hotels, conference centers, and event spaces streamline proposals and room scheduling.
+          - generic [ref=e155]:
+            - heading "sell Sales Teams" [level=4] [ref=e156]:
+              - generic [ref=e157]: sell
+              - text: Sales Teams
+            - paragraph [ref=e158]: Respond faster with accurate, consistent answers pulled from your own content.
+          - generic [ref=e160]:
+            - heading "event Event Planners" [level=4] [ref=e161]:
+              - generic [ref=e162]: event
+              - text: Event Planners
+            - paragraph [ref=e163]: Manage multi-track requirements with automated room assignments and conflict checks.
+          - generic [ref=e165]:
+            - heading "insights Business Development" [level=4] [ref=e166]:
+              - generic [ref=e167]: insights
+              - text: Business Development
+            - paragraph [ref=e168]: Standardize responses and win more bids with professional output every time.
+        - heading "FAQ" [level=2] [ref=e169]
+        - generic [ref=e170]:
+          - button "Expand" [ref=e172] [cursor=pointer]:
+            - generic [ref=e173]: keyboard_arrow_down
+            - generic [ref=e174]: travel_explore
+            - text: How does the AI find answers in my documents?
+          - paragraph [ref=e177]: Your uploads are chunked and embedded (vector embeddings). The system semantically matches RFP questions to your stored content.
+          - button "Expand" [ref=e179] [cursor=pointer]:
+            - generic [ref=e180]: keyboard_arrow_down
+            - generic [ref=e181]: edit
+            - text: Can I override AI answers?
+          - paragraph [ref=e184]: Yes. Review and edit any response before exporting. Your edits can be saved into templates or tokens for reuse.
+          - button "Expand" [ref=e186] [cursor=pointer]:
+            - generic [ref=e187]: keyboard_arrow_down
+            - generic [ref=e188]: event_seat
+            - text: How do venue assignments work?
+          - paragraph [ref=e191]: We use a first-fit algorithm to assign the smallest suitable rooms based on capacity, setup, and availability, with conflict detection and re-calculation that preserves existing assignments.
+          - button "Expand" [ref=e193] [cursor=pointer]:
+            - generic [ref=e194]: keyboard_arrow_down
+            - generic [ref=e195]: attach_file
+            - text: What file formats are supported?
+          - paragraph [ref=e198]: "Uploads: .docx, .pdf, .png, .jpg, .jpeg. Exports: Word (.docx), PDF, and CSV."
+          - button "Expand" [ref=e200] [cursor=pointer]:
+            - generic [ref=e201]: keyboard_arrow_down
+            - generic [ref=e202]: hub
+            - text: Which models are supported?
+          - paragraph [ref=e205]: Works with GPT-4o, GPT-5, and other OpenAI-compatible models via API keys.
+  - paragraph [ref=e209]: "@2025 by BlazorData.net | Version 01.10.00"
+  - img [ref=e210]

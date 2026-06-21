@@ -1,0 +1,40 @@
+@using GuideFlow.Components
+@using GuideFlow.Enums
+@* Ordered steps for the GuideFlow onboarding tour. Targets are stable element ids
+   added to the navigation menu, the Home call-to-action, and the Save button.
+   GuideFlow gracefully skips any step whose target is not currently on the page. *@
+
+<GuideFlowStep Element="#menu-home" Title="Welcome to RFP Response Creator"
+               Order="0" Side="Placement.Bottom">
+    <p>This quick tour shows how to turn an RFP into a polished, AI-generated proposal. Use Next to continue or Skip to exit.</p>
+</GuideFlowStep>
+
+<GuideFlowStep Element="#tour-cta" Title="Your next step"
+               Order="1" Side="Placement.Bottom">
+    <p>This button always points to your next action - start by adding your AI key, then build your knowledge base, then create a response.</p>
+</GuideFlowStep>
+
+<GuideFlowStep Element="#menu-settings" Title="Settings - add your AI key"
+               Order="2" Side="Placement.Bottom">
+    <p>Open Settings to paste your AI key and choose a model. Nothing works until a valid key is saved.</p>
+</GuideFlowStep>
+
+<GuideFlowStep Element="#tour-features" Title="Build your Knowledgebase"
+               Order="3" Side="Placement.Top">
+    <p>Upload past proposals and reference documents. The app indexes them so the AI can answer from your own content. Once your AI key is saved, a Knowledgebase menu opens for this.</p>
+</GuideFlowStep>
+
+<GuideFlowStep Element="#tour-workflow" Title="Create a Response"
+               Order="4" Side="Placement.Top">
+    <p>Pick a template, upload the RFP, and let AI draft answers you can review and edit. Venue mode also assigns rooms. The Response menu drives this five-step workflow.</p>
+</GuideFlowStep>
+
+<GuideFlowStep Element="#tour-faq" Title="Review the Logs"
+               Order="5" Side="Placement.Top">
+    <p>Check the FAQ here for quick answers. Once you're set up, the Logs menu tracks processing activity and helps you troubleshoot any issues.</p>
+</GuideFlowStep>
+
+<GuideFlowStep Element="#btn-save-close" Title="Save your work"
+               Order="6" Side="Placement.Left">
+    <p>Save and Close packages your data so you can pick up where you left off next time.</p>
+</GuideFlowStep>

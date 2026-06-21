@@ -21,6 +21,7 @@
 	  <PackageReference Include="Radzen.Blazor" Version="10.4.9" />
 	  <PackageReference Include="Azure.AI.OpenAI" Version="2.1.0" />
 	  <PackageReference Include="Azure.Identity" Version="1.21.0" />
+	  <PackageReference Include="GuideFlow" Version="1.0.1" />
   </ItemGroup>
 
   <ItemGroup>

@@ -2,6 +2,8 @@
 @using RFPResponseAPP.Model
 @using RFPResponseAPP.Models
 @using System.Collections.Generic
+@using GuideFlow.Components
+@using GuideFlow.Models
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 @inherits LayoutComponentBase
 @implements IAsyncDisposable
@@ -13,10 +15,16 @@
 @inject LogService _LogService
 @inject AppMetadata _AppMetadata
 @inject HttpClient Http
+@inject TourService Tour
 <RadzenDialog />
 <RadzenNotification />
 <RadzenTooltip />
 <RadzenContextMenu />
+
+<GuideFlowTour @ref="tour" TourOptions="tourOptions"
+               OnComplete="OnTourFinished" OnCancel="OnTourFinished">
+    <TourSteps />
+</GuideFlowTour>
 <main>
     <div class="top-row px-4 d-flex justify-content-between align-items-center">
         <div class="d-flex align-items-center">
@@ -24,7 +32,11 @@
         </div>
         <div class="d-flex align-items-center">
             <a href="https://BlazorData.net/" target="_blank" class="me-2">BlazorData.net</a>
-            <RadzenButton Click="@(async () => await SaveSettingsaaAndCloseBrowserTab())" Disabled="@isSaving" Size="ButtonSize.ExtraSmall">
+            <RadzenButton Click="@(async () => await Tour.ReplayAsync())" Size="ButtonSize.ExtraSmall" ButtonStyle="ButtonStyle.Light" class="me-2" title="Replay the guided tour">
+                <RadzenIcon Icon="help_outline" class="me-1" />
+                <span>Tour</span>
+            </RadzenButton>
+            <RadzenButton id="btn-save-close" Click="@(async () => await SaveSettingsaaAndCloseBrowserTab())" Disabled="@isSaving" Size="ButtonSize.ExtraSmall">
                 @if (isSaving)
                 {
                     <span class="spinner-border spinner-border-sm"></span>
@@ -65,6 +77,13 @@
     private string versionLocal = string.Empty;
     private string versionPublished = string.Empty;
 
+    private GuideFlowTour tour;
+    private readonly TourOptions tourOptions = new()
+    {
+        Overlay = true,
+        ShowProgress = true
+    };
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -74,6 +93,10 @@
 
             objZipService = new ZipService(JSRuntime, localStorage, SettingsService, _LogService, DialogService);
             _browserModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./js/browserInterop.js");
+
+            // Make the tour available and decide whether to auto-start for first-time visitors.
+            Tour.Attach(tour);
+            await Tour.MaybeStartForFirstRunAsync();
 
             try
             {
@@ -100,6 +123,12 @@
                 await _LogService.WriteToLogAsync(ex.Message);
             }
         }
+    }
+
+    private async Task OnTourFinished()
+    {
+        // Persist that the tour has been seen so it will not auto-start again.
+        await Tour.MarkCompletedAsync();
     }
 
     private async Task SaveSettingsaaAndCloseBrowserTab()
